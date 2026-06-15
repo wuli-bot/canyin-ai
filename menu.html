@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>菜单设计助手</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0f172a;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;min-height:100vh;display:flex;justify-content:center;padding:24px 16px}
+.container{width:100%;max-width:520px}
+.header{text-align:center;margin-bottom:24px}
+.header h1{font-size:22px;font-weight:700;background:linear-gradient(135deg,#fbbf24,#f97316);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px}
+.header p{font-size:13px;color:#94a3b8}
+.card{background:#1e293b;border-radius:16px;padding:20px;margin-bottom:16px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12px;color:#94a3b8;margin-bottom:5px;font-weight:500}
+.field input,.field select{width:100%;background:#0f172a;border:1px solid #334155;border-radius:10px;padding:10px 12px;color:#e2e8f0;font-size:14px;outline:none;transition:border-color .2s}
+.field input:focus,.field select:focus{border-color:#fbbf24}
+.field input::placeholder{color:#475569}
+.row{display:flex;gap:12px}
+.row .field{flex:1}
+.btn{width:100%;padding:13px;border:none;border-radius:50px;background:linear-gradient(135deg,#fbbf24,#f97316);color:#0f172a;font-size:15px;font-weight:700;cursor:pointer;transition:opacity .2s,transform .1s;margin-top:4px}
+.btn:hover{opacity:.9}.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.section-title{font-size:15px;font-weight:600;margin:16px 0 10px;display:flex;align-items:center;gap:6px}
+.result-card{background:#0f172a;border-radius:12px;padding:14px;margin-bottom:10px;border-left:3px solid #334155}
+.result-card.yl{border-left-color:#ef4444}
+.result-card.ll{border-left-color:#fbbf24}
+.result-card.jl{border-left-color:#22c55e}
+.result-card.tc{border-left-color:#3b82f6}
+.result-card.cg{border-left-color:#a855f7}
+.item{display:flex;justify-content:space-between;align-items:flex-start;padding:7px 0;border-bottom:1px solid #1e293b}
+.item:last-child{border-bottom:none}
+.item-name{font-size:13px;font-weight:600}
+.item-desc{font-size:11px;color:#64748b;margin-top:2px}
+.item-price{font-size:13px;font-weight:700;color:#fbbf24;white-space:nowrap;margin-left:10px}
+.tip-list{list-style:none;padding:0}
+.tip-list li{font-size:12px;color:#94a3b8;padding:5px 0;border-bottom:1px solid #1e293b;line-height:1.6}
+.tip-list li:last-child{border-bottom:none}
+.tip-list li::before{content:"💡 ";font-size:11px}
+.empty{text-align:center;padding:40px 20px;color:#475569;font-size:13px}
+.history-toggle{font-size:12px;color:#64748b;text-align:center;cursor:pointer;padding:8px;transition:color .2s}
+.history-toggle:hover{color:#94a3b8}
+.history-item{background:#0f172a;border-radius:10px;padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:background .2s}
+.history-item:hover{background:#1a2332}
+.history-item .hi-info{font-size:12px}
+.history-item .hi-title{font-weight:600;font-size:13px}
+.history-item .hi-time{font-size:11px;color:#475569;margin-top:2px}
+.history-item .hi-del{color:#475569;font-size:16px;padding:4px 8px;border-radius:6px;transition:color .2s,background .2s}
+.history-item .hi-del:hover{color:#ef4444;background:#1e293b}
+.back-btn{font-size:12px;color:#fbbf24;cursor:pointer;margin-bottom:12px;display:inline-block}
+.back-btn:hover{text-decoration:underline}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>📋 菜单设计</h1>
+    <p>告诉我你的店，帮你设计科学菜单</p>
+  </div>
+
+  <div id="inputView">
+    <div class="card">
+      <div class="field">
+        <label>店名（可选，用于方案展示）</label>
+        <input type="text" id="shopName" placeholder="如：老王家炒饭">
+      </div>
+      <div class="field">
+        <label>品类</label>
+        <select id="category">
+          <option value="">请选择品类</option>
+          <option value="炒饭">炒饭</option>
+          <option value="盖码饭">盖码饭</option>
+          <option value="面条">面条</option>
+          <option value="粉">粉</option>
+          <option value="奶茶">奶茶</option>
+          <option value="烧烤">烧烤</option>
+          <option value="火锅">火锅</option>
+          <option value="炸鸡">炸鸡</option>
+          <option value="麻辣烫">麻辣烫</option>
+          <option value="轻食">轻食</option>
+          <option value="其他">其他</option>
+        </select>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>客单价（元）</label>
+          <input type="number" id="avgPrice" placeholder="如：25">
+        </div>
+        <div class="field">
+          <label>菜品数量</label>
+          <input type="number" id="dishCount" value="12" min="6" max="50">
+        </div>
+      </div>
+      <button class="btn" id="genBtn" onclick="generate()">一键设计菜单</button>
+    </div>
+
+    <div id="historySection" class="hidden">
+      <div class="history-toggle" onclick="toggleHistory()">▾ 查看历史方案</div>
+      <div id="historyList" class="hidden"></div>
+    </div>
+  </div>
+
+  <div id="resultView" class="hidden">
+    <div class="back-btn" onclick="showInput()">← 返回修改</div>
+    <div id="resultContent"></div>
+  </div>
+</div>
+
+<script>
+var DB_KEY = 'menu_designs_v1';
+
+var MENU_DB = {
+  '炒饭': [
+    {n:'蛋炒饭',p:12,c:3,d:'成本低、出餐快、人人点'},
+    {n:'酸菜炒饭',p:13,c:3,d:'开胃爽口、成本极低'},
+    {n:'火腿炒饭',p:15,c:4,d:'经典口味、接受度高'},
+    {n:'培根炒饭',p:16,c:5,d:'年轻客群最爱'},
+    {n:'腊肠炒饭',p:16,c:5,d:'广式风味、辨识度强'},
+    {n:'牛肉炒饭',p:22,c:8,d:'毛利高、有溢价空间'},
+    {n:'虾仁炒饭',p:25,c:9,d:'高价值感、拍照好看'},
+    {n:'鱿鱼炒饭',p:24,c:8,d:'海鲜风味、差异明显'},
+    {n:'鲍鱼炒饭',p:35,c:12,d:'高端定位、利润极高'},
+    {n:'蟹肉炒饭',p:32,c:11,d:'海鲜溢价、适合套餐'},
+    {n:'咸鱼鸡粒炒饭',p:20,c:7,d:'港式经典、回头客多'},
+    {n:'酱油炒饭',p:11,c:2.5,d:'超低成本、引流利器'},
+    {n:'泡菜炒饭',p:14,c:3.5,d:'韩式风味、年轻人爱'},
+    {n:'咖喱炒饭',p:18,c:5,d:'异域风味、差异化强'},
+    {n:'松露炒饭',p:38,c:10,d:'高端噱头、社交传播'},
+    {n:'芝士炒饭',p:20,c:6,d:'拉丝效果、拍照分享'},
+    {n:'麻辣炒饭',p:16,c:4,d:'重口味、川渝市场'},
+    {n:'蒜香炒饭',p:14,c:3,d:'简单但有记忆点'},
+    {n:'番茄鸡蛋炒饭',p:14,c:3.5,d:'家常味道、老少皆宜'},
+    {n:'黑椒牛肉炒饭',p:24,c:8,d:'西式风味、溢价明显'}
+  ],
+  '盖码饭': [
+    {n:'番茄鸡蛋盖饭',p:13,c:3,d:'零门槛、人人接受'},
+    {n:'辣椒炒肉盖饭',p:16,c:5,d:'湖南经典、下饭王'},
+    {n:'红烧肉盖饭',p:20,c:7,d:'硬菜感、满足感强'},
+    {n:'宫保鸡丁盖饭',p:17,c:5,d:'国民菜、接受度广'},
+    {n:'鱼香肉丝盖饭',p:17,c:5,d:'经典川味、点单率高'},
+    {n:'麻婆豆腐盖饭',p:14,c:3,d:'成本极低、利润空间大'},
+    {n:'回锅肉盖饭',p:18,c:6,d:'川菜代表、复购率高'},
+    {n:'黄焖鸡盖饭',p:19,c:6,d:'热门单品、自带流量'},
+    {n:'卤肉饭',p:16,c:4.5,d:'台式经典、出餐极快'},
+    {n:'咖喱鸡排盖饭',p:20,c:6,d:'日式风味、年轻人爱'},
+    {n:'黑椒牛柳盖饭',p:24,c:9,d:'高价值感、利润款'},
+    {n:'铁板牛肉盖饭',p:26,c:9,d:'仪式感强、溢价高'},
+    {n:'酸菜鱼盖饭',p:22,c:8,d:'热门品类、引流力强'},
+    {n:'干煸豆角盖饭',p:15,c:4,d:'素菜荤做、成本低'},
+    {n:'土豆牛腩盖饭',p:22,c:8,d:'硬菜定位、客单拉升'},
+    {n:'香菇滑鸡盖饭',p:17,c:5,d:'清淡口味、健康定位'},
+    {n:'糖醋里脊盖饭',p:19,c:6,d:'甜口受众广、女性爱'},
+    {n:'水煮肉片盖饭',p:21,c:7,d:'川味硬核、男生最爱'},
+    {n:'蒜蓉虾仁盖饭',p:28,c:10,d:'高端定位、利润最高'},
+    {n:'照烧鸡腿盖饭',p:18,c:5,d:'日式甜口、学生群体'}
+  ],
+  '面条': [
+    {n:'阳春面',p:10,c:2,d:'超低成本、引流首选'},
+    {n:'葱油拌面',p:11,c:2,d:'极简操作、利润极高'},
+    {n:'炸酱面',p:14,c:4,d:'北方经典、认知度高'},
+    {n:'番茄鸡蛋面',p:13,c:3,d:'家常口味、人人接受'},
+    {n:'红烧牛肉面',p:22,c:8,d:'硬通货、价值感强'},
+    {n:'酸菜肉丝面',p:15,c:4,d:'开胃爽口、出餐快'},
+    {n:'重庆小面',p:13,c:3,d:'网红品类、自带流量'},
+    {n:'担担面',p:14,c:3.5,d:'川味代表、辣味引流'},
+    {n:'热干面',p:11,c:2.5,d:'地域特色、成本极低'},
+    {n:'兰州拉面',p:16,c:5,d:'品类认知强、复购高'},
+    {n:'刀削面',p:15,c:4,d:'山西特色、视觉冲击'},
+    {n:'拌面',p:12,c:3,d:'简单高效、利润好'},
+    {n:'油泼面',p:14,c:3.5,d:'陕西风味、网红属性'},
+    {n:'肥肠面',p:20,c:7,d:'重口味、粉丝忠诚度高'},
+    {n:'海鲜面',p:26,c:10,d:'高价值感、溢价空间大'},
+    {n:'排骨面',p:22,c:8,d:'硬菜面食、客单拉升'},
+    {n:'鸡杂面',p:16,c:5,d:'下脚料利用、利润高'},
+    {n:'酸汤面',p:14,c:3.5,d:'贵州风味、差异化'},
+    {n:'炸酱排骨面',p:24,c:8,d:'双重满足、适合套餐'},
+    {n:'麻酱面',p:12,c:3,d:'北方最爱、操作简单'}
+  ],
+  '粉': [
+    {n:'酸辣粉',p:12,c:3,d:'网红单品、年轻女性最爱'},
+    {n:'牛肉粉',p:20,c:7,d:'硬通货、价值感强'},
+    {n:'肥肠粉',p:22,c:7,d:'成都经典、粉丝粘性高'},
+    {n:'酸菜粉',p:13,c:3,d:'成本低、开胃引流'},
+    {n:'羊肉粉',p:22,c:8,d:'贵州特色、冬季爆款'},
+    {n:'螺蛳粉',p:15,c:4,d:'超级网红、自带流量'},
+    {n:'桂林米粉',p:13,c:3,d:'经典品类、认知度广'},
+    {n:'湖南米粉',p:14,c:3.5,d:'辣味引流、复购高'},
+    {n:'过桥米线',p:18,c:5,d:'云南特色、仪式感强'},
+    {n:'花甲粉',p:18,c:6,d:'海鲜定位、利润不错'},
+    {n:'排骨粉',p:20,c:7,d:'硬菜搭配、客单拉升'},
+    {n:'三鲜粉',p:16,c:5,d:'清淡口味、受众广'},
+    {n:'杂酱粉',p:14,c:3.5,d:'操作简单、利润好'},
+    {n:'番茄牛肉粉',p:22,c:7,d:'酸甜开胃、年轻人爱'},
+    {n:'红烧排骨粉',p:24,c:8,d:'高价值感、适合套餐'},
+    {n:'猪脚粉',p:22,c:7,d:'两广特色、胶原蛋白'},
+    {n:'牛杂粉',p:20,c:7,d:'下脚料利用、利润高'},
+    {n:'海鲜粉',p:25,c:9,d:'高端定位、溢价空间大'},
+    {n:'鸡汤粉',p:16,c:4.5,d:'清淡养生、差异化'},
+    {n:'干拌粉',p:12,c:3,d:'极简操作、夏天好卖'}
+  ],
+  '奶茶': [
+    {n:'珍珠奶茶',p:10,c:2.5,d:'经典入门、人人必点'},
+    {n:'芒果冰沙',p:14,c:4,d:'夏季爆款、颜值高'},
+    {n:'柠檬茶',p:9,c:2,d:'成本极低、引流之王'},
+    {n:'椰汁西米露',p:14,c:4,d:'甜品定位、溢价空间'},
+    {n:'抹茶拿铁',p:16,c:4.5,d:'日系高级感、年轻人爱'},
+    {n:'杨枝甘露',p:16,c:5,d:'港式经典、价值感强'},
+    {n:'草莓奶昔',p:15,c:4.5,d:'女性最爱、拍照神器'},
+    {n:'百香果茶',p:12,c:3,d:'酸甜口感、复购率高'},
+    {n:'芋泥波波',p:15,c:4.5,d:'网红爆款、社交传播'},
+    {n:'黑糖鹿丸鲜奶',p:14,c:4,d:'台系经典、口感丰富'},
+    {n:'生椰拿铁',p:16,c:4.5,d:'咖啡跨界、溢价明显'},
+    {n:'多肉葡萄',p:15,c:4.5,d:'喜茶同款、认知度高'},
+    {n:'蜜桃乌龙',p:13,c:3.5,d:'清爽口感、夏天好卖'},
+    {n:'可可拿铁',p:14,c:4,d:'巧克力控、冬季爆款'},
+    {n:'桂花酒酿',p:15,c:4,d:'中式创新、差异明显'},
+    {n:'牛油果奶昔',p:18,c:6,d:'高端定位、利润款'},
+    {n:'桃桃乌龙',p:14,c:4,d:'清甜爽口、女性最爱'},
+    {n:'奥利奥奶昔',p:14,c:4,d:'年轻群体、口感丰富'},
+    {n:'鲜榨橙汁',p:14,c:5,d:'健康定位、溢价合理'},
+    {n:'冰美式',p:12,c:2.5,d:'咖啡入门、成本极低'}
+  ],
+  '烧烤': [
+    {n:'烤羊肉串',p:5,c:1.5,d:'烧烤灵魂、必点单品'},
+    {n:'烤牛肉串',p:6,c:2,d:'硬通货、利润稳定'},
+    {n:'烤鸡翅',p:8,c:2.5,d:'男女老少都爱'},
+    {n:'烤韭菜',p:4,c:1,d:'成本极低、利润之王'},
+    {n:'烤茄子',p:8,c:2,d:'素菜之王、饱腹感强'},
+    {n:'烤玉米',p:5,c:1.5,d:'引流单品、人人点'},
+    {n:'烤金针菇',p:6,c:1.5,d:'成本低、出餐快'},
+    {n:'烤鱿鱼',p:10,c:3,d:'海鲜定位、价值感强'},
+    {n:'烤生蚝',p:12,c:5,d:'高端单品、利润极高'},
+    {n:'烤板筋',p:6,c:2,d:'下酒神器、男性最爱'},
+    {n:'烤馒头',p:3,c:0.8,d:'超低成本、饱腹引流'},
+    {n:'烤排骨',p:18,c:7,d:'硬菜定位、客单拉升'},
+    {n:'烤虾',p:15,c:6,d:'海鲜溢价、利润高'},
+    {n:'烤猪蹄',p:18,c:6,d:'网红单品、胶原蛋白'},
+    {n:'烤五花',p:8,c:2.5,d:'烧烤经典、油脂香'},
+    {n:'烤豆角',p:5,c:1.2,d:'素菜搭配、利润好'},
+    {n:'烤土豆片',p:4,c:1,d:'极简成本、人人点'},
+    {n:'烤年糕',p:6,c:1.5,d:'甜品定位、女性爱'},
+    {n:'烤扇贝',p:12,c:5,d:'高端海鲜、溢价空间'},
+    {n:'烤全鱼',p:28,c:10,d:'大菜定位、聚餐必点'}
+  ],
+  '火锅': [
+    {n:'精品肥牛',p:28,c:10,d:'火锅必备、价值感强'},
+    {n:'羊肉卷',p:26,c:9,d:'冬季爆款、利润稳定'},
+    {n:'毛肚',p:22,c:8,d:'火锅灵魂、必点单品'},
+    {n:'鸭血',p:12,c:3,d:'成本极低、利润之王'},
+    {n:'黄喉',p:18,c:6,d:'口感独特、老饕最爱'},
+    {n:'虾滑',p:22,c:8,d:'高价值感、女性最爱'},
+    {n:'土豆片',p:6,c:1,d:'成本极低、人人点'},
+    {n:'娃娃菜',p:8,c:1.5,d:'素菜引流、利润高'},
+    {n:'金针菇',p:8,c:1.5,d:'火锅标配、出餐快'},
+    {n:'冻豆腐',p:6,c:1,d:'吸汤神器、成本极低'},
+    {n:'午餐肉',p:12,c:4,d:'年轻人最爱、方便'},
+    {n:'牛肉丸',p:14,c:4.5,d:'Q弹口感、复购高'},
+    {n:'鲜豆腐',p:6,c:1,d:'基础素菜、利润好'},
+    {n:'宽粉',p:8,c:1.5,d:'主食定位、饱腹感'},
+    {n:'鹌鹑蛋',p:8,c:2,d:'小食搭配、利润高'},
+    {n:'脑花',p:18,c:6,d:'川渝特色、重口味'},
+    {n:'鲜鸭肠',p:20,c:7,d:'高端食材、利润极高'},
+    {n:'手切鲜牛肉',p:32,c:12,d:'顶级定位、客单拉升'},
+    {n:'鱼片',p:18,c:6,d:'嫩滑口感、健康定位'},
+    {n:'藕片',p:6,c:1,d:'清脆口感、成本极低'}
+  ],
+  '炸鸡': [
+    {n:'炸鸡翅',p:10,c:3,d:'经典单品、人人爱'},
+    {n:'炸鸡腿',p:10,c:3,d:'饱腹感强、性价比高'},
+    {n:'炸鸡块',p:12,c:3.5,d:'小食定位、适合分享'},
+    {n:'炸薯条',p:8,c:1.5,d:'成本极低、利润之王'},
+    {n:'炸鸡汉堡',p:15,c:4,d:'主食定位、套餐核心'},
+    {n:'香辣鸡翅',p:12,c:3.5,d:'辣味引流、年轻人爱'},
+    {n:'蜜汁鸡翅',p:12,c:3.5,d:'甜口定位、女性最爱'},
+    {n:'鸡肉卷',p:14,c:4,d:'便捷主食、出餐快'},
+    {n:'洋葱圈',p:8,c:2,d:'小食搭配、利润好'},
+    {n:'鸡米花',p:10,c:2.5,d:'小食引流、儿童爱'},
+    {n:'炸鱿鱼圈',p:14,c:4.5,d:'海鲜定位、差异明显'},
+    {n:'鸡肉三明治',p:15,c:4.5,d:'早餐场景、全时段'},
+    {n:'炸鸡皮',p:8,c:2,d:'酥脆口感、下酒神器'},
+    {n:'蜜汁手扒鸡',p:35,c:12,d:'大菜定位、聚餐首选'},
+    {n:'鸡胸肉沙拉',p:18,c:5,d:'健康定位、女性市场'},
+    {n:'芝士鸡排',p:14,c:4,d:'拉丝效果、社交传播'},
+    {n:'辣子鸡',p:16,c:5,d:'川味炸鸡、差异化'},
+    {n:'椒盐鸡翅',p:12,c:3.5,d:'咸香口感、男性爱'},
+    {n:'炸年糕',p:8,c:2,d:'甜品定位、学生爱'},
+    {n:'全家桶',p:59,c:18,d:'聚餐爆款、客单拉升'}
+  ],
+  '麻辣烫': [
+    {n:'娃娃菜',p:3,c:0.5,d:'成本极低、利润之王'},
+    {n:'土豆片',p:3,c:0.5,d:'基础素菜、人人选'},
+    {n:'金针菇',p:4,c:0.8,d:'麻辣烫标配、出餐快'},
+    {n:'豆皮',p:3,c:0.6,d:'吸汤神器、成本极低'},
+    {n:'午餐肉',p:6,c:2,d:'人气王、年轻人必选'},
+    {n:'牛肉丸',p:5,c:1.5,d:'Q弹口感、复购高'},
+    {n:'肥牛卷',p:10,c:4,d:'高价值感、利润款'},
+    {n:'虾滑',p:10,c:3.5,d:'高端定位、女性最爱'},
+    {n:'宽粉',p:4,c:0.8,d:'主食定位、饱腹感'},
+    {n:'鱼豆腐',p:4,c:1,d:'火锅同源、成本极低'},
+    {n:'藕片',p:3,c:0.5,d:'清脆口感、素菜引流'},
+    {n:'鹌鹑蛋',p:4,c:1,d:'蛋白质补充、利润高'},
+    {n:'火腿肠',p:4,c:1.2,d:'学生最爱、认知度高'},
+    {n:'蟹棒',p:5,c:1.5,d:'海鲜定位、成本可控'},
+    {n:'鸭血',p:4,c:0.8,d:'超低成本、利润极高'},
+    {n:'花菜',p:3,c:0.5,d:'素菜搭配、饱腹感'},
+    {n:'腐竹',p:4,c:0.8,d:'吸汤入味、素食者爱'},
+    {n:'毛肚',p:10,c:3.5,d:'高端食材、利润极高'},
+    {n:'方便面',p:3,c:0.8,d:'主食补充、学生必选'},
+    {n:'培根',p:6,c:2,d:'人气食材、溢价合理'}
+  ],
+  '轻食': [
+    {n:'凯撒沙拉',p:22,c:6,d:'经典沙拉、价值感强'},
+    {n:'鸡胸肉沙拉',p:25,c:7,d:'健身标配、蛋白质高'},
+    {n:'牛油果三明治',p:22,c:7,d:'网红单品、女性最爱'},
+    {n:'全麦三明治',p:18,c:5,d:'健康主食、上班族爱'},
+    {n:'藜麦碗',p:28,c:8,d:'超级食物、高端定位'},
+    {n:'金枪鱼沙拉',p:24,c:7,d:'低脂高蛋白、健身爱'},
+    {n:'水果酸奶碗',p:20,c:6,d:'甜品定位、拍照好看'},
+    {n:'烤鸡胸肉卷',p:22,c:6,d:'便携主食、午餐场景'},
+    {n:'牛油果鸡蛋吐司',p:20,c:6,d:'早餐场景、溢价高'},
+    {n:'低脂牛肉碗',p:28,c:9,d:'高蛋白定位、利润款'},
+    {n:'地中海沙拉',p:22,c:6,d:'异域风味、差异化'},
+    {n:'虾仁牛油果沙拉',p:30,c:10,d:'高端定位、利润最高'},
+    {n:'蔬菜汁',p:15,c:3.5,d:'健康饮品、成本极低'},
+    {n:'蛋白奶昔',p:18,c:4.5,d:'健身配套、溢价明显'},
+    {n:'全麦贝果',p:15,c:4,d:'早餐场景、健康定位'},
+    {n:'三文鱼沙拉',p:32,c:11,d:'高端食材、客单拉升'},
+    {n:'紫薯燕麦碗',p:20,c:5,d:'低GI定位、女性市场'},
+    {n:'鸡肉谷物碗',p:24,c:7,d:'均衡营养、午餐首选'},
+    {n:'希腊酸奶碗',p:18,c:5,d:'异域风味、利润好'},
+    {n:'能量球(3个)',p:12,c:3,d:'零食定位、加购率高'}
+  ],
+  '其他': [
+    {n:'招牌主食A',p:0,c:0,d:'引流款 - 成本低、出餐快'},
+    {n:'招牌主食B',p:0,c:0,d:'引流款 - 人人必点'},
+    {n:'特色菜品A',p:0,c:0,d:'利润款 - 毛利高、有溢价'},
+    {n:'特色菜品B',p:0,c:0,d:'利润款 - 价值感强'},
+    {n:'经典菜品A',p:0,c:0,d:'常规款 - 稳定出餐'},
+    {n:'经典菜品B',p:0,c:0,d:'常规款 - 复购率高'},
+    {n:'时令菜品A',p:0,c:0,d:'常规款 - 季节差异化'},
+    {n:'人气菜品A',p:0,c:0,d:'常规款 - 社交传播'},
+    {n:'高端菜品A',p:0,c:0,d:'利润款 - 客单拉升'},
+    {n:'高端菜品B',p:0,c:0,d:'利润款 - 聚餐定位'},
+    {n:'素菜A',p:0,c:0,d:'引流款 - 成本极低'},
+    {n:'小食A',p:0,c:0,d:'加购项 - 提升客单'}
+  ]
+};
+
+var ADDON_DB = {
+  '炒饭':[{n:'加蛋',p:2},{n:'加牛肉',p:8},{n:'加虾仁',p:10},{n:'加 bacon',p:6},{n:'加芝士',p:4}],
+  '盖码饭':[{n:'加蛋',p:2},{n:'加肉',p:6},{n:'加豆腐',p:3},{n:'加辣',p:1},{n:'加大份',p:5}],
+  '面条':[{n:'加蛋',p:2},{n:'加肉',p:8},{n:'加面',p:3},{n:'加辣',p:1},{n:'加大碗',p:4}],
+  '粉':[{n:'加蛋',p:2},{n:'加肉',p:6},{n:'加粉',p:3},{n:'加辣',p:1},{n:'加酸菜',p:2}],
+  '奶茶':[{n:'加珍珠',p:2},{n:'加椰果',p:2},{n:'加布丁',p:3},{n:'加芝士奶盖',p:4},{n:'换燕麦奶',p:3}],
+  '烧烤':[{n:'加辣',p:1},{n:'加芝士',p:3},{n:'加酱料',p:2},{n:'加年糕',p:4},{n:'加玉米',p:3}],
+  '火锅':[{n:'加蘸料',p:5},{n:'加面',p:4},{n:'加汤底',p:8},{n:'加饮品',p:6},{n:'加米饭',p:2}],
+  '炸鸡':[{n:'加酱料',p:2},{n:'加芝士',p:3},{n:'加薯条',p:6},{n:'加饮料',p:5},{n:'加鸡块',p:6}],
+  '麻辣烫':[{n:'加面',p:3},{n:'加蛋',p:2},{n:'加肉',p:5},{n:'加芝士',p:3},{n:'加饮料',p:4}],
+  '轻食':[{n:'加鸡胸肉',p:6},{n:'加牛油果',p:8},{n:'加鸡蛋',p:3},{n:'换藜麦',p:4},{n:'加坚果',p:5}],
+  '其他':[{n:'加料A',p:3},{n:'加料B',p:5},{n:'加大份',p:4},{n:'加饮品',p:5},{n:'加小食',p:4}]
+};
+
+var TIPS_DB = {
+  '炒饭':['引流款（蛋炒饭/酱油炒饭）放在菜单最前面，用大字体突出','利润款（虾仁/鲍鱼炒饭）配实拍图，放在视觉黄金位置','设置"炒饭+饮料"套餐，提升客单价20%以上','加料项放在菜单底部，用"推荐加料"引导','标注"出餐快·10分钟"等效率标签，吸引外卖用户'],
+  '盖码饭':['引流款（番茄鸡蛋/麻婆豆腐）放在首屏，标注"人气TOP"','利润款（红烧肉/铁板牛肉）配大图，用"招牌推荐"标签','设置"盖饭+汤+饮料"套餐，提升客单价','加料区引导"加蛋+2""加肉+6"提升单笔消费','午市标注"商务套餐"，晚市标注"超值晚餐"'],
+  '面条':['阳春面/葱油拌面作为引流款，放在最前面','红烧牛肉面作为利润标杆，用大字号+实拍图','设置"面+小菜+饮料"套餐组合','加料项引导"加蛋""加面""加肉"','标注面条份量和辣度，减少退单率'],
+  '粉':['酸辣粉/酸菜粉作为引流款，用"酸辣开胃"等文案引流','牛肉粉/肥肠粉作为利润款，标注"招牌必点"','设置"粉+小食+饮品"套餐，提升客单价','加料项"加蛋""加肉""加粉"放在下单页','螺蛳粉等特殊品类标注口味特征，降低决策成本'],
+  '奶茶':['珍珠奶茶/柠檬茶作为引流款，放在菜单首屏','生椰拿铁/牛油果奶昔作为利润款，用精美图片展示','设置"第二杯半价""双杯套餐"提升连带','加料区"加珍珠""加椰果"放在选规格页面','标注甜度/冰度选择项，提升用户定制感'],
+  '烧烤':['烤馒头/韭菜作为引流款，低价吸引下单','烤生蚝/烤全鱼作为利润款，用"必点"标签','设置"10串套餐""双人烧烤套餐"提升客单','加料"加辣""加酱料"放在选串页面','按"荤菜/素菜/海鲜"分类，方便用户选购'],
+  '火锅':['鸭血/土豆片作为引流款，低价降低决策门槛','手切鲜牛肉/毛肚作为利润款，用"镇店之宝"标签','设置"双人套餐""四人套餐"提升桌均消费','蘸料/饮品/主食作为加购项引导','按"必点荤菜/素菜/主食"分类展示'],
+  '炸鸡':['炸薯条/鸡米花作为引流款，吸引下单','全家桶/蜜汁手扒鸡作为利润款，拉升客单','设置"单人餐""双人桶"等套餐组合','加料"加酱料""加饮料"放在下单流程中','标注"现炸·15分钟"等时效信息'],
+  '麻辣烫':['娃娃菜/土豆片作为引流款，降低入门价','肥牛/虾滑作为利润款，用"推荐"标签引导','设置"18元任选X样""28元套餐"等固定套餐','加料"加面""加肉"放在选菜页面','标注辣度选择（微辣/中辣/重辣），减少退单'],
+  '轻食':['凯撒沙拉/全麦三明治作为引流款，降低尝鲜门槛','藜麦碗/三文鱼沙拉作为利润款，用"超级食物"标签','设置"周卡套餐""7天轻食计划"提升LTV','加料"加鸡胸""加牛油果"放在定制页面','标注热量/蛋白质数据，精准吸引健身人群'],
+  '其他':['设置2-3道引流款，用低价吸引首次下单','利润款放在菜单视觉黄金位置（中间偏上）','套餐组合覆盖单人/双人/多人场景','加料项引导"加料""加大份"提升客单价','定期根据销量数据调整菜品排序和定价']
+};
+
+function rand(min, max) { return Math.round((min + Math.random() * (max - min)) * 10) / 10; }
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+function generate() {
+  var name = document.getElementById('shopName').value.trim() || '我的店';
+  var cat = document.getElementById('category').value;
+  var avg = parseInt(document.getElementById('avgPrice').value) || 0;
+  var total = clamp(parseInt(document.getElementById('dishCount').value) || 12, 6, 50);
+
+  if (!cat) { alert('请选择品类'); return; }
+  if (avg <= 0) { alert('请输入客单价'); return; }
+
+  var db = (MENU_DB[cat] || MENU_DB['其他']).slice();
+  var addons = (ADDON_DB[cat] || ADDON_DB['其他']).slice();
+
+  var ylCount = Math.max(2, Math.round(total * 0.2));
+  var llCount = Math.max(2, Math.round(total * 0.35));
+  var cgCount = Math.max(1, Math.round(total * 0.3));
+  var addonCount = clamp(Math.round(total * 0.3), 3, 5);
+
+  function pick(arr, n) {
+    var shuffled = arr.slice().sort(function() { return Math.random() - 0.5; });
+    return shuffled.slice(0, Math.min(n, shuffled.length));
+  }
+
+  function priceFor(baseP, cat2) {
+    var ratio;
+    if (cat2 === 'yl') ratio = rand(0.6, 0.8);
+    else if (cat2 === 'll') ratio = rand(1.2, 1.5);
+    else ratio = rand(0.9, 1.1);
+    var p = baseP > 0 ? baseP : Math.round(avg * ratio);
+    return Math.max(Math.round(avg * ratio), Math.round(p * ratio / (baseP > 0 ? baseP / avg * ratio : 1)));
+  }
+
+  var ylItems = pick(db, ylCount).map(function(item) {
+    var p = Math.round(avg * rand(0.6, 0.8));
+    return { n: item.n, p: Math.max(p, 6), c: item.c > 0 ? item.c : Math.round(p * 0.3), d: item.d };
+  });
+  var llItems = pick(db, llCount).map(function(item) {
+    var p = Math.round(avg * rand(1.2, 1.5));
+    return { n: item.n, p: p, c: item.c > 0 ? item.c : Math.round(p * 0.35), d: item.d };
+  });
+  var cgItems = pick(db, cgCount).map(function(item) {
+    var p = Math.round(avg * rand(0.9, 1.1));
+    return { n: item.n, p: Math.max(p, 8), c: item.c > 0 ? item.c : Math.round(p * 0.35), d: item.d };
+  });
+
+  var myAddons = pick(addons, addonCount).map(function(a) {
+    return { n: a.n, p: a.p > 0 ? a.p : Math.round(avg * rand(0.1, 0.2)) };
+  });
+
+  var comboCount = clamp(Math.round(total * 0.2), 2, 3);
+  var combos = [];
+  for (var i = 0; i < comboCount; i++) {
+    var yl = ylItems[i % ylItems.length];
+    var ll = llItems[i % llItems.length];
+    var sumP = yl.p + ll.p;
+    var cp = Math.round(sumP * 0.85);
+    var labels = ['超值单人餐','招牌双人餐','豪华畅享餐','人气套餐','经济实惠餐'];
+    combos.push({
+      n: labels[i % labels.length],
+      items: yl.n + ' + ' + ll.n,
+      p: cp,
+      orig: sumP
+    });
+  }
+
+  var tips = (TIPS_DB[cat] || TIPS_DB['其他']).slice(0, 5);
+
+  var design = {
+    id: Date.now().toString(),
+    name: name,
+    cat: cat,
+    avg: avg,
+    total: total,
+    yl: ylItems,
+    ll: llItems,
+    cg: cgItems,
+    addons: myAddons,
+    combos: combos,
+    tips: tips,
+    time: new Date().toLocaleString('zh-CN')
+  };
+
+  saveDesign(design);
+  renderResult(design);
+}
+
+function renderResult(d) {
+  var h = '';
+  h += '<div class="card">';
+  h += '<div class="section-title">📋 ' + esc(d.name) + ' · ' + esc(d.cat) + '菜单方案</div>';
+  h += '<div style="font-size:11px;color:#64748b;margin-bottom:12px">客单价 ¥' + d.avg + ' · ' + d.total + '道菜 · ' + d.time + '</div>';
+
+  h += '<div class="section-title" style="color:#ef4444">🔥 引流款（' + d.yl.length + '道）</div>';
+  d.yl.forEach(function(item, i) {
+    var margin = Math.round((1 - item.c / item.p) * 100);
+    h += '<div class="result-card yl">';
+    h += '<div class="item"><div><div class="item-name">' + (i+1) + '. ' + esc(item.n) + '</div>';
+    h += '<div class="item-desc">' + esc(item.d) + ' · 毛利率' + margin + '%</div></div>';
+    h += '<div class="item-price">¥' + item.p + '</div></div></div>';
+  });
+
+  h += '<div class="section-title" style="color:#fbbf24">💰 利润款（' + d.ll.length + '道）</div>';
+  d.ll.forEach(function(item, i) {
+    var margin = Math.round((1 - item.c / item.p) * 100);
+    h += '<div class="result-card ll">';
+    h += '<div class="item"><div><div class="item-name">' + (i+1) + '. ' + esc(item.n) + '</div>';
+    h += '<div class="item-desc">' + esc(item.d) + ' · 毛利率' + margin + '%</div></div>';
+    h += '<div class="item-price">¥' + item.p + '</div></div></div>';
+  });
+
+  if (d.cg.length > 0) {
+    h += '<div class="section-title" style="color:#94a3b8">🍽️ 常规款（' + d.cg.length + '道）</div>';
+    d.cg.forEach(function(item, i) {
+      h += '<div class="result-card">';
+      h += '<div class="item"><div><div class="item-name">' + (i+1) + '. ' + esc(item.n) + '</div>';
+      h += '<div class="item-desc">' + esc(item.d) + '</div></div>';
+      h += '<div class="item-price">¥' + item.p + '</div></div></div>';
+    });
+  }
+
+  h += '<div class="section-title" style="color:#22c55e">🧩 加料项（' + d.addons.length + '个）</div>';
+  d.addons.forEach(function(a, i) {
+    h += '<div class="result-card jl">';
+    h += '<div class="item"><div class="item-name">' + (i+1) + '. ' + esc(a.n) + '</div>';
+    h += '<div class="item-price" style="color:#22c55e">+¥' + a.p + '</div></div></div>';
+  });
+
+  h += '<div class="section-title" style="color:#3b82f6">🎁 套餐组合（' + d.combos.length + '套）</div>';
+  d.combos.forEach(function(c, i) {
+    var labels = 'ABCDEFGH';
+    h += '<div class="result-card tc">';
+    h += '<div class="item"><div><div class="item-name">' + labels[i] + '. ' + esc(c.n) + '</div>';
+    h += '<div class="item-desc">' + esc(c.items) + '</div></div>';
+    h += '<div class="item-price" style="color:#3b82f6">¥' + c.p + ' <span style="text-decoration:line-through;color:#475569;font-size:11px">¥' + c.orig + '</span></div>';
+    h += '</div></div>';
+  });
+
+  h += '<div class="section-title" style="color:#a855f7">💡 菜单策略建议</div>';
+  h += '<ul class="tip-list">';
+  d.tips.forEach(function(tip) {
+    h += '<li>' + esc(tip) + '</li>';
+  });
+  h += '</ul>';
+  h += '</div>';
+
+  document.getElementById('resultContent').innerHTML = h;
+  document.getElementById('inputView').classList.add('hidden');
+  document.getElementById('resultView').classList.remove('hidden');
+}
+
+function showInput() {
+  document.getElementById('resultView').classList.add('hidden');
+  document.getElementById('inputView').classList.remove('hidden');
+}
+
+function esc(s) {
+  var d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function saveDesign(design) {
+  var list = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+  list.unshift(design);
+  if (list.length > 5) list = list.slice(0, 5);
+  localStorage.setItem(DB_KEY, JSON.stringify(list));
+  renderHistory();
+}
+
+function renderHistory() {
+  var list = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+  var section = document.getElementById('historySection');
+  var container = document.getElementById('historyList');
+  if (list.length === 0) { section.classList.add('hidden'); return; }
+  section.classList.remove('hidden');
+
+  var h = '';
+  list.forEach(function(d) {
+    h += '<div class="history-item" onclick="viewDesign(\'' + d.id + '\')">';
+    h += '<div class="hi-info"><div class="hi-title">' + esc(d.name) + ' · ' + esc(d.cat) + '</div>';
+    h += '<div class="hi-time">' + d.time + ' · ¥' + d.avg + ' · ' + d.total + '道</div></div>';
+    h += '<div class="hi-del" onclick="event.stopPropagation();delDesign(\'' + d.id + '\')">✕</div>';
+    h += '</div>';
+  });
+  container.innerHTML = h;
+}
+
+function viewDesign(id) {
+  var list = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+  var d = list.find(function(x) { return x.id === id; });
+  if (d) renderResult(d);
+}
+
+function delDesign(id) {
+  var list = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+  list = list.filter(function(x) { return x.id !== id; });
+  localStorage.setItem(DB_KEY, JSON.stringify(list));
+  renderHistory();
+}
+
+function toggleHistory() {
+  var el = document.getElementById('historyList');
+  el.classList.toggle('hidden');
+  var toggle = document.querySelector('.history-toggle');
+  if (el.classList.contains('hidden')) {
+    toggle.textContent = '▾ 查看历史方案';
+  } else {
+    toggle.textContent = '▴ 收起历史方案';
+  }
+}
+
+renderHistory();
+</script>
+</body>
+</html>

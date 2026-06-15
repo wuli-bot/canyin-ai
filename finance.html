@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>今日经营</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0f172a;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh;display:flex;justify-content:center;padding:16px}
+.wrap{max-width:520px;width:100%}
+.card{background:#1e293b;border-radius:16px;padding:24px;margin-bottom:16px}
+h1{font-size:1.5rem;font-weight:700;margin-bottom:4px}
+.sub{color:#94a3b8;font-size:.9rem;margin-bottom:20px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:.85rem;color:#94a3b8;margin-bottom:6px}
+.field input{width:100%;background:#0f172a;border:1px solid #334155;border-radius:12px;padding:12px 16px;color:#e2e8f0;font-size:1.1rem;outline:none;transition:border .2s}
+.field input:focus{border-color:#fbbf24}
+.btn{width:100%;padding:14px;border:none;border-radius:50px;background:linear-gradient(135deg,#fbbf24,#f97316);color:#0f172a;font-size:1rem;font-weight:700;cursor:pointer;margin-top:8px;transition:opacity .2s}
+.btn:active{opacity:.8}
+.result{display:none}
+.overview{background:#0f172a;border-radius:12px;padding:20px;margin-bottom:16px}
+.row{display:flex;justify-content:space-between;padding:8px 0;font-size:.95rem}
+.row.total{border-top:1px solid #334155;margin-top:8px;padding-top:12px}
+.profit-num{font-size:2.5rem;font-weight:800;background:linear-gradient(135deg,#fbbf24,#f97316);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.2}
+.rate{font-weight:600}
+.rate-green{color:#4ade80}.rate-yellow{color:#facc15}.rate-red{color:#f87171}
+.section-title{font-size:1.05rem;font-weight:600;margin:20px 0 12px}
+.bar-row{display:flex;align-items:center;margin-bottom:8px;font-size:.85rem}
+.bar-label{width:48px;flex-shrink:0;color:#94a3b8}
+.bar-track{flex:1;height:24px;background:#0f172a;border-radius:6px;overflow:hidden;margin:0 10px}
+.bar-fill{height:100%;border-radius:6px;background:#334155;transition:width .4s}
+.bar-fill.today{background:linear-gradient(90deg,#fbbf24,#f97316)}
+.bar-val{width:60px;text-align:right;flex-shrink:0;color:#cbd5e1}
+.tips{background:#0f172a;border-radius:12px;padding:16px;font-size:.9rem;line-height:1.7}
+.tips li{list-style:none;padding-left:1.2em;position:relative}
+.tips li::before{content:"•";position:absolute;left:0;color:#fbbf24}
+.history-toggle{background:none;border:1px solid #334155;border-radius:50px;padding:10px 24px;color:#94a3b8;font-size:.9rem;cursor:pointer;width:100%;transition:border-color .2s}
+.history-toggle:active{border-color:#fbbf24}
+.history-list{display:none;margin-top:12px}
+.history-list.open{display:block}
+.hist-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #1e293b;font-size:.85rem}
+.hist-row:last-child{border:none}
+.hist-date{color:#94a3b8;width:80px}
+.hist-rev{color:#e2e8f0}
+.hist-profit{font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="card">
+<h1>📈 今日经营</h1>
+<p class="sub">30秒填完，帮你看清今天赚了多少钱</p>
+<div class="field"><label>今日营业额</label><input type="number" id="revenue" placeholder="0" inputmode="decimal"></div>
+<div class="field"><label>食材支出</label><input type="number" id="foodCost" placeholder="0" inputmode="decimal"></div>
+<div class="field"><label>其他支出</label><input type="number" id="otherCost" placeholder="0" inputmode="decimal"></div>
+<button class="btn" onclick="generate()">生成今日报表</button>
+</div>
+<div class="result" id="result">
+<div class="card">
+<div class="overview" id="overview"></div>
+<div class="section-title">📈 本周趋势</div>
+<div id="trend"></div>
+<div class="section-title">💡 经营建议</div>
+<div class="tips"><ul id="tips"></ul></div>
+</div>
+</div>
+<button class="history-toggle" onclick="toggleHistory()">📅 查看历史（最近7天）</button>
+<div class="history-list" id="historyList"></div>
+</div>
+<script>
+var KEY="finance_daily",MAX=30;
+function loadData(){try{return JSON.parse(localStorage.getItem(KEY))||[]}catch(e){return[]}}
+function saveData(d){var a=loadData(),t=new Date().toISOString().slice(0,10),i=a.findIndex(function(x){return x.date===t});if(i>=0)a[i]=d;else{a.push(d);if(a.length>MAX)a=a.slice(-MAX)}localStorage.setItem(KEY,JSON.stringify(a))}
+function fmt(n){return"¥"+n.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,",")}
+function generate(){
+var r=parseFloat(document.getElementById("revenue").value)||0,f=parseFloat(document.getElementById("foodCost").value)||0,o=parseFloat(document.getElementById("otherCost").value)||0;
+if(r===0){alert("请输入今日营业额");return}
+var profit=r-f-o,foodRatio=r>0?f/r*100:0,profitRate=r>0?profit/r*100:0;
+saveData({date:new Date().toISOString().slice(0,10),revenue:r,foodCost:f,otherCost:o,profit:profit});
+// overview
+var rc=profitRate>20?"rate-green":profitRate>=10?"rate-yellow":"rate-red";
+document.getElementById("overview").innerHTML='<div class="row"><span>营业额</span><span>'+fmt(r)+'</span></div><div class="row"><span>食材成本</span><span>'+fmt(f)+'</span></div><div class="row"><span>其他成本</span><span>'+fmt(o)+'</span></div><div class="row total"><span>今日净利</span><span class="profit-num">'+fmt(profit)+'</span></div><div class="row"><span>净利润率</span><span class="rate '+rc+'">'+profitRate.toFixed(1)+'%</span></div>';
+// trend
+var data=loadData(),days=["日","一","二","三","四","五","六"],today=new Date(),arr=[];
+for(var i=6;i>=0;i--){var d=new Date(today);d.setDate(d.getDate()-i);var ds=d.toISOString().slice(0,10),item=data.find(function(x){return x.date===ds}),isT=i===0;arr.push({label:isT?"今天":"周"+days[d.getDay()],val:item?item.revenue:0,today:isT})}
+var mx=Math.max.apply(null,arr.map(function(x){return x.val}))||1,thtml="";
+arr.forEach(function(a){var w=a.val>0?Math.max(a.val/mx*100,4):0;thtml+='<div class="bar-row"><span class="bar-label">'+a.label+'</span><div class="bar-track"><div class="bar-fill'+(a.today?" today":"")+'" style="width:'+w+'%"></div></div><span class="bar-val">'+(a.val>0?fmt(a.val):"-")+'</span></div>'});
+document.getElementById("trend").innerHTML=thtml;
+// tips
+var tips=[],ydata=data.filter(function(x){return x.date!==new Date().toISOString().slice(0,10)}),yesterday=ydata.length?ydata[ydata.length-1]:null;
+if(foodRatio>40)tips.push("⚠️ 食材占比"+foodRatio.toFixed(0)+"%，成本偏高，考虑优化采购渠道或调整菜品结构");
+else if(foodRatio<30)tips.push("✅ 食材占比"+foodRatio.toFixed(0)+"%，成本控制优秀，继续保持");
+else tips.push("📊 食材占比"+foodRatio.toFixed(0)+"%，处于合理区间");
+if(yesterday){var diff=yesterday.revenue>0?((r-yesterday.revenue)/yesterday.revenue*100):0;if(diff>0)tips.push("📈 营业额比昨天多了"+diff.toFixed(0)+"%，保持势头！");else if(diff<0)tips.push("📉 营业额比昨天少了"+Math.abs(diff).toFixed(0)+"%，分析原因试试");}
+if(profitRate<10)tips.push("🔴 净利润率低于10%，关注定价和成本结构");
+else if(profitRate>20)tips.push("🟢 净利润率超过20%，经营状况良好");
+if(arr.filter(function(x){return x.val>0}).length>=3){var vals=arr.slice(-3).map(function(x){return x.val});if(vals[2]<vals[1]&&vals[1]<vals[0])tips.push("⚡ 近3天营业额持续下降，需警惕");if(vals[2]>vals[1]&&vals[1]>vals[0])tips.push("🚀 近3天营业额持续上升，势头不错")}
+document.getElementById("tips").innerHTML=tips.map(function(t){return"<li>"+t+"</li>"}).join("");
+document.getElementById("result").style.display="block";
+document.getElementById("result").scrollIntoView({behavior:"smooth"})}
+function toggleHistory(){
+var el=document.getElementById("historyList");
+if(el.classList.contains("open")){el.classList.remove("open");return}
+var data=loadData().slice(-7).reverse(),html="";
+data.forEach(function(d){var rc=d.profit>0?"rate-green":"rate-red";html+='<div class="hist-row"><span class="hist-date">'+d.date.slice(5)+'</span><span class="hist-rev">营收 '+fmt(d.revenue)+'</span><span class="hist-profit '+rc+'">'+fmt(d.profit)+'</span></div>'});
+document.getElementById("historyList").innerHTML=html||'<div style="color:#94a3b8;text-align:center;padding:16px">暂无数据</div>';
+el.classList.add("open")}
+// prefill today
+(function(){var d=loadData().find(function(x){return x.date===new Date().toISOString().slice(0,10)});if(d){document.getElementById("revenue").value=d.revenue;document.getElementById("foodCost").value=d.foodCost;document.getElementById("otherCost").value=d.otherCost}})();
+</script>
+</body>
+</html>

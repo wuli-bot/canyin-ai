@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>📦 库存管理</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0f172a;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;min-height:100vh;display:flex;justify-content:center;padding:20px 16px 40px}
+.wrap{width:100%;max-width:520px}
+h1{font-size:28px;font-weight:700;text-align:center;margin-bottom:4px;background:linear-gradient(135deg,#fbbf24,#f97316);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sub{text-align:center;color:#94a3b8;font-size:14px;margin-bottom:24px}
+.card{background:#1e293b;border-radius:16px;padding:20px;margin-bottom:16px}
+label{display:block;font-size:13px;color:#94a3b8;margin-bottom:6px;font-weight:500}
+select,input[type=number]{width:100%;background:#0f172a;border:1px solid #334155;border-radius:10px;padding:12px 14px;color:#e2e8f0;font-size:16px;outline:none;transition:border .2s}
+select:focus,input:focus{border-color:#fbbf24}
+.row{display:flex;gap:12px;margin-bottom:14px}
+.row>div{flex:1}
+.btn{width:100%;padding:14px;border:none;border-radius:50px;background:linear-gradient(135deg,#fbbf24,#f97316);color:#0f172a;font-size:16px;font-weight:700;cursor:pointer;transition:opacity .2s;margin-top:4px}
+.btn:active{opacity:.8}
+.section-title{font-size:15px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.item-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #334155;font-size:14px}
+.item-row:last-child{border-bottom:none}
+.item-name{color:#e2e8f0;min-width:60px}
+.item-qty{color:#94a3b8;flex:1;text-align:right;margin-right:12px}
+.item-cost{color:#fbbf24;font-weight:600;min-width:60px;text-align:right}
+.total-row{display:flex;justify-content:space-between;padding:10px 0;font-size:15px;font-weight:700;color:#fbbf24;border-top:2px solid #334155;margin-top:4px}
+.bar-wrap{margin-bottom:10px}
+.bar-label{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px}
+.bar-bg{height:8px;background:#334155;border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width .4s}
+.bar-red{background:#ef4444}.bar-yellow{background:#eab308}.bar-green{background:#22c55e}
+.cycle-item{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid #1e293b}
+.cycle-cat{color:#94a3b8}.cycle-freq{color:#e2e8f0;font-weight:500}
+.tip{background:#0f172a;border-radius:10px;padding:10px 12px;font-size:13px;color:#cbd5e1;margin-bottom:8px;line-height:1.5}
+.tip::before{content:"💡 ";margin-right:2px}
+#result{display:none}
+.fade-in{animation:fadeIn .4s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>📦 库存管理</h1>
+  <p class="sub">告诉我你的店，帮你管好食材</p>
+
+  <div class="card">
+    <label>品类</label>
+    <select id="category">
+      <option value="chaofan">炒饭/炒面</option>
+      <option value="naicha">奶茶/饮品</option>
+      <option value="shaokao">烧烤</option>
+      <option value="huoguo">火锅/麻辣烫</option>
+      <option value="mifan">米粉/面条</option>
+      <option value="hanbao">汉堡/炸鸡</option>
+      <option value="shucai">轻食/沙拉</option>
+    </select>
+    <div class="row" style="margin-top:14px">
+      <div>
+        <label>日均单量</label>
+        <input type="number" id="daily" placeholder="例: 80" min="1">
+      </div>
+      <div>
+        <label>营业天数/周</label>
+        <input type="number" id="days" value="7" min="1" max="7">
+      </div>
+    </div>
+    <button class="btn" onclick="generate()">一键生成计划</button>
+  </div>
+
+  <div id="result">
+    <div class="card fade-in">
+      <div class="section-title">📋 每日采购清单</div>
+      <div id="purchaseList"></div>
+    </div>
+    <div class="card fade-in">
+      <div class="section-title">📊 库存预警</div>
+      <div id="stockAlert"></div>
+    </div>
+    <div class="card fade-in">
+      <div class="section-title">📅 采购周期建议</div>
+      <div id="cycleList"></div>
+    </div>
+    <div class="card fade-in">
+      <div class="section-title">💡 省钱建议</div>
+      <div id="tipsList"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+var DB = {
+  chaofan: {
+    name: "炒饭/炒面",
+    items: [
+      {n:"大米",unit:"kg",per:0.15,price:6,stock:50,shelf:30,type:"dry"},
+      {n:"鸡蛋",unit:"个",per:2,price:0.6,stock:200,shelf:15,type:"fresh"},
+      {n:"食用油",unit:"L",per:0.02,price:12,stock:10,shelf:180,type:"dry"},
+      {n:"葱花",unit:"kg",per:0.03,price:8,stock:5,shelf:3,type:"fresh"},
+      {n:"调味料",unit:"份",per:1,price:0.5,stock:100,shelf:90,type:"dry"},
+      {n:"包材",unit:"个",per:1,price:0.3,stock:500,shelf:365,type:"dry"}
+    ]
+  },
+  naicha: {
+    name: "奶茶/饮品",
+    items: [
+      {n:"茶叶",unit:"kg",per:0.02,price:80,stock:5,shelf:180,type:"dry"},
+      {n:"奶精/牛奶",unit:"L",per:0.15,price:8,stock:20,shelf:7,type:"fresh"},
+      {n:"糖",unit:"kg",per:0.03,price:6,stock:10,shelf:365,type:"dry"},
+      {n:"珍珠/椰果",unit:"kg",per:0.05,price:10,stock:10,shelf:30,type:"dry"},
+      {n:"杯子+吸管",unit:"套",per:1,price:0.4,stock:1000,shelf:365,type:"dry"},
+      {n:"冰块",unit:"kg",per:0.2,price:2,stock:30,shelf:1,type:"frozen"}
+    ]
+  },
+  shaokao: {
+    name: "烧烤",
+    items: [
+      {n:"肉类",unit:"kg",per:0.2,price:28,stock:20,shelf:3,type:"fresh"},
+      {n:"蔬菜",unit:"kg",per:0.15,price:6,stock:10,shelf:2,type:"fresh"},
+      {n:"竹签/铁签",unit:"根",per:3,price:0.1,stock:1000,shelf:365,type:"dry"},
+      {n:"调料/撒料",unit:"份",per:1,price:0.8,stock:100,shelf:90,type:"dry"},
+      {n:"木炭",unit:"kg",per:0.3,price:4,stock:30,shelf:365,type:"dry"},
+      {n:"包材",unit:"份",per:1,price:0.5,stock:500,shelf:365,type:"dry"}
+    ]
+  },
+  huoguo: {
+    name: "火锅/麻辣烫",
+    items: [
+      {n:"底料/汤底",unit:"份",per:1,price:3,stock:100,shelf:90,type:"dry"},
+      {n:"肉类",unit:"kg",per:0.15,price:30,stock:15,shelf:3,type:"fresh"},
+      {n:"丸滑类",unit:"kg",per:0.1,price:16,stock:10,shelf:7,type:"frozen"},
+      {n:"蔬菜",unit:"kg",per:0.2,price:5,stock:15,shelf:2,type:"fresh"},
+      {n:"主食",unit:"份",per:1,price:0.8,stock:100,shelf:30,type:"dry"},
+      {n:"餐具/包材",unit:"套",per:1,price:0.6,stock:500,shelf:365,type:"dry"}
+    ]
+  },
+  mifan: {
+    name: "米粉/面条",
+    items: [
+      {n:"米粉/面条",unit:"kg",per:0.2,price:5,stock:50,shelf:30,type:"dry"},
+      {n:"高汤原料",unit:"kg",per:0.05,price:20,stock:10,shelf:7,type:"fresh"},
+      {n:"浇头/配菜",unit:"份",per:1,price:2,stock:80,shelf:3,type:"fresh"},
+      {n:"调味料",unit:"份",per:1,price:0.4,stock:100,shelf:90,type:"dry"},
+      {n:"青菜",unit:"kg",per:0.05,price:6,stock:5,shelf:2,type:"fresh"},
+      {n:"包材",unit:"个",per:1,price:0.3,stock:500,shelf:365,type:"dry"}
+    ]
+  },
+  hanbao: {
+    name: "汉堡/炸鸡",
+    items: [
+      {n:"面包胚",unit:"个",per:1,price:1.2,stock:200,shelf:3,type:"fresh"},
+      {n:"肉饼/鸡肉",unit:"kg",per:0.15,price:22,stock:15,shelf:3,type:"frozen"},
+      {n:"生菜/番茄",unit:"份",per:1,price:0.8,stock:50,shelf:2,type:"fresh"},
+      {n:"酱料",unit:"份",per:1,price:0.3,stock:100,shelf:30,type:"dry"},
+      {n:"裹粉/调料",unit:"份",per:1,price:0.4,stock:100,shelf:90,type:"dry"},
+      {n:"包材",unit:"套",per:1,price:0.5,stock:500,shelf:365,type:"dry"}
+    ]
+  },
+  shucai: {
+    name: "轻食/沙拉",
+    items: [
+      {n:"蔬菜混合",unit:"kg",per:0.2,price:12,stock:10,shelf:2,type:"fresh"},
+      {n:"蛋白质(鸡胸/虾)",unit:"kg",per:0.1,price:25,stock:8,shelf:3,type:"fresh"},
+      {n:"主食(藜麦等)",unit:"kg",per:0.05,price:30,stock:5,shelf:30,type:"dry"},
+      {n:"酱汁",unit:"份",per:1,price:1,stock:60,shelf:14,type:"fresh"},
+      {n:"坚果/果干",unit:"kg",per:0.02,price:40,stock:3,shelf:30,type:"dry"},
+      {n:"包材",unit:"个",per:1,price:0.6,stock:300,shelf:365,type:"dry"}
+    ]
+  }
+};
+
+function loadSaved(){
+  try{
+    var s=JSON.parse(localStorage.getItem("stock_cfg")||"{}");
+    if(s.category)document.getElementById("category").value=s.category;
+    if(s.daily)document.getElementById("daily").value=s.daily;
+    if(s.days)document.getElementById("days").value=s.days;
+  }catch(e){}
+}
+
+function saveCfg(){
+  var cfg={
+    category:document.getElementById("category").value,
+    daily:document.getElementById("daily").value,
+    days:document.getElementById("days").value
+  };
+  localStorage.setItem("stock_cfg",JSON.stringify(cfg));
+}
+
+function generate(){
+  var catKey=document.getElementById("category").value;
+  var daily=parseFloat(document.getElementById("daily").value);
+  var days=parseInt(document.getElementById("days").value)||7;
+  if(!daily||daily<=0){alert("请输入日均单量");return;}
+
+  saveCfg();
+  var cat=DB[catKey];
+  var items=cat.items;
+
+  // 采购清单
+  var html="";
+  var totalCost=0;
+  items.forEach(function(it){
+    var dayCost=it.per*daily*it.price;
+    var weekQty=it.per*daily*days*1.2;
+    var weekCost=dayCost*days*1.2;
+    totalCost+=dayCost;
+    var qtyStr=weekQty>=10?Math.round(weekQty):weekQty.toFixed(1);
+    html+='<div class="item-row"><span class="item-name">'+it.n+'</span><span class="item-qty">'+qtyStr+it.unit+'/周</span><span class="item-cost">¥'+Math.round(dayCost)+'/天</span></div>';
+  });
+  html+='<div class="total-row"><span>日均总成本</span><span>¥'+Math.round(totalCost)+'</span></div>';
+  document.getElementById("purchaseList").innerHTML=html;
+
+  // 库存预警
+  var alertHtml="";
+  items.forEach(function(it){
+    var dayConsume=it.per*daily;
+    var remainDays=dayConsume>0?it.stock/dayConsume:999;
+    var pct=Math.min(remainDays/7*100,100);
+    var cls=remainDays<2?"bar-red":remainDays<=4?"bar-yellow":"bar-green";
+    var label=remainDays<2?"需补货!":remainDays<=4?"快没了":"正常";
+    var dayStr=remainDays>=30?"充足":remainDays.toFixed(1)+"天";
+    alertHtml+='<div class="bar-wrap"><div class="bar-label"><span>'+it.n+' ('+label+')</span><span style="color:'+(cls==="bar-red"?"#ef4444":cls==="bar-yellow"?"#eab308":"#22c55e")+'">'+dayStr+'</span></div><div class="bar-bg"><div class="bar-fill '+cls+'" style="width:'+pct+'%"></div></div></div>';
+  });
+  document.getElementById("stockAlert").innerHTML=alertHtml;
+
+  // 采购周期
+  var cycles={"dry":"一周1次","fresh":"2-3天1次","frozen":"一周1次"};
+  var cycleHtml="";
+  var seen={};
+  items.forEach(function(it){
+    if(!seen[it.type]){
+      seen[it.type]=true;
+      var label=it.type==="dry"?"耐储存":it.type==="fresh"?"生鲜":"冷冻";
+      cycleHtml+='<div class="cycle-item"><span class="cycle-cat">'+label+'</span><span class="cycle-freq">'+cycles[it.type]+'</span></div>';
+    }
+  });
+  document.getElementById("cycleList").innerHTML=cycleHtml;
+
+  // 省钱建议
+  var tips=[
+    "日均"+daily+"单，按批发价批量采购耐储品可省10-15%，建议每周统一采购一次",
+    daily>=50?"单量较大，建议与供应商签订月结协议，争取账期和折扣":"单量增长中，可先少量多次采购，避免过期浪费",
+    "关注临期食材，先进先出；设置手机闹钟每2天检查一次库存"
+  ];
+  if(daily<30)tips[0]="日均不足30单，建议少量采购保鲜度，避免积压";
+  var tipsHtml="";
+  tips.forEach(function(t){tipsHtml+='<div class="tip">'+t+'</div>';});
+  document.getElementById("tipsList").innerHTML=tipsHtml;
+
+  document.getElementById("result").style.display="block";
+  document.getElementById("result").scrollIntoView({behavior:"smooth"});
+}
+
+loadSaved();
+</script>
+</body>
+</html>

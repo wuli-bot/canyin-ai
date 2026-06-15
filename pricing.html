@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>定价策略助手</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0f172a;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;display:flex;justify-content:center;padding:20px 16px 60px}
+.wrap{width:100%;max-width:520px}
+h1{font-size:28px;text-align:center;margin-top:24px;background:linear-gradient(135deg,#fbbf24,#f97316);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;letter-spacing:-0.5px}
+.sub{text-align:center;color:#64748b;font-size:14px;margin-top:6px;margin-bottom:32px}
+.form{background:#1e293b;border-radius:16px;padding:24px;margin-bottom:24px}
+.field{margin-bottom:16px}
+.field:last-of-type{margin-bottom:20px}
+label{display:block;font-size:13px;color:#94a3b8;margin-bottom:6px;font-weight:500}
+input[type=text],input[type=number]{width:100%;background:#0f172a;border:1px solid #334155;border-radius:12px;padding:12px 16px;color:#e2e8f0;font-size:16px;outline:none;transition:border .2s}
+input:focus{border-color:#fbbf24}
+.row{display:flex;gap:12px}
+.row .field{flex:1}
+.unit{position:relative}
+.unit input{padding-right:40px}
+.unit span{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:#64748b;font-size:14px;pointer-events:none}
+.btn{width:100%;padding:14px;border:none;border-radius:50px;background:linear-gradient(135deg,#fbbf24,#f97316);color:#0f172a;font-size:17px;font-weight:700;cursor:pointer;transition:opacity .2s,transform .1s;letter-spacing:1px}
+.btn:hover{opacity:.9}
+.btn:active{transform:scale(.98)}
+.results{display:none}
+.summary{display:flex;gap:16px;margin-bottom:20px}
+.summary .chip{background:#1e293b;border-radius:12px;padding:12px 16px;flex:1;text-align:center}
+.chip .val{font-size:22px;font-weight:700;color:#fbbf24}
+.chip .lbl{font-size:12px;color:#64748b;margin-top:2px}
+.card{background:#1e293b;border-radius:12px;padding:18px 20px;margin-bottom:12px;border-left:4px solid #888}
+.card .name{font-size:15px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.card .name .icon{font-size:18px}
+.card .rows{display:grid;grid-template-columns:1fr 1fr;gap:6px 16px}
+.card .r{display:flex;justify-content:space-between;font-size:13px}
+.card .r .k{color:#64748b}
+.card .r .v{font-weight:600}
+.card .r.highlight .v{color:#22c55e;font-size:15px}
+.card.meituan{border-color:#FFC107}
+.card.jd{border-color:#e53935}
+.card.eleme{border-color:#2196F3}
+.card.douyin{border-color:#9C27B0}
+.card.tangshi{border-color:#4CAF50}
+.compare{margin-top:24px}
+.compare h3{font-size:14px;color:#94a3b8;margin-bottom:12px;font-weight:600}
+.bar-row{display:flex;align-items:center;margin-bottom:10px;font-size:13px}
+.bar-label{width:56px;color:#94a3b8;flex-shrink:0;font-size:12px}
+.bar-track{flex:1;height:24px;background:#0f172a;border-radius:6px;overflow:hidden;margin:0 10px;position:relative}
+.bar-fill{height:100%;border-radius:6px;transition:width .5s ease;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-size:11px;font-weight:700;color:#0f172a;min-width:fit-content}
+.bar-fill.meituan{background:linear-gradient(90deg,#FFC107,#FFD54F)}
+.bar-fill.jd{background:linear-gradient(90deg,#e53935,#ef5350)}
+.bar-fill.eleme{background:linear-gradient(90deg,#2196F3,#64B5F6)}
+.bar-fill.douyin{background:linear-gradient(90deg,#9C27B0,#BA68C8)}
+.bar-fill.tangshi{background:linear-gradient(90deg,#4CAF50,#81C784)}
+.bar-val{width:50px;text-align:right;font-weight:600;color:#e2e8f0;flex-shrink:0}
+.tips{background:#1e293b;border-radius:12px;padding:18px 20px;margin-top:16px}
+.tips h3{font-size:14px;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.tips .tag{display:inline-block;background:#0f172a;border-radius:8px;padding:6px 12px;margin:4px 6px 4px 0;font-size:13px;color:#fbbf24;font-weight:500}
+.best{margin-top:20px;background:linear-gradient(135deg,rgba(251,191,36,.1),rgba(249,115,22,.1));border:1px solid rgba(251,191,36,.25);border-radius:12px;padding:16px 20px;text-align:center}
+.best .label{font-size:13px;color:#94a3b8}
+.best .value{font-size:20px;font-weight:800;color:#fbbf24;margin-top:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>💰 定价策略</h1>
+  <p class="sub">输入成本，一键算出各平台最优定价</p>
+
+  <div class="form">
+    <div class="field">
+      <label>菜名</label>
+      <input type="text" id="dishName" placeholder="例如：红烧牛肉面">
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>成本</label>
+        <div class="unit"><input type="number" id="cost" placeholder="10" step="0.1" min="0"><span>元</span></div>
+      </div>
+      <div class="field">
+        <label>目标毛利</label>
+        <div class="unit"><input type="number" id="margin" value="60" min="1" max="95"><span>%</span></div>
+      </div>
+    </div>
+    <button class="btn" onclick="calculate()">一键定价</button>
+  </div>
+
+  <div class="results" id="results"></div>
+</div>
+
+<script>
+var platforms = [
+  { key:'meituan', name:'美团外卖', icon:'🟡', css:'meituan', commission:0.20, delivery:4, minCommission:2 },
+  { key:'jd', name:'京东外卖', icon:'🔴', css:'jd', commission:0.08, delivery:3, minCommission:1 },
+  { key:'eleme', name:'饿了么', icon:'🔵', css:'eleme', commission:0.20, delivery:4, minCommission:2 },
+  { key:'douyin', name:'抖音外卖', icon:'🟣', css:'douyin', commission:0.05, delivery:3, minCommission:0 },
+  { key:'tangshi', name:'堂食', icon:'🟢', css:'tangshi', commission:0, delivery:0, minCommission:0 }
+];
+
+function calcPrice(cost, platform, targetMargin) {
+  var p = platform;
+  if (p.key === 'tangshi') {
+    var base = cost / (1 - targetMargin);
+    var price = nicePrice(base);
+    var profit = price - cost;
+    var commission = 0;
+    var delivery = 0;
+    var actualMargin = (profit / price * 100);
+    return { price: price, commission: commission, delivery: delivery, profit: profit, actualMargin: actualMargin };
+  }
+  // 建议售价 = ceil(成本 / (1 - 抽成率) - 配送费) 但需考虑保底抽成
+  // 先按基础公式：售价 * (1 - 抽成率) - 配送费 - 成本 >= 售价 * 目标毛利率
+  // 售价 * (1 - 抽成率 - 目标毛利率) >= 成本 + 配送费
+  // 但抽成有保底，需迭代
+  var price = Math.ceil(cost / (1 - targetMargin));
+  for (var i = 0; i < 20; i++) {
+    var comm = Math.max(price * p.commission, p.minCommission);
+    var needed = cost + comm + p.delivery;
+    var minPrice = needed / (1 - 0); // just cover
+    // 检查利润是否满足
+    var profit = price - cost - comm - p.delivery;
+    var margin = profit / price;
+    if (margin >= targetMargin - 0.005) break;
+    price = nicePrice(price + 1);
+  }
+  price = nicePrice(price);
+  var finalComm = Math.max(price * p.commission, p.minCommission);
+  var finalProfit = price - cost - finalComm - p.delivery;
+  var finalMargin = finalProfit / price * 100;
+  return { price: price, commission: finalComm, delivery: p.delivery, profit: finalProfit, actualMargin: finalMargin };
+}
+
+function nicePrice(p) {
+  p = Math.ceil(p);
+  return p;
+}
+
+function getManjian(price) {
+  if (price < 20) return ['满15减2'];
+  if (price <= 35) return ['满25减3', '满40减6'];
+  if (price <= 50) return ['满35减5', '满50减8'];
+  return ['满50减7', '满80减12'];
+}
+
+function calculate() {
+  var dishName = document.getElementById('dishName').value.trim() || '未命名菜品';
+  var cost = parseFloat(document.getElementById('cost').value);
+  var targetMargin = parseFloat(document.getElementById('margin').value) / 100;
+
+  if (isNaN(cost) || cost <= 0) {
+    alert('请输入有效成本');
+    return;
+  }
+  if (isNaN(targetMargin) || targetMargin <= 0 || targetMargin >= 1) {
+    alert('请输入有效毛利率(1-95%)');
+    return;
+  }
+
+  var results = [];
+  for (var i = 0; i < platforms.length; i++) {
+    var r = calcPrice(cost, platforms[i], targetMargin);
+    r.platform = platforms[i];
+    results.push(r);
+  }
+
+  // 找最高利润
+  var bestProfit = -Infinity;
+  var bestName = '';
+  for (var j = 0; j < results.length; j++) {
+    if (results[j].profit > bestProfit) {
+      bestProfit = results[j].profit;
+      bestName = results[j].platform.name;
+    }
+  }
+
+  var html = '';
+
+  // 汇总
+  html += '<div class="summary">';
+  html += '<div class="chip"><div class="val">¥' + cost.toFixed(1) + '</div><div class="lbl">📊 成本</div></div>';
+  html += '<div class="chip"><div class="val">' + (targetMargin*100).toFixed(0) + '%</div><div class="lbl">🎯 目标毛利率</div></div>';
+  html += '</div>';
+
+  // 各平台卡片
+  for (var k = 0; k < results.length; k++) {
+    var r = results[k];
+    var p = r.platform;
+    html += '<div class="card ' + p.css + '">';
+    html += '<div class="name"><span class="icon">' + p.icon + '</span>' + p.name + '</div>';
+    html += '<div class="rows">';
+    html += '<div class="r"><span class="k">建议售价</span><span class="v" style="color:#fbbf24;font-size:18px">¥' + r.price + '</span></div>';
+    html += '<div class="r highlight"><span class="k">到手利润</span><span class="v">¥' + r.profit.toFixed(1) + '</span></div>';
+    if (p.key !== 'tangshi') {
+      var commRate = (r.commission / r.price * 100).toFixed(1);
+      html += '<div class="r"><span class="k">平台抽成</span><span class="v">¥' + r.commission.toFixed(1) + '(' + commRate + '%)</span></div>';
+      html += '<div class="r"><span class="k">配送费</span><span class="v">¥' + r.delivery + '</span></div>';
+    } else {
+      html += '<div class="r"><span class="k">平台抽成</span><span class="v">无</span></div>';
+      html += '<div class="r"><span class="k">配送费</span><span class="v">无</span></div>';
+    }
+    html += '<div class="r"><span class="k">实际毛利率</span><span class="v" style="color:#22c55e">' + r.actualMargin.toFixed(1) + '%</span></div>';
+    html += '</div></div>';
+  }
+
+  // 利润对比条
+  var maxProfit = 0;
+  for (var m = 0; m < results.length; m++) {
+    if (results[m].profit > maxProfit) maxProfit = results[m].profit;
+  }
+  html += '<div class="compare"><h3>📊 利润对比</h3>';
+  for (var n = 0; n < results.length; n++) {
+    var r2 = results[n];
+    var pct = maxProfit > 0 ? (r2.profit / maxProfit * 100) : 0;
+    if (pct < 5) pct = 5;
+    html += '<div class="bar-row">';
+    html += '<span class="bar-label">' + r2.platform.name.replace('外卖','') + '</span>';
+    html += '<div class="bar-track"><div class="bar-fill ' + r2.platform.css + '" style="width:' + pct + '%">' + (pct > 20 ? '¥'+r2.profit.toFixed(1) : '') + '</div></div>';
+    html += '<span class="bar-val">¥' + r2.profit.toFixed(1) + '</span>';
+    html += '</div>';
+  }
+  html += '</div>';
+
+  // 满减建议
+  var mainPrice = results[0].price;
+  var manjian = getManjian(mainPrice);
+  html += '<div class="tips"><h3>💡 满减建议（基于美团售价¥' + mainPrice + '）</h3>';
+  for (var q = 0; q < manjian.length; q++) {
+    html += '<span class="tag">' + manjian[q] + '</span>';
+  }
+  html += '</div>';
+
+  // 最优推荐
+  html += '<div class="best"><div class="label">🏆 到手利润最高</div><div class="value">' + bestName + ' · ¥' + bestProfit.toFixed(1) + '</div></div>';
+
+  var el = document.getElementById('results');
+  el.innerHTML = html;
+  el.style.display = 'block';
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+</script>
+</body>
+</html>

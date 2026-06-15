@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>设备选型助手</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0f172a;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;min-height:100vh;display:flex;justify-content:center;padding:20px 12px 40px}
+.app{width:100%;max-width:520px}
+h1{font-size:1.5rem;text-align:center;margin-bottom:4px;background:linear-gradient(135deg,#fbbf24,#f97316);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.subtitle{text-align:center;font-size:.85rem;color:#94a3b8;margin-bottom:24px}
+.card{background:#1e293b;border-radius:16px;padding:20px;margin-bottom:16px}
+label{display:block;font-size:.8rem;color:#94a3b8;margin-bottom:6px;font-weight:500}
+select,input[type=number]{width:100%;padding:12px 14px;border-radius:10px;border:1px solid #334155;background:#0f172a;color:#e2e8f0;font-size:1rem;outline:none;transition:border .2s}
+select:focus,input[type=number]:focus{border-color:#fbbf24}
+.field{margin-bottom:14px}
+.field:last-of-type{margin-bottom:0}
+.input-wrap{position:relative}
+.input-wrap .unit{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:#64748b;font-size:.85rem;pointer-events:none}
+.btn{width:100%;padding:14px;border:none;border-radius:50px;background:linear-gradient(135deg,#fbbf24,#f97316);color:#0f172a;font-size:1rem;font-weight:700;cursor:pointer;margin-top:18px;transition:opacity .2s,transform .1s}
+.btn:hover{opacity:.9}
+.btn:active{transform:scale(.98)}
+.result{display:none}
+.result.show{display:block}
+.budget-bar-wrap{margin:12px 0 8px}
+.budget-info{display:flex;justify-content:space-between;font-size:.85rem;margin-bottom:6px}
+.budget-info .total{color:#94a3b8}
+.budget-info .spent{font-weight:700}
+.bar-bg{height:8px;background:#334155;border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width .5s ease,background .3s}
+.bar-green{background:#22c55e}
+.bar-yellow{background:#eab308}
+.bar-red{background:#ef4444}
+.over-tag{display:inline-block;background:#ef444422;color:#ef4444;font-size:.75rem;padding:2px 8px;border-radius:20px;margin-top:6px}
+.section-title{font-size:.95rem;font-weight:700;margin:18px 0 10px;display:flex;align-items:center;gap:6px}
+.section-title .tag{font-size:.65rem;background:#334155;color:#94a3b8;padding:2px 8px;border-radius:20px}
+.item-list{list-style:none}
+.item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #ffffff0a}
+.item:last-child{border-bottom:none}
+.item-name{font-size:.9rem}
+.item-price{font-size:.9rem;font-weight:600;color:#fbbf24;white-space:nowrap}
+.item-optional{opacity:.6}
+.item-optional .item-name::after{content:"可选";font-size:.65rem;color:#94a3b8;margin-left:6px;background:#334155;padding:1px 6px;border-radius:10px}
+.tips{font-size:.85rem;color:#94a3b8;line-height:1.7}
+.tips li{margin-bottom:4px;list-style:none;padding-left:16px;position:relative}
+.tips li::before{content:"•";position:absolute;left:0;color:#fbbf24}
+.channels{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.chip{background:#0f172a;border:1px solid #334155;border-radius:20px;padding:6px 14px;font-size:.8rem;color:#e2e8f0}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>🔧 设备选型</h1>
+  <p class="subtitle">输入基本信息，帮你配齐所有设备</p>
+
+  <div class="card">
+    <div class="field">
+      <label>品类</label>
+      <select id="category">
+        <option value="炒饭">炒饭</option>
+        <option value="盖码饭">盖码饭</option>
+        <option value="面条">面条</option>
+        <option value="粉">粉</option>
+        <option value="奶茶">奶茶</option>
+        <option value="烧烤">烧烤</option>
+        <option value="火锅">火锅</option>
+        <option value="炸鸡">炸鸡</option>
+        <option value="麻辣烫">麻辣烫</option>
+        <option value="轻食">轻食</option>
+        <option value="其他">其他</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>面积</label>
+      <div class="input-wrap">
+        <input type="number" id="area" placeholder="例：40" min="1">
+        <span class="unit">㎡</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>预算</label>
+      <div class="input-wrap">
+        <input type="number" id="budget" placeholder="例：30000" min="100">
+        <span class="unit">元</span>
+      </div>
+    </div>
+    <button class="btn" onclick="generate()">一键配齐设备</button>
+  </div>
+
+  <div class="result" id="result"></div>
+</div>
+
+<script>
+const COMMON = [
+  {name:"不锈钢操作台",price:1200},
+  {name:"双槽水槽",price:800},
+  {name:"排烟系统",price:3000},
+  {name:"灭火器",price:150}
+];
+
+const SPECIAL = {
+  "炒饭":[
+    {name:"商用炒灶",price:2800},
+    {name:"大铁锅",price:200},
+    {name:"蒸饭柜",price:3500},
+    {name:"保温台",price:1500}
+  ],
+  "盖码饭":[
+    {name:"商用炒灶",price:2800},
+    {name:"大铁锅",price:200},
+    {name:"蒸饭柜",price:3500},
+    {name:"保温台",price:1500}
+  ],
+  "面条":[
+    {name:"商用炒灶",price:2800},
+    {name:"煮面炉",price:2000},
+    {name:"高汤桶",price:500},
+    {name:"蒸饭柜",price:3500}
+  ],
+  "粉":[
+    {name:"煮面炉",price:2000},
+    {name:"高汤桶",price:500},
+    {name:"烫粉炉",price:1500},
+    {name:"保温台",price:1500}
+  ],
+  "奶茶":[
+    {name:"封口机",price:1800},
+    {name:"制冰机",price:2500},
+    {name:"搅拌机",price:800},
+    {name:"奶精机",price:1200}
+  ],
+  "烧烤":[
+    {name:"烧烤炉",price:3000},
+    {name:"排烟净化器",price:4000},
+    {name:"冷藏展示柜",price:3500},
+    {name:"保鲜工作台",price:2500}
+  ],
+  "火锅":[
+    {name:"电磁炉 ×5",price:2000},
+    {name:"涮菜展示柜",price:3000},
+    {name:"调料台",price:1000},
+    {name:"电磁炉专用锅 ×5",price:750}
+  ],
+  "炸鸡":[
+    {name:"炸炉",price:3500},
+    {name:"保温柜",price:2000},
+    {name:"裹粉台",price:800},
+    {name:"腌制机",price:1200}
+  ],
+  "麻辣烫":[
+    {name:"煮面炉",price:2000},
+    {name:"展示冷柜",price:2800},
+    {name:"烫菜篮架",price:300},
+    {name:"调料台",price:1000}
+  ],
+  "轻食":[
+    {name:"沙拉操作台",price:2500},
+    {name:"冷藏展示柜",price:3500},
+    {name:"商用搅拌机",price:1200},
+    {name:"保鲜工作台",price:2500}
+  ],
+  "其他":[
+    {name:"商用炒灶",price:2800},
+    {name:"大铁锅",price:200},
+    {name:"蒸饭柜",price:3500},
+    {name:"保温台",price:1500}
+  ]
+};
+
+const REFRIGERATION = [
+  {name:"四门冰箱",price:3500},
+  {name:"冷藏展示柜",price:2500}
+];
+
+function getAreaScale(area){
+  if(area<=0) return {scale:1,label:"标准"};
+  if(area<30) return {scale:0.7,label:"精简"};
+  if(area<=60) return {scale:1,label:"标准"};
+  return {scale:1.3,label:"完整"};
+}
+
+function adjustItems(items,scale){
+  if(scale>=1.3){
+    return items.map(i=>({...i}));
+  }
+  if(scale<=0.7){
+    const len=items.length;
+    if(len<=2) return items.map(i=>({...i}));
+    return items.slice(0,Math.ceil(len*0.7)).map(i=>({...i}));
+  }
+  return items.map(i=>({...i}));
+}
+
+function generate(){
+  const cat=document.getElementById("category").value;
+  const area=parseFloat(document.getElementById("area").value)||0;
+  const budget=parseFloat(document.getElementById("budget").value)||0;
+
+  if(area<=0){alert("请输入店铺面积");return}
+  if(budget<=0){alert("请输入预算金额");return}
+
+  const {scale,label}=getAreaScale(area);
+  const specItems=adjustItems(SPECIAL[cat]||SPECIAL["其他"],scale);
+  const commonItems=adjustItems(COMMON,scale);
+
+  const needsFridge=["炒饭","盖码饭","面条","粉","奶茶","烧烤","火锅","炸鸡","麻辣烫","轻食","其他"].includes(cat);
+  let fridgeItems=[];
+  if(needsFridge){
+    fridgeItems=adjustItems(REFRIGERATION,scale);
+    if(scale<1) fridgeItems=[fridgeItems[0]];
+  }
+
+  let allItems=[];
+  commonItems.forEach(i=>allItems.push({...i,section:"kitchen",optional:false}));
+  specItems.forEach(i=>allItems.push({...i,section:"special",optional:false}));
+  fridgeItems.forEach(i=>allItems.push({...i,section:"fridge",optional:false}));
+
+  const totalNeeded=allItems.reduce((s,i)=>s+i.price,0);
+
+  let required=allItems.map(i=>({...i}));
+  let optional=[];
+
+  if(totalNeeded>budget){
+    required=[];
+    optional=[];
+    let runTotal=0;
+    for(const item of allItems){
+      if(runTotal+item.price<=budget*0.85){
+        required.push({...item,optional:false});
+        runTotal+=item.price;
+      } else {
+        optional.push({...item,optional:true});
+        runTotal+=item.price;
+      }
+    }
+    if(required.length===0){
+      required=[allItems[0]];
+      optional=allItems.slice(1).map(i=>({...i,optional:true}));
+    }
+  }
+
+  const requiredTotal=required.reduce((s,i)=>s+i.price,0);
+  const allTotal=requiredTotal+optional.reduce((s,i)=>s+i.price,0);
+
+  const pct=Math.min(Math.round(requiredTotal/budget*100),150);
+  let barClass="bar-green";
+  if(pct>=100) barClass="bar-red";
+  else if(pct>=80) barClass="bar-yellow";
+
+  let channels=[];
+  if(budget<15000) channels=["1688批发","拼多多商用","闲鱼二手设备"];
+  else if(budget<40000) channels=["京东商用","美团快驴","1688旗舰店"];
+  else channels=["品牌直营","京东商用","厨都汇","本地供应商"];
+
+  let html='<div class="card">';
+  html+='<div class="budget-info"><span class="total">总预算 ¥'+budget.toLocaleString()+'</span><span class="spent" style="color:'+(barClass==='bar-red'?'#ef4444':barClass==='bar-yellow'?'#eab308':'#22c55e')+'">已配 ¥'+requiredTotal.toLocaleString()+'</span></div>';
+  html+='<div class="budget-bar-wrap"><div class="bar-bg"><div class="bar-fill '+barClass+'" style="width:'+Math.min(pct,100)+'%"></div></div></div>';
+  if(pct>100) html+='<span class="over-tag">超预算 '+(pct-100)+'%</span>';
+  else if(pct>=80) html+='<div style="font-size:.75rem;color:#eab308;margin-top:4px">预算较紧凑，已优先保留必需设备</div>';
+  else html+='<div style="font-size:.75rem;color:#22c55e;margin-top:4px">预算充足，可考虑品质升级</div>';
+  html+='</div>';
+
+  if(required.length>0){
+    const kitchenReq=required.filter(i=>i.section==="kitchen");
+    const specReq=required.filter(i=>i.section==="special");
+    const fridgeReq=required.filter(i=>i.section==="fridge");
+
+    if(kitchenReq.length){
+      html+='<div class="card"><div class="section-title">🏗️ 基础设备 <span class="tag">必需</span></div><ul class="item-list">';
+      kitchenReq.forEach(i=>html+=renderItem(i));
+      html+='</ul></div>';
+    }
+    if(specReq.length){
+      html+='<div class="card"><div class="section-title">🔥 '+cat+'专用设备 <span class="tag">必需</span></div><ul class="item-list">';
+      specReq.forEach(i=>html+=renderItem(i));
+      html+='</ul></div>';
+    }
+    if(fridgeReq.length){
+      html+='<div class="card"><div class="section-title">❄️ 制冷设备 <span class="tag">必需</span></div><ul class="item-list">';
+      fridgeReq.forEach(i=>html+=renderItem(i));
+      html+='</ul></div>';
+    }
+  }
+
+  if(optional.length>0){
+    html+='<div class="card"><div class="section-title">⬆️ 可选升级 <span class="tag">预算充足再加</span></div><ul class="item-list">';
+    optional.forEach(i=>html+=renderItem(i));
+    html+='</ul>';
+    html+='<div style="font-size:.75rem;color:#94a3b8;margin-top:8px">以上合计 ¥'+optional.reduce((s,i)=>s+i.price,0).toLocaleString()+'</div>';
+    html+='</div>';
+  }
+
+  const tips=generateTips(cat,area,scale,budget,requiredTotal);
+  html+='<div class="card"><div class="section-title">💡 采购建议</div><ul class="tips">';
+  tips.forEach(t=>html+='<li>'+t+'</li>');
+  html+='</ul></div>';
+
+  html+='<div class="card"><div class="section-title">🛒 推荐渠道</div><div class="channels">';
+  channels.forEach(c=>html+='<span class="chip">'+c+'</span>');
+  html+='</div></div>';
+
+  const res=document.getElementById("result");
+  res.innerHTML=html;
+  res.classList.add("show");
+  res.scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+function renderItem(item){
+  const cls=item.optional?"item item-optional":"item";
+  return '<li class="'+cls+'"><span class="item-name">'+item.name+'</span><span class="item-price">¥'+item.price.toLocaleString()+'</span></li>';
+}
+
+function generateTips(cat,area,scale,budget,total){
+  const tips=[];
+  if(scale<1) tips.push("面积较小，已精简设备数量，建议选用多功能合一设备节省空间");
+  if(scale>=1.3) tips.push("空间充裕，建议按动线合理分区，提高出餐效率");
+  if(budget<15000) tips.push("预算有限，建议优先在1688采购基础设备，核心设备可考虑二手");
+  if(budget>=40000) tips.push("预算充足，建议选购品牌设备，售后更有保障");
+  tips.push("排烟系统和消防设备不建议省，这是合规经营的基础");
+  tips.push("不锈钢设备建议选304材质，耐腐蚀寿命长");
+  if(["奶茶","轻食"].includes(cat)) tips.push(cat+"品类对冷藏依赖大，冰箱建议买大不买小");
+  if(["烧烤","火锅"].includes(cat)) tips.push(cat+"品类油烟大，排烟净化器务必达标，避免被投诉");
+  return tips;
+}
+</script>
+</body>
+</html>
