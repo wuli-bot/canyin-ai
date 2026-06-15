@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>差评处理助手</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0f1117;--card:#1a1d27;--border:#2a2d3a;--primary:#4f8cff;--primary-hover:#3a6fd8;--text:#e4e6ed;--text-muted:#8b8fa3;--danger:#ff4d4f;--success:#52c41a;--warning:#faad14;--radius:12px}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:20px}
+.container{max-width:720px;margin:0 auto}
+header{text-align:center;padding:32px 0 24px}
+header h1{font-size:24px;font-weight:700;background:linear-gradient(135deg,#4f8cff,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+header p{color:var(--text-muted);font-size:14px;margin-top:8px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+.card-title{font-size:15px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.card-title .icon{width:20px;height:20px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px}
+textarea{width:100%;min-height:120px;background:#12141c;border:1px solid var(--border);border-radius:8px;padding:14px;color:var(--text);font-size:14px;line-height:1.7;resize:vertical;transition:border-color .2s}
+textarea:focus{outline:none;border-color:var(--primary)}
+textarea::placeholder{color:var(--text-muted)}
+.btn{width:100%;padding:14px;background:linear-gradient(135deg,#4f8cff,#6366f1);color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;transition:opacity .2s,transform .1s}
+.btn:hover{opacity:.9}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.result-area{display:none}
+.diagnosis{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+.diag-item{background:#12141c;border:1px solid var(--border);border-radius:8px;padding:12px 16px;flex:1;min-width:140px}
+.diag-label{font-size:12px;color:var(--text-muted);margin-bottom:4px}
+.diag-value{font-size:14px;font-weight:600}
+.diag-value.high{color:var(--danger)}
+.diag-value.medium{color:var(--warning)}
+.diag-value.low{color:var(--success)}
+.reply-section{margin-top:16px}
+.reply-tab-bar{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.reply-tab{padding:8px 16px;border-radius:20px;font-size:13px;font-weight:500;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;transition:all .2s;white-space:nowrap}
+.reply-tab.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.reply-content{background:#12141c;border:1px solid var(--border);border-radius:8px;padding:18px;font-size:14px;line-height:1.9;white-space:pre-wrap;min-height:100px;color:var(--text)}
+.copy-btn{margin-top:12px;padding:8px 20px;background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--text-muted);font-size:13px;cursor:pointer;transition:all .2s}
+.copy-btn:hover{border-color:var(--primary);color:var(--primary)}
+.copy-btn.copied{border-color:var(--success);color:var(--success)}
+.loading{display:none;text-align:center;padding:40px 0}
+.loading .spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading p{color:var(--text-muted);font-size:13px}
+.example-btn{margin-top:12px;padding:6px 14px;background:transparent;border:1px dashed var(--border);border-radius:6px;color:var(--text-muted);font-size:12px;cursor:pointer;transition:all .2s}
+.example-btn:hover{border-color:var(--primary);color:var(--primary)}
+footer{text-align:center;padding:24px 0;color:var(--text-muted);font-size:12px}
+@media(max-width:480px){body{padding:12px}header{padding:20px 0 16px}header h1{font-size:20px}.card{padding:18px}.diag-item{min-width:100%}}
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+<h1>🛡️ 差评处理助手</h1>
+<p>粘贴差评，AI 自动诊断问题并生成 3 版专业回复方案</p>
+</header>
+
+<div class="card">
+<div class="card-title"><span class="icon" style="background:#4f8cff22;color:#4f8cff">✎</span> 粘贴差评内容</div>
+<textarea id="reviewInput" placeholder="将顾客的差评粘贴到这里，例如：&#10;"真难吃，太咸了，分量还少，再也不来了！""></textarea>
+<button class="example-btn" onclick="loadExample()">💡 加载示例差评</button>
+</div>
+
+<div class="card">
+<button class="btn" id="analyzeBtn" onclick="analyze()">🔍 开始分析</button>
+</div>
+
+<div class="loading" id="loading">
+<div class="spinner"></div>
+<p>正在分析差评内容，生成回复方案...</p>
+</div>
+
+<div class="result-area" id="resultArea">
+<div class="card">
+<div class="card-title"><span class="icon" style="background:#ff4d4f22;color:#ff4d4f">⚡</span> 差评诊断</div>
+<div class="diagnosis" id="diagnosis"></div>
+<div style="font-size:13px;color:var(--text-muted);line-height:1.7" id="keyPoint"></div>
+</div>
+
+<div class="card">
+<div class="card-title"><span class="icon" style="background:#52c41a22;color:#52c41a">✉</span> 回复方案</div>
+<div class="reply-tab-bar" id="tabBar"></div>
+<div class="reply-content" id="replyContent"></div>
+<button class="copy-btn" id="copyBtn" onclick="copyReply()">📋 复制当前方案</button>
+</div>
+</div>
+
+<footer>差评处理助手 · 餐饮商家专用工具</footer>
+</div>
+
+<script>
+// ========== 关键词规则引擎 ==========
+const RULES = {
+  '口味': { keywords: ['咸','淡','难吃','不好吃','味道差','味道不好','没味道','太咸','太淡','苦','腥','油腻','太油','不新鲜','变味','发霉','糊了','焦了','没熟','夹生','太甜','太辣','太酸','口感差','口味差','味道怪','异味','哈喇','恶心','反胃','吃不下去','没法吃'], severity: '高' },
+  '分量': { keywords: ['少','量少','吃不饱','分量少','太少了','不够吃','没有肉','肉少','菜少','饭少','吃不饱','一小碗','一点点','几片','可怜','寒酸','缩水','偷工减料','量小'], severity: '中' },
+  '配送速度': { keywords: ['慢','超时','等太久','太慢','等了好久','迟迟','迟迟不来','送得慢','出餐慢','配送慢','等了一个小时','等了半小时','一个小时','半个小时','迟到','延误','蜗牛','龟速','快一个小时'], severity: '中' },
+  '温度': { keywords: ['凉','冷','不热','凉了','冰冷的','没有温度','温的','不烫','冷透了','冰的','热都没热','冷饭','凉透了','不温不火','微凉'], severity: '中' },
+  '包装': { keywords: ['漏','撒','破','洒了','漏了','撒了','破了','溢出','漏汤','撒一地','包装破','盒子破了','没封好','打翻','溢出','变形','压坏','挤碎','漏汁','汤洒','餐盒破','没打包好','包装差','包装简陋'], severity: '低' },
+  '服务': { keywords: ['态度差','不搭理','态度恶劣','爱理不理','不理人','凶','甩脸','骂人','不耐烦','态度很差不耐烦','态度很差','差评服务','服务员','老板态度','态度不好','摆脸色','冷脸','白眼','吼','推卸','不负责任','敷衍','搪塞','不解决','投诉没人管','打电话不接','不回消息','联系不上'], severity: '高' }
+};
+
+// ========== 严重程度判断 ==========
+function calcSeverity(categories, text) {
+  const highWords = ['再也不来','永远不来','再也不会','投诉','举报','12315','曝光','垃圾','恶心','骗子','坑人','黑店','太离谱','气死','受不了','忍无可忍','无语','过分','太夸张','坚决','绝对不','千万别','避雷','踩雷'];
+  let score = 0;
+  if (categories.includes('口味')) score += 2;
+  if (categories.includes('服务')) score += 2;
+  if (categories.length >= 2) score += 1;
+  for (const w of highWords) { if (text.includes(w)) { score += 2; break; } }
+  if (score >= 4) return '高';
+  if (score >= 2) return '中';
+  return '低';
+}
+
+// ========== 诊断引擎 ==========
+function diagnose(text) {
+  const found = [];
+  for (const [cat, rule] of Object.entries(RULES)) {
+    for (const kw of rule.keywords) {
+      if (text.includes(kw)) { found.push(cat); break; }
+    }
+  }
+  if (found.length === 0) found.push('其他');
+  const severity = calcSeverity(found, text);
+  const keyPoint = generateKeyPoint(found, text);
+  return { categories: found, severity, keyPoint };
+}
+
+function generateKeyPoint(cats, text) {
+  const summary = {
+    '口味': '菜品口味不符合顾客预期',
+    '分量': '顾客认为菜品分量不足',
+    '配送速度': '配送或出餐时间过长',
+    '温度': '餐品到手温度不达标',
+    '包装': '包装存在破损或密封问题',
+    '服务': '服务态度引起顾客不满'
+  };
+  return cats.map(c => summary[c] || c).join('；') + '。';
+}
+
+// ========== 回复生成引擎 ==========
+function generateReplies(diag, originalText) {
+  const cats = diag.categories;
+  const catLabel = cats.join('+');
+  
+  // 版本1：温和道歉版
+  const r1 = generateReply1(cats, originalText);
+  // 版本2：解释说明+行动版
+  const r2 = generateReply2(cats, originalText);
+  // 版本3：直接补偿版
+  const r3 = generateReply3(cats, originalText);
+  
+  return [
+    { title: '温和道歉版', content: r1 },
+    { title: '解释说明版', content: r2 },
+    { title: '直接补偿版', content: r3 }
+  ];
+}
+
+function generateReply1(cats, text) {
+  let reply = '亲爱的顾客，您好！\n\n';
+  reply += '非常抱歉给您带来了不好的用餐体验，看到您的反馈我们深感愧疚。\n\n';
+  
+  const apologyMap = {
+    '口味': '我们非常重视您对口味的反馈，菜品味道没有达到您的期望，我们真诚地向您道歉。',
+    '分量': '关于分量问题，让您没有吃饱，我们感到很抱歉。',
+    '配送速度': '配送时间过长给您带来不便，我们深表歉意。',
+    '温度': '餐品到手温度不够，影响了您的用餐体验，我们非常抱歉。',
+    '包装': '包装出现问题给您带来困扰，我们真诚致歉。',
+    '服务': '服务态度让您感到不满，我们致以最诚挚的歉意。'
+  };
+  
+  cats.forEach(c => { if (apologyMap[c]) reply += apologyMap[c] + '\n'; });
+  
+  reply += '\n您的每一条反馈对我们都弥足珍贵，我们会认真对待并持续改进。期待有机会能重新为您服务，让您看到我们的改变。';
+  reply += '\n\n祝您生活愉快！';
+  return reply;
+}
+
+function generateReply2(cats, text) {
+  let reply = '尊敬的顾客，您好！\n\n';
+  reply += '感谢您的反馈，我们已认真对待您反映的问题。\n\n';
+  
+  const explainMap = {
+    '口味': '经核查，当日出餐环节在调味把控上出现了偏差。我们已立即调整配方标准，并对后厨团队进行了专项培训，确保后续每一份出品口味稳定。',
+    '分量': '经核实，当批次的食材分量确实未达标准。我们已重新规范了每道菜品的克重标准，并加强了出餐前的检查流程。',
+    '配送速度': '经了解，当日因订单集中导致出餐和配送环节出现了延误。我们已优化了接单排期机制，并与配送团队沟通加强了高峰时段的运力调配。',
+    '温度': '经排查，问题出在餐品打包后到配送取餐之间的时间间隔过长。我们已增加了保温措施，缩短餐品等待配送的时间。',
+    '包装': '经检查，当日使用的包材在密封性上存在不足。我们已更换了更优质的包装材料，并增加了封口的加固处理。',
+    '服务': '经调查，当班人员在服务中确实存在沟通不当的问题。我们已对相关人员进行严肃处理，并安排了服务礼仪专项培训。'
+  };
+  
+  cats.forEach(c => { if (explainMap[c]) reply += explainMap[c] + '\n\n'; });
+  
+  reply += '我们真心希望这些改进能让您感受到诚意。如果您愿意再给我们一次机会，下次一定让您满意！';
+  return reply;
+}
+
+function generateReply3(cats, text) {
+  let reply = '亲爱的顾客，您好！\n\n';
+  reply += '对于此次给您带来的不佳体验，我们深感抱歉，并希望能够做出实际补偿。\n\n';
+  
+  reply += '为此我们为您准备了以下心意：\n';
+  reply += '🎁 下次下单可享全单8折优惠\n';
+  reply += '🎁 额外赠送一份特色小菜/饮品\n\n';
+  
+  reply += '如您有任何其他诉求，欢迎直接联系店长沟通，我们一定妥善解决：\n';
+  reply += '📱 店长微信：Air19770809\n\n';
+  
+  reply += '您的满意是我们最大的追求，期待能用实际行动挽回您的信任！';
+  return reply;
+}
+
+// ========== UI 逻辑 ==========
+let currentReplies = [];
+let activeTab = 0;
+
+function loadExample() {
+  document.getElementById('reviewInput').value = '真难吃，太咸了，分量还少，再也不来了！';
+}
+
+function analyze() {
+  const text = document.getElementById('reviewInput').value.trim();
+  if (!text) { alert('请先粘贴差评内容'); return; }
+  
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('resultArea').style.display = 'none';
+  document.getElementById('analyzeBtn').disabled = true;
+  
+  setTimeout(() => {
+    const diag = diagnose(text);
+    currentReplies = generateReplies(diag, text);
+    renderResult(diag);
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('resultArea').style.display = 'block';
+    document.getElementById('analyzeBtn').disabled = false;
+
+    // 飞书同步：提交差评工单 + 高严重度预警
+    if (typeof FeishuBridge !== 'undefined') {
+      FeishuBridge.submitBadReview({
+        originalText: text, categories: diag.categories,
+        severity: diag.severity, keyPoint: diag.keyPoint
+      }).catch(function(e) { console.log('[飞书] 提交差评工单失败', e); });
+      FeishuBridge.highSeverityAlert({
+        originalText: text, categories: diag.categories, severity: diag.severity
+      }).catch(function(e) { console.log('[飞书] 预警推送失败', e); });
+    }
+  }, 800);
+}
+
+function renderResult(diag) {
+  // 渲染诊断
+  const diagHtml = `
+    <div class="diag-item">
+      <div class="diag-label">问题类别</div>
+      <div class="diag-value">${diag.categories.join(' + ')}</div>
+    </div>
+    <div class="diag-item">
+      <div class="diag-label">严重程度</div>
+      <div class="diag-value ${diag.severity === '高' ? 'high' : diag.severity === '中' ? 'medium' : 'low'}">${diag.severity}</div>
+    </div>
+  `;
+  document.getElementById('diagnosis').innerHTML = diagHtml;
+  document.getElementById('keyPoint').innerHTML = '<strong>关键问题点：</strong>' + diag.keyPoint;
+  
+  // 渲染 Tab
+  activeTab = 0;
+  const tabBar = document.getElementById('tabBar');
+  tabBar.innerHTML = currentReplies.map((r, i) => 
+    `<button class="reply-tab${i===0?' active':''}" onclick="switchTab(${i})">${r.title}</button>`
+  ).join('');
+  
+  document.getElementById('replyContent').textContent = currentReplies[0].content;
+  document.getElementById('copyBtn').textContent = '📋 复制当前方案';
+  document.getElementById('copyBtn').classList.remove('copied');
+}
+
+function switchTab(idx) {
+  activeTab = idx;
+  document.querySelectorAll('.reply-tab').forEach((t, i) => t.classList.toggle('active', i === idx));
+  document.getElementById('replyContent').textContent = currentReplies[idx].content;
+  document.getElementById('copyBtn').textContent = '📋 复制当前方案';
+  document.getElementById('copyBtn').classList.remove('copied');
+}
+
+function copyReply() {
+  const content = currentReplies[activeTab].content;
+  const replyType = currentReplies[activeTab].title;
+  navigator.clipboard.writeText(content).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = '✅ 已复制';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = '📋 复制当前方案'; btn.classList.remove('copied'); }, 2000);
+
+    // 飞书同步：记录采用了哪个回复方案
+    if (typeof FeishuBridge !== 'undefined') {
+      var inputText = document.getElementById('reviewInput').value.trim();
+      var diag = diagnose(inputText);
+      FeishuBridge.logReplyUsage({
+        originalText: inputText, categories: diag.categories,
+        replyType: replyType, replyContent: content
+      }).catch(function(e) { console.log('[飞书] 记录回复方案失败', e); });
+    }
+  });
+}
+
+// 回车快捷键
+document.getElementById('reviewInput').addEventListener('keydown', function(e) {
+  if (e.ctrlKey && e.key === 'Enter') analyze();
+});
+
+// ========== 飞书桥接层（预留接口） ==========
+var FeishuBridge = (function() {
+  var config = { enabled: false, appId: '', appSecret: '', tableToken: '', webhookUrl: '', calendarId: '' };
+  var tenantAccessToken = null, tokenExpireTime = 0;
+
+  async function getTenantToken() {
+    if (tenantAccessToken && Date.now() < tokenExpireTime) return tenantAccessToken;
+    if (!config.appId || !config.appSecret) { console.warn('[飞书] 未配置 appId/appSecret'); return null; }
+    try {
+      var resp = await fetch('https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({app_id: config.appId, app_secret: config.appSecret})
+      });
+      var data = await resp.json();
+      if (data.code === 0) { tenantAccessToken = data.tenant_access_token; tokenExpireTime = Date.now() + (data.expire - 60) * 1000; return tenantAccessToken; }
+    } catch(e) { console.error('[飞书] 获取 token 失败', e); }
+    return null;
+  }
+
+  async function request(endpoint, options) {
+    options = options || {};
+    if (!config.enabled) return;
+    var token = await getTenantToken();
+    if (!token) return;
+    var headers = Object.assign({'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json'}, options.headers || {});
+    var url = endpoint.indexOf('http') === 0 ? endpoint : 'https://open.feishu.cn/open-apis' + endpoint;
+    var resp = await fetch(url, Object.assign({}, options, {headers: headers}));
+    return resp.json();
+  }
+
+  // 提交差评工单到飞书「差评管理表」
+  async function submitBadReview(data) {
+    if (!config.enabled || !config.tableToken) return;
+    return request('/bitable/v1/apps/' + config.tableToken + '/tables/差评管理/records', {
+      method: 'POST',
+      body: JSON.stringify({fields: {
+        差评原文: data.originalText || '',
+        问题类别: (data.categories || []).join('+'),
+        严重程度: data.severity || '',
+        关键问题: data.keyPoint || '',
+        处理状态: '待处理',
+        提交时间: new Date().toISOString()
+      }})
+    });
+  }
+
+  // 记录回复方案使用情况
+  async function logReplyUsage(data) {
+    if (!config.enabled || !config.tableToken) return;
+    return request('/bitable/v1/apps/' + config.tableToken + '/tables/差评管理/records', {
+      method: 'POST',
+      body: JSON.stringify({fields: {
+        差评原文: data.originalText || '',
+        问题类别: (data.categories || []).join('+'),
+        采用方案: data.replyType || '',
+        回复内容: data.replyContent || '',
+        处理状态: '已回复',
+        回复时间: new Date().toISOString()
+      }})
+    });
+  }
+
+  async function sendMessage(text) {
+    if (!config.enabled || !config.webhookUrl) return;
+    return fetch(config.webhookUrl, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({msg_type: 'text', content: {text: text}})}).then(function(r){return r.json()});
+  }
+
+  // 高严重度差评实时预警
+  async function highSeverityAlert(data) {
+    if (data.severity !== '高') return;
+    var msg = '🚨 高严重度差评预警\n\n';
+    msg += '问题类别：' + (data.categories || []).join('+') + '\n';
+    msg += '差评原文：' + (data.originalText || '').substring(0, 100) + '...\n';
+    msg += '建议立即处理！';
+    await sendMessage(msg);
+  }
+
+  // 安排客户回访
+  async function scheduleRevisit(customerInfo, dateTime, summary) {
+    if (!config.enabled || !config.calendarId) return;
+    return request('/calendar/v4/calendars/' + config.calendarId + '/events', {
+      method: 'POST',
+      body: JSON.stringify({
+        summary: summary || '回访客户：' + customerInfo.name,
+        description: '联系方式：' + (customerInfo.phone || '') + '\n来源：差评处理',
+        start_time: {date: dateTime.split('T')[0]},
+        end_time: {date: dateTime.split('T')[0]},
+        need_notification: true
+      })
+    });
+  }
+
+  function enable(cfg) { Object.assign(config, cfg); config.enabled = true; console.log('[飞书] 已启用', config); }
+
+  return {enable: enable, submitBadReview: submitBadReview, logReplyUsage: logReplyUsage, sendMessage: sendMessage, highSeverityAlert: highSeverityAlert, scheduleRevisit: scheduleRevisit, request: request};
+})();
+
+// 启用飞书（未来填入真实凭证）
+// FeishuBridge.enable({appId: 'cli_xxxx', appSecret: 'xxxx', tableToken: 'YOUR_TOKEN', webhookUrl: 'https://open.feishu.cn/open-apis/bot/v2/hook/xxxx'});
+</script>
+</body>
+</html>

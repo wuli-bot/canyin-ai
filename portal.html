@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>餐饮AI店长 - 你的12位AI数字员工</title>
+<meta name="description" content="餐饮AI店长，12位AI数字员工7x24小时帮你盯店。算得清成本、抓得住差评、看得懂趋势。">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0f1117;--card:#1a1d27;--border:#2a2d3a;
+  --blue:#4f8cff;--purple:#a855f7;--gold:#fbbf24;
+  --text:#e4e4e7;--text-dim:#9ca3af;--text-bright:#fff;
+  --green:#22c55e;--red:#ef4444;
+}
+html{scroll-behavior:smooth}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--text);line-height:1.6;
+  overflow-x:hidden;
+}
+a{color:var(--blue);text-decoration:none}
+a:hover{color:var(--purple)}
+
+/* ===== HERO ===== */
+.hero{
+  min-height:100vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;
+  padding:2rem 1rem;position:relative;overflow:hidden;
+}
+.hero::before{
+  content:'';position:absolute;top:-50%;left:-50%;
+  width:200%;height:200%;
+  background:radial-gradient(circle at 50% 50%,rgba(79,140,255,.08) 0%,rgba(168,85,247,.05) 30%,transparent 60%);
+  animation:heroPulse 8s ease-in-out infinite;
+}
+@keyframes heroPulse{
+  0%,100%{transform:scale(1);opacity:.6}
+  50%{transform:scale(1.1);opacity:1}
+}
+.hero-content{position:relative;z-index:1;max-width:800px}
+.hero-logo{font-size:3.5rem;margin-bottom:.5rem;display:block}
+.hero h1{
+  font-size:clamp(2rem,5vw,3.5rem);font-weight:800;
+  background:linear-gradient(135deg,var(--blue),var(--purple));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;margin-bottom:.75rem;
+}
+.hero .subtitle{
+  font-size:clamp(1rem,2.5vw,1.35rem);color:var(--text-dim);
+  margin-bottom:1.5rem;
+}
+.hero .value{
+  font-size:clamp(.9rem,2vw,1.1rem);
+  color:var(--gold);margin-bottom:2.5rem;
+  letter-spacing:.05em;
+}
+.cta-btn{
+  display:inline-block;padding:.9rem 2.5rem;
+  background:linear-gradient(135deg,var(--gold),#f59e0b);
+  color:#000;font-weight:700;font-size:1.1rem;
+  border:none;border-radius:50px;cursor:pointer;
+  transition:transform .2s,box-shadow .2s;
+  box-shadow:0 0 20px rgba(251,191,36,.3);
+}
+.cta-btn:hover{
+  transform:translateY(-2px);
+  box-shadow:0 0 35px rgba(251,191,36,.5);
+  color:#000;
+}
+
+/* ===== SECTIONS ===== */
+section{padding:4rem 1rem;max-width:1200px;margin:0 auto}
+.section-title{
+  text-align:center;font-size:clamp(1.5rem,3vw,2.2rem);
+  font-weight:700;margin-bottom:.5rem;color:var(--text-bright);
+}
+.section-subtitle{
+  text-align:center;color:var(--text-dim);
+  margin-bottom:3rem;font-size:1rem;
+}
+
+/* ===== PAIN POINTS ===== */
+.pain-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:1.5rem;
+}
+.pain-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:16px;padding:2rem;
+  transition:transform .3s,border-color .3s,box-shadow .3s;
+}
+.pain-card:hover{
+  transform:translateY(-4px);
+  border-color:var(--red);
+  box-shadow:0 0 20px rgba(239,68,68,.15);
+}
+.pain-icon{font-size:2rem;margin-bottom:.75rem;display:block}
+.pain-card p{color:var(--text);font-size:1rem;font-weight:500}
+
+/* ===== TEAM GRID ===== */
+.team-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(320px,1fr));
+  gap:1.5rem;
+}
+.agent-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:16px;overflow:hidden;cursor:pointer;
+  transition:transform .3s,border-color .3s,box-shadow .3s;
+  position:relative;
+}
+.agent-card:hover{
+  transform:translateY(-6px);
+  border-color:var(--blue);
+  box-shadow:0 8px 30px rgba(79,140,255,.2);
+}
+.agent-card.expanded{
+  border-color:var(--purple);
+  box-shadow:0 8px 40px rgba(168,85,247,.25);
+}
+.agent-header{padding:1.5rem 1.5rem 1rem}
+.agent-avatar{
+  width:56px;height:56px;border-radius:14px;
+  background:linear-gradient(135deg,rgba(79,140,255,.15),rgba(168,85,247,.15));
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.6rem;margin-bottom:.75rem;
+  border:1px solid var(--border);
+}
+.agent-name-row{
+  display:flex;align-items:center;gap:.6rem;
+  margin-bottom:.25rem;
+}
+.agent-name{font-size:1.15rem;font-weight:700;color:var(--text-bright)}
+.status-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--green);display:inline-block;
+  animation:breathe 2s ease-in-out infinite;
+}
+@keyframes breathe{
+  0%,100%{opacity:1;box-shadow:0 0 4px rgba(34,197,94,.5)}
+  50%{opacity:.5;box-shadow:0 0 8px rgba(34,197,94,.8)}
+}
+.agent-title{
+  font-size:.85rem;color:var(--text-dim);margin-bottom:.5rem;
+  display:flex;align-items:center;gap:.4rem;
+}
+.agent-tag{
+  display:inline-block;padding:.15rem .5rem;
+  background:rgba(79,140,255,.12);color:var(--blue);
+  border-radius:20px;font-size:.75rem;font-weight:500;
+}
+.agent-summary{
+  font-size:.9rem;color:var(--text-dim);
+  line-height:1.5;margin-top:.5rem;
+}
+
+/* expand arrow */
+.expand-arrow{
+  position:absolute;top:1.5rem;right:1.5rem;
+  width:24px;height:24px;display:flex;align-items:center;
+  justify-content:center;color:var(--text-dim);
+  transition:transform .3s;font-size:.8rem;
+}
+.agent-card.expanded .expand-arrow{transform:rotate(180deg)}
+
+/* detail panel */
+.agent-detail{
+  max-height:0;overflow:hidden;
+  transition:max-height .4s ease,padding .3s ease;
+  padding:0 1.5rem;
+}
+.agent-card.expanded .agent-detail{
+  max-height:500px;padding:0 1.5rem 1.5rem;
+}
+.detail-divider{
+  height:1px;background:var(--border);margin-bottom:1rem;
+}
+.detail-list{list-style:none}
+.detail-list li{
+  padding:.4rem 0;font-size:.9rem;color:var(--text);
+  display:flex;align-items:flex-start;gap:.5rem;
+}
+.detail-list li::before{
+  content:'';width:6px;height:6px;border-radius:50%;
+  background:linear-gradient(135deg,var(--blue),var(--purple));
+  flex-shrink:0;margin-top:.55rem;
+}
+.agent-use-btn{
+  display:block;width:100%;padding:.7rem;margin-top:1rem;
+  background:linear-gradient(135deg,var(--blue),var(--purple));
+  color:#fff;text-align:center;border-radius:10px;
+  font-size:.95rem;font-weight:600;
+  transition:opacity .2s,transform .2s;
+}
+.agent-use-btn:hover{
+  opacity:.9;transform:translateY(-1px);
+  color:#fff;text-decoration:none;
+}
+
+/* ===== PRICING ===== */
+.pricing-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:1.5rem;align-items:start;
+}
+.price-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:16px;padding:2rem;text-align:center;
+  position:relative;transition:transform .3s,border-color .3s;
+}
+.price-card:hover{
+  transform:translateY(-4px);
+  border-color:var(--blue);
+}
+.price-card.recommended{
+  border-color:var(--purple);
+  box-shadow:0 0 30px rgba(168,85,247,.2);
+}
+.price-badge{
+  position:absolute;top:-12px;left:50%;transform:translateX(-50%);
+  background:linear-gradient(135deg,var(--blue),var(--purple));
+  color:#fff;padding:.3rem 1.2rem;border-radius:20px;
+  font-size:.8rem;font-weight:600;white-space:nowrap;
+}
+.price-plan{
+  font-size:1.2rem;font-weight:700;color:var(--text-bright);
+  margin-bottom:.5rem;margin-top:.5rem;
+}
+.price-amount{
+  font-size:2.5rem;font-weight:800;
+  background:linear-gradient(135deg,var(--blue),var(--purple));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;margin-bottom:.25rem;
+}
+.price-amount span{font-size:1rem;font-weight:400}
+.price-note{font-size:.85rem;color:var(--text-dim);margin-bottom:1.5rem}
+.price-features{
+  list-style:none;text-align:left;margin-bottom:1.5rem;
+}
+.price-features li{
+  padding:.35rem 0;font-size:.9rem;color:var(--text);
+  display:flex;align-items:center;gap:.5rem;
+}
+.price-features li::before{content:'✓';color:var(--green);font-weight:700}
+.price-btn{
+  display:block;width:100%;padding:.75rem;
+  border:1px solid var(--border);border-radius:10px;
+  background:transparent;color:var(--text);
+  font-size:1rem;font-weight:600;cursor:pointer;
+  transition:all .2s;
+}
+.price-btn:hover{
+  background:linear-gradient(135deg,var(--blue),var(--purple));
+  border-color:transparent;color:#fff;
+}
+.price-card.recommended .price-btn{
+  background:linear-gradient(135deg,var(--blue),var(--purple));
+  border-color:transparent;color:#fff;
+}
+.price-card.recommended .price-btn:hover{
+  box-shadow:0 0 25px rgba(79,140,255,.4);
+  transform:translateY(-1px);
+}
+
+/* ===== FOOTER ===== */
+footer{
+  border-top:1px solid var(--border);
+  padding:3rem 1rem;text-align:center;
+  max-width:1200px;margin:0 auto;
+}
+.footer-quote{
+  font-size:1rem;color:var(--text-dim);
+  margin-bottom:1.5rem;font-style:italic;
+  max-width:600px;margin-left:auto;margin-right:auto;
+}
+.contact-area{
+  background:var(--card);border:1px dashed var(--border);
+  border-radius:12px;padding:1.5rem;max-width:400px;
+  margin:0 auto 2rem;
+}
+.contact-area p{color:var(--text-dim);font-size:.9rem}
+.footer-copy{font-size:.8rem;color:var(--text-dim)}
+
+/* ===== NAV ===== */
+.top-nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  background:rgba(15,17,23,.85);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+  padding:.6rem 1.5rem;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.nav-brand{
+  font-size:1.1rem;font-weight:700;
+  background:linear-gradient(135deg,var(--blue),var(--purple));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.nav-links{display:flex;gap:1.5rem}
+.nav-links a{
+  font-size:.85rem;color:var(--text-dim);
+  transition:color .2s;
+}
+.nav-links a:hover{color:var(--text-bright)}
+.nav-cta{
+  padding:.4rem 1rem;
+  background:linear-gradient(135deg,var(--gold),#f59e0b);
+  color:#000!important;font-weight:600;border-radius:20px;
+  font-size:.85rem;
+  -webkit-text-fill-color:#000!important;
+}
+.nav-cta:hover{box-shadow:0 0 15px rgba(251,191,36,.3)}
+.mobile-menu-btn{
+  display:none;background:none;border:none;
+  color:var(--text);font-size:1.4rem;cursor:pointer;
+}
+
+/* ===== PAYMENT MODAL ===== */
+.modal-overlay{
+  display:none;position:fixed;top:0;left:0;right:0;bottom:0;
+  background:rgba(0,0,0,.7);backdrop-filter:blur(4px);
+  z-index:200;align-items:center;justify-content:center;
+}
+.modal-overlay.active{display:flex}
+.modal-box{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:20px;padding:2rem;max-width:420px;width:90%;
+  text-align:center;position:relative;
+  animation:modalIn .3s ease;
+}
+@keyframes modalIn{
+  from{transform:scale(.9);opacity:0}
+  to{transform:scale(1);opacity:1}
+}
+.modal-close{
+  position:absolute;top:1rem;right:1rem;
+  background:none;border:none;color:var(--text-dim);
+  font-size:1.5rem;cursor:pointer;padding:.25rem;
+  transition:color .2s;
+}
+.modal-close:hover{color:var(--text-bright)}
+.modal-title{
+  font-size:1.3rem;font-weight:700;color:var(--text-bright);
+  margin-bottom:.5rem;
+}
+.modal-amount{
+  font-size:2rem;font-weight:800;
+  background:linear-gradient(135deg,var(--gold),#f59e0b);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;margin-bottom:1rem;
+}
+.modal-qr{
+  width:220px;height:220px;margin:0 auto 1rem;
+  background:#fff;border-radius:12px;padding:8px;
+  box-shadow:0 4px 20px rgba(0,0,0,.3);
+}
+.modal-qr img{width:100%;height:100%;object-fit:contain}
+.modal-tip{
+  font-size:.85rem;color:var(--text-dim);
+  margin-bottom:1.5rem;line-height:1.5;
+}
+.modal-steps{
+  background:rgba(79,140,255,.08);border-radius:10px;
+  padding:1rem;text-align:left;
+}
+.modal-steps p{
+  font-size:.85rem;color:var(--text);
+  padding:.25rem 0;display:flex;align-items:center;gap:.5rem;
+}
+.modal-steps .step-num{
+  width:20px;height:20px;border-radius:50%;
+  background:linear-gradient(135deg,var(--blue),var(--purple));
+  color:#fff;font-size:.7rem;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.modal-contact{
+  margin-top:1rem;padding-top:1rem;
+  border-top:1px solid var(--border);
+}
+.modal-contact p{
+  font-size:.8rem;color:var(--text-dim);
+}
+.modal-contact .wechat{
+  color:var(--green);font-weight:600;font-size:.95rem;
+}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:768px){
+  .nav-links{
+    display:none;position:fixed;top:52px;left:0;right:0;
+    background:rgba(15,17,23,.95);backdrop-filter:blur(12px);
+    flex-direction:column;padding:1rem 1.5rem;gap:1rem;
+    border-bottom:1px solid var(--border);
+  }
+  .nav-links.open{display:flex}
+  .mobile-menu-btn{display:block}
+  .hero{min-height:auto;padding:8rem 1rem 4rem}
+  .team-grid{grid-template-columns:1fr}
+  .pricing-grid{grid-template-columns:1fr;max-width:400px;margin-left:auto;margin-right:auto}
+  section{padding:3rem 1rem}
+}
+@media(max-width:400px){
+  .pain-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="top-nav">
+  <span class="nav-brand">餐饮AI店长</span>
+  <button class="mobile-menu-btn" onclick="toggleNav()" aria-label="菜单">☰</button>
+  <div class="nav-links" id="navLinks">
+    <a href="#pain">痛点</a>
+    <a href="#team">团队</a>
+    <a href="#pricing">价格</a>
+    <a href="https://wuli-bot.github.io/canyin-ai/" class="nav-cta" target="_blank">立即试用</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-content">
+    <span class="hero-logo">🍜</span>
+    <h1>餐饮AI店长</h1>
+    <p class="subtitle">你的12位AI数字员工，7×24小时帮你盯店</p>
+    <p class="value">算得清成本 → 抓得住差评 → 看得懂趋势</p>
+    <a href="https://wuli-bot.github.io/canyin-ai/" class="cta-btn" target="_blank">🚀 立即试用</a>
+  </div>
+</section>
+
+<!-- PAIN POINTS -->
+<section id="pain">
+  <h2 class="section-title">🔥 餐饮人的日常痛点</h2>
+  <p class="section-subtitle">每一条都是真实踩过的坑</p>
+  <div class="pain-grid">
+    <div class="pain-card">
+      <span class="pain-icon">⏰</span>
+      <p>每天花2小时刷同行、看差评、研究热菜，时间全碎片化了</p>
+    </div>
+    <div class="pain-card">
+      <span class="pain-icon">🤷</span>
+      <p>推了新菜不知道要不要保留，凭感觉做决定</p>
+    </div>
+    <div class="pain-card">
+      <span class="pain-icon">😰</span>
+      <p>别人卖爆了你才知道，永远慢半拍</p>
+    </div>
+    <div class="pain-card">
+      <span class="pain-icon">⭐</span>
+      <p>差评来了没空回，评分掉下去单量跟着掉</p>
+    </div>
+  </div>
+</section>
+
+<!-- TEAM -->
+<section id="team">
+  <h2 class="section-title">🎯 你的AI数字员工团队</h2>
+  <p class="section-subtitle">12位专业"候选人"，点击查看详情</p>
+  <div class="team-grid" id="teamGrid">
+    <!-- Cards injected by JS -->
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing">
+  <h2 class="section-title">💎 选择你的方案</h2>
+  <p class="section-subtitle">灵活定价，按需使用</p>
+  <div class="pricing-grid">
+    <div class="price-card">
+      <div class="price-plan">体验版</div>
+      <div class="price-amount">¥99<span>/月</span></div>
+      <div class="price-note">适合试水</div>
+      <ul class="price-features">
+        <li>任选1个模块</li>
+        <li>基础使用额度</li>
+        <li>社群答疑支持</li>
+      </ul>
+      <button class="price-btn" onclick="openPayment('体验版','99')">立即订阅</button>
+    </div>
+    <div class="price-card recommended">
+      <div class="price-badge">🔥 推荐</div>
+      <div class="price-plan">标准版</div>
+      <div class="price-amount">¥299<span>/月</span></div>
+      <div class="price-note">性价比之选</div>
+      <ul class="price-features">
+        <li>全部12个模块</li>
+        <li>无限使用次数</li>
+        <li>优先答疑支持</li>
+        <li>新模块抢先体验</li>
+      </ul>
+      <button class="price-btn" onclick="openPayment('标准版','299')">立即订阅</button>
+    </div>
+    <div class="price-card">
+      <div class="price-plan">年付版</div>
+      <div class="price-amount">¥999<span>/年</span></div>
+      <div class="price-note">≈¥83/月，省¥589</div>
+      <ul class="price-features">
+        <li>全部12个模块</li>
+        <li>无限使用次数</li>
+        <li>专属1对1答疑</li>
+        <li>新功能免费升级</li>
+      </ul>
+      <button class="price-btn" onclick="openPayment('年付版','999')">立即订阅</button>
+    </div>
+  </div>
+</section>
+
+<!-- PAYMENT MODAL -->
+<div class="modal-overlay" id="paymentModal" onclick="closePayment(event)">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="closePayment()" aria-label="关闭">&times;</button>
+    <div class="modal-title" id="modalTitle">订阅 标准版</div>
+    <div class="modal-amount" id="modalAmount">¥299</div>
+    <div class="modal-qr">
+      <img src="payment_qrcode.png" alt="微信扫码支付" id="modalQrImg">
+    </div>
+    <div class="modal-tip">微信扫码，按对应金额付款</div>
+    <div class="modal-steps">
+      <p><span class="step-num">1</span> 打开微信"扫一扫"</p>
+      <p><span class="step-num">2</span> 扫描上方二维码</p>
+      <p><span class="step-num">3</span> 手动输入金额 ¥<span id="modalAmountNum">299</span></p>
+      <p><span class="step-num">4</span> 付款后截图发至微信，即刻开通</p>
+    </div>
+    <div class="modal-contact">
+      <p>付款后添加微信确认开通</p>
+      <p class="wechat">微信号：请填写你的微信号</p>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer id="contact">
+  <div class="footer-quote">"来自一人餐饮店的实战经验，每个工具都在自己的店里验证过"</div>
+  <div class="contact-area">
+    <p>📱 扫码或搜索微信咨询</p>
+    <p style="margin-top:.5rem;color:var(--text);font-size:1rem">微信号：请填写你的微信号</p>
+  </div>
+  <p class="footer-copy">© 2026 餐饮AI店长 · 让每一位餐饮老板都有AI助手</p>
+</footer>
+
+<script>
+// ===== Agent Data =====
+var agents = [
+  {
+    emoji: "📊",
+    name: "成本核算官",
+    tag: "资深财务分析师",
+    summary: "帮你把每道菜的成本和利润算得明明白白",
+    url: "https://wuli-bot.github.io/canyin-ai/",
+    skills: [
+      "输入食材+采购价+售价，自动算每道菜毛利",
+      "支持美团/京东/饿了么各平台抽成对比",
+      "一键倒推定价：想要多少利润→该卖多少钱"
+    ]
+  },
+  {
+    emoji: "🛡️",
+    name: "差评处理官",
+    tag: "危机公关专家",
+    summary: "差评来了不慌，自动生成专业回复方案",
+    url: "https://wuli-bot.github.io/canyin-ai/chaping.html",
+    skills: [
+      "粘贴差评，自动诊断问题严重度",
+      "生成3版专业回复方案（道歉/解释/补偿）",
+      "区分恶意差评vs真实反馈，给处理建议"
+    ]
+  },
+  {
+    emoji: "📋",
+    name: "菜单设计官",
+    tag: "品类策划师",
+    summary: "帮你设计科学的菜品结构，提升客单价",
+    url: "https://wuli-bot.github.io/canyin-ai/menu.html",
+    skills: [
+      "帮你设计菜品结构：引流款+利润款+凑单款",
+      "堂食/外卖双版本菜单排版策略",
+      "菜品命名方案+套餐组合建议"
+    ]
+  },
+  {
+    emoji: "💰",
+    name: "定价策略官",
+    tag: "收益精算师",
+    summary: "根据成本自动算各平台最优定价",
+    url: "https://wuli-bot.github.io/canyin-ai/pricing.html",
+    skills: [
+      "根据成本自动算各平台最优定价",
+      "满减活动设计：引流不亏钱",
+      "价格定位分析：高中低端怎么选"
+    ]
+  },
+  {
+    emoji: "🏪",
+    name: "招牌设计官",
+    tag: "品牌创意总监",
+    summary: "从命名到门头，帮你打造品牌视觉",
+    url: "https://wuli-bot.github.io/canyin-ai/brand.html",
+    skills: [
+      "品牌命名方案",
+      "Logo设计方向+配色建议",
+      "门头排版参考+制作尺寸"
+    ]
+  },
+  {
+    emoji: "🔧",
+    name: "设备选型官",
+    tag: "采购顾问",
+    summary: "帮你选对设备不踩坑，省下冤枉钱",
+    url: "https://wuli-bot.github.io/canyin-ai/equipment.html",
+    skills: [
+      "根据品类输出完整设备采购清单",
+      "型号参数推荐+预算表",
+      "渠道建议+避坑指南"
+    ]
+  },
+  {
+    emoji: "📍",
+    name: "选址分析官",
+    tag: "商圈研究员",
+    summary: "用数据帮你找到最佳开店位置",
+    url: "https://wuli-bot.github.io/canyin-ai/site.html",
+    skills: [
+      "目标区域3km商圈画像",
+      "竞品密度+客群分析",
+      "选址评分+风险提示"
+    ]
+  },
+  {
+    emoji: "🚀",
+    name: "开店流程官",
+    tag: "项目管理师",
+    summary: "从0到1开店全流程，不遗漏任何环节",
+    url: "https://wuli-bot.github.io/canyin-ai/opening.html",
+    skills: [
+      "从0到1开店全流程清单",
+      "证照办理指引",
+      "时间节点+常见坑预警"
+    ]
+  },
+  {
+    emoji: "📈",
+    name: "财务报表官",
+    tag: "数据分析师",
+    summary: "每天赚了多少钱，一眼看清楚",
+    url: "https://wuli-bot.github.io/canyin-ai/finance.html",
+    skills: [
+      "日/周/月报自动生成",
+      "渠道分账+利润趋势",
+      "漏洞诊断：哪块在漏钱"
+    ]
+  },
+  {
+    emoji: "📦",
+    name: "库存管理官",
+    tag: "供应链管家",
+    summary: "食材不断货、不浪费，成本降下来",
+    url: "https://wuli-bot.github.io/canyin-ai/stock.html",
+    skills: [
+      "食材采购计划+安全库存预警",
+      "供应商对比+损耗控制标准",
+      "每周补货计划自动生成"
+    ]
+  },
+  {
+    emoji: "🔗",
+    name: "私域引流官",
+    tag: "流量运营师",
+    summary: "把外卖顾客变成微信好友，复购翻倍",
+    url: "https://cst6cg23zd.coze.site/",
+    skills: [
+      "外卖包裹卡设计+文案",
+      "堂食扫码引流方案",
+      "企微欢迎语+社群运营SOP"
+    ]
+  },
+  {
+    emoji: "🔄",
+    name: "复购引擎官",
+    tag: "客户成功经理",
+    summary: "让顾客来了还想来，建立长期关系",
+    url: "https://w53cf2ps6b.coze.site/",
+    skills: [
+      "首客认脸方案",
+      "7次自动触达计划",
+      "会员积分体系+老带新裂变方案"
+    ]
+  }
+];
+
+// ===== Render Cards =====
+var grid = document.getElementById("teamGrid");
+var html = "";
+for (var i = 0; i < agents.length; i++) {
+  var a = agents[i];
+  var skillsHtml = "";
+  for (var j = 0; j < a.skills.length; j++) {
+    skillsHtml += "<li>" + a.skills[j] + "</li>";
+  }
+  html += '<div class="agent-card" onclick="toggleCard(this)">' +
+    '<div class="agent-header">' +
+      '<div class="agent-avatar">' + a.emoji + '</div>' +
+      '<div class="agent-name-row">' +
+        '<span class="agent-name">' + a.name + '</span>' +
+        '<span class="status-dot" title="已上线"></span>' +
+      '</div>' +
+      '<div class="agent-title">' +
+        '<span class="agent-tag">' + a.tag + '</span>' +
+      '</div>' +
+      '<p class="agent-summary">' + a.summary + '</p>' +
+    '</div>' +
+    '<span class="expand-arrow">▼</span>' +
+    '<div class="agent-detail">' +
+      '<div class="detail-divider"></div>' +
+      '<ul class="detail-list">' + skillsHtml + '</ul>' +
+      '<a href="' + a.url + '" target="_blank" class="agent-use-btn" onclick="event.stopPropagation()">🚀 立即使用</a>' +
+    '</div>' +
+  '</div>';
+}
+grid.innerHTML = html;
+
+// ===== Toggle Card =====
+function toggleCard(el) {
+  var wasExpanded = el.classList.contains("expanded");
+  // close all
+  var all = document.querySelectorAll(".agent-card");
+  for (var i = 0; i < all.length; i++) {
+    all[i].classList.remove("expanded");
+  }
+  // open clicked if it wasn't open
+  if (!wasExpanded) {
+    el.classList.add("expanded");
+  }
+}
+
+// ===== Mobile Nav =====
+function toggleNav() {
+  var links = document.getElementById("navLinks");
+  if (links.classList.contains("open")) {
+    links.classList.remove("open");
+  } else {
+    links.classList.add("open");
+  }
+}
+
+// Close nav on link click
+var navAnchors = document.querySelectorAll("#navLinks a");
+for (var i = 0; i < navAnchors.length; i++) {
+  navAnchors[i].addEventListener("click", function() {
+    document.getElementById("navLinks").classList.remove("open");
+  });
+}
+
+// ===== Payment Modal =====
+function openPayment(plan, amount) {
+  document.getElementById("modalTitle").textContent = "订阅 " + plan;
+  document.getElementById("modalAmount").textContent = "¥" + amount;
+  document.getElementById("modalAmountNum").textContent = amount;
+  document.getElementById("paymentModal").classList.add("active");
+  document.body.style.overflow = "hidden";
+}
+
+function closePayment(e) {
+  if (e && e.target && !e.target.classList.contains("modal-overlay") && !e.target.classList.contains("modal-close")) return;
+  document.getElementById("paymentModal").classList.remove("active");
+  document.body.style.overflow = "";
+}
+
+// Close modal on Escape key
+document.addEventListener("keydown", function(e) {
+  if (e.key === "Escape") closePayment();
+});
+</script>
+</body>
+</html>
