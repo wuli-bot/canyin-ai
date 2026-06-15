@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>设备选型助手</title>
+<title>设备选型助手 - AI店长感知层配置</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#0f172a;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;min-height:100vh;display:flex;justify-content:center;padding:20px 12px 40px}
@@ -23,199 +23,535 @@ input:focus{border-color:#fbbf24}
 .btn:active{transform:scale(.98)}
 .result{display:none}
 .result.show{display:block}
-.intro-box{background:linear-gradient(135deg,#fbbf2410,#f9731610);border:1px solid #fbbf2440;border-radius:16px;padding:20px;margin-bottom:16px}
-.intro-title{font-size:.9rem;color:#fbbf24;font-weight:600;margin-bottom:8px}
-.intro-content{font-size:.8rem;color:#94a3b8;line-height:1.8}
-.summary{background:#1e293b;border-radius:16px;padding:20px;margin-bottom:16px;border:1px solid #fbbf24}
-.summary-title{font-size:.9rem;color:#fbbf24;margin-bottom:12px;font-weight:600}
-.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.summary-item{text-align:center}
-.summary-value{font-size:1.5rem;font-weight:700;background:linear-gradient(135deg,#fbbf24,#f97316);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.summary-label{font-size:.75rem;color:#94a3b8;margin-top:2px}
-.budget-bar-wrap{margin:16px 0 8px}
+/* AI intro banner */
+.ai-banner{background:linear-gradient(135deg,#1e293b,#0f172a);border:1px solid #f9731644;border-radius:16px;padding:16px 20px;margin-bottom:16px}
+.ai-banner-title{font-size:1rem;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.ai-banner-desc{font-size:.8rem;color:#94a3b8;line-height:1.6}
+/* summary card */
+.summary-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.summary-label{font-size:.85rem;color:#94a3b8}
+.summary-val{font-size:1.2rem;font-weight:800;background:linear-gradient(135deg,#fbbf24,#f97316);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .budget-info{display:flex;justify-content:space-between;font-size:.85rem;margin-bottom:6px}
 .budget-info .total{color:#94a3b8}
 .budget-info .spent{font-weight:700}
 .bar-bg{height:8px;background:#334155;border-radius:4px;overflow:hidden}
-.bar-fill{height:100%;border-radius:4px;transition:width .5s}
-.section{margin-top:24px}
-.section-title{font-size:1rem;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px}
-.section-title .icon{font-size:1.2rem}
-.device-card{background:#0f172a;border-radius:12px;padding:16px;margin-bottom:12px;border-left:3px solid #f97316}
-.device-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
-.device-name{font-size:.95rem;font-weight:600;color:#e2e8f0}
-.device-price{font-size:1rem;font-weight:700;color:#fbbf24}
-.device-desc{font-size:.8rem;color:#94a3b8;line-height:1.6}
-.device-desc .emoji{margin-right:4px}
-.device-desc .ai-value{color:#10b981;margin-top:4px}
-.device-desc .no-device{color:#ef4444;margin-top:4px}
-.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.7rem;font-weight:600;margin-left:8px}
-.tag-p0{background:#dc262620;color:#dc2626}
-.warning{background:#ef444420;border:1px solid #ef444440;border-radius:12px;padding:16px;margin-top:16px}
-.warning-text{font-size:.8rem;color:#ef4444;line-height:1.6}
-.channel-box{background:#1e293b;border-radius:12px;padding:16px;margin-top:16px}
-.channel-title{font-size:.85rem;color:#e2e8f0;font-weight:600;margin-bottom:8px}
-.channel-list{display:flex;flex-wrap:wrap;gap:8px}
-.channel-tag{background:#334155;padding:6px 12px;border-radius:20px;font-size:.75rem;color:#e2e8f0}
+.bar-fill{height:100%;border-radius:4px;transition:width .5s ease,background .3s}
+.bar-green{background:#22c55e}
+.bar-yellow{background:#eab308}
+.bar-red{background:#ef4444}
+.over-tag{display:inline-block;background:#ef444422;color:#ef4444;font-size:.75rem;padding:2px 8px;border-radius:20px;margin-top:6px}
+.budget-note{font-size:.75rem;margin-top:4px}
+/* section */
+.section-title{font-size:.95rem;font-weight:700;margin:18px 0 10px;display:flex;align-items:center;gap:6px}
+.section-title .tag{font-size:.65rem;padding:2px 8px;border-radius:20px}
+.tag-p0{background:#f9731622;color:#f97316}
+.tag-p1{background:#334155;color:#94a3b8}
+.tag-req{background:#22c55e22;color:#22c55e}
+.tag-opt{background:#eab30822;color:#eab308}
+/* equipment card */
+.eq-card{border-left:3px solid #f97316;background:#0f172a;border-radius:0 10px 10px 0;padding:12px 14px;margin-bottom:10px}
+.eq-card:last-child{margin-bottom:0}
+.eq-card.optional{border-left-color:#475569;opacity:.7}
+.eq-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.eq-name{font-size:.9rem;font-weight:600}
+.eq-price{font-size:.9rem;font-weight:700;color:#fbbf24;white-space:nowrap}
+.eq-line{display:flex;align-items:flex-start;gap:6px;font-size:.8rem;line-height:1.5;margin-bottom:3px}
+.eq-line .ico{flex-shrink:0;width:16px;text-align:center;font-size:.85rem}
+.eq-func{color:#cbd5e1}
+.eq-ai{color:#fbbf24}
+.eq-miss{color:#ef4444;opacity:.85}
+/* tips & channels */
+.tips{font-size:.85rem;color:#94a3b8;line-height:1.7}
+.tips li{margin-bottom:4px;list-style:none;padding-left:16px;position:relative}
+.tips li::before{content:"•";position:absolute;left:0;color:#fbbf24}
+.channels{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.chip{background:#0f172a;border:1px solid #334155;border-radius:20px;padding:6px 14px;font-size:.8rem;color:#e2e8f0}
 </style>
 </head>
 <body>
 <div class="app">
-  <h1>🔧 设备选型助手</h1>
-  <p class="subtitle">AI店长的感知层——让AI看得见、听得到、算得准</p>
-  
+  <h1>🔧 设备选型</h1>
+  <p class="subtitle">AI店长的感知层配置——让AI看得见、听得到、算得准</p>
+
   <div class="card">
     <div class="field">
-      <label>品类</label>
-      <input type="text" id="category" list="category_list" placeholder="如：炒饭、奶茶、烧烤..." autocomplete="off">
-      <datalist id="category_list">
-        <option value="炒饭"><option value="盖码饭"><option value="面条"><option value="粉"><option value="麻辣烫"><option value="火锅"><option value="烧烤"><option value="炸鸡"><option value="奶茶"><option value="咖啡"><option value="轻食"><option value="汉堡"><option value="披萨"><option value="甜品"><option value="小吃"><option value="快餐"><option value="粥"><option value="饺子"><option value="包子"><option value="烤鱼"><option value="烤肉"><option value="日料"><option value="韩料"><option value="西餐"><option value="粤菜"><option value="川菜"><option value="湘菜"><option value="卤味"><option value="冒菜"><option value="砂锅"><option value="铁板烧"><option value="寿司"><option value="黄焖鸡"><option value="烤肉饭"><option value="鸡公煲"><option value="酸菜鱼"><option value="螺蛳粉"><option value="肠粉"><option value="煎饼"><option value="其他">
+      <label for="category">品类</label>
+      <input type="text" id="category" list="cat-list" placeholder="选择或输入品类" autocomplete="off">
+      <datalist id="cat-list">
+        <option value="炒饭">
+        <option value="盖码饭">
+        <option value="面条">
+        <option value="粉">
+        <option value="麻辣烫">
+        <option value="火锅">
+        <option value="烧烤">
+        <option value="炸鸡">
+        <option value="奶茶">
+        <option value="咖啡">
+        <option value="轻食">
+        <option value="汉堡">
+        <option value="披萨">
+        <option value="甜品">
+        <option value="小吃">
+        <option value="快餐">
+        <option value="粥">
+        <option value="饺子">
+        <option value="包子">
+        <option value="烤鱼">
+        <option value="烤肉">
+        <option value="日料">
+        <option value="韩料">
+        <option value="西餐">
+        <option value="粤菜">
+        <option value="川菜">
+        <option value="湘菜">
+        <option value="卤味">
+        <option value="冒菜">
+        <option value="砂锅">
+        <option value="铁板烧">
+        <option value="寿司">
+        <option value="其他">
       </datalist>
     </div>
     <div class="field">
       <label>面积</label>
       <div class="input-wrap">
-        <input type="number" id="area" placeholder="如：20" min="1">
+        <input type="number" id="area" placeholder="例：40" min="1">
         <span class="unit">㎡</span>
       </div>
     </div>
     <div class="field">
       <label>预算</label>
       <div class="input-wrap">
-        <input type="number" id="budget" placeholder="如：10000" min="0">
+        <input type="number" id="budget" placeholder="例：30000" min="100">
         <span class="unit">元</span>
       </div>
     </div>
+    <button class="btn" onclick="generate()">一键配齐设备</button>
   </div>
-  
-  <button class="btn" onclick="generate()">一键配齐设备</button>
-  
-  <div class="result" id="result">
-    <div id="summary"></div>
-    <div class="section" id="p0Section"></div>
-    <div class="section" id="p1Section"></div>
-    <div id="channelBox"></div>
-  </div>
+
+  <div class="result" id="result"></div>
 </div>
 
 <script>
-const AI_DEVICES = [
-  {name:"外卖云打印机（飞鹅FP-V3）", price:269, func:"自动接单打印，来单2秒出纸，WiFi+4G双网", aiValue:"API让AI分析销量/高峰/复购，是AI获取订单数据的入口", noDevice:"AI看不到订单数据，不知道卖什么、什么时候卖"},
-  {name:"扫码枪（科密TE530D）", price:341, func:"无线扫码入库，IP66工业级防护，2万条离线存储", aiValue:"入库数据自动进系统，AI自动核算成本、记录台账", noDevice:"库存数据靠手动录入，效率低+出错率高，AI算不了成本"},
-  {name:"电子秤（大华RS232）", price:300, func:"称重数据通过RS232串口实时传到系统", aiValue:"称重即入库，成本自动核算，不用手动记账", noDevice:"没有数据输出的秤，在AI运营体系里就是一块铁"},
-  {name:"摄像头-后厨（海康4MP）", price:400, func:"RTSP实时视频流，AI可做食安分析", aiValue:"7×24监控，异常自动预警，食安合规有保障", noDevice:"截图模式4秒间隔，AI是瞎子，食安监控有漏洞"},
-  {name:"摄像头-前厅（海康200万）", price:340, func:"RTSP实时视频流，认人+安防", aiValue:"老板认人系统、客流分析的数据源", noDevice:"前厅是盲区，客流数据、顾客画像无从谈起"},
-  {name:"边缘网关（树莓派Zero 2W）", price:200, func:"本地串口秤+扫码枪+摄像头→数据推送云端", aiValue:"打通硬件和云端管道的桥梁，没有它所有本地设备全断连云端", noDevice:"云服务器没有串口/USB口，所有本地硬件都是孤岛"},
-  {name:"路由器（小米AX3000T）", price:129, func:"WiFi6网络底座，所有设备联网", aiValue:"AI基础设施，网络不稳=全部设备离线=AI瘫痪", noDevice:"网络不稳→设备掉线→AI瞎了聋了哑了"}
+/* ===== DATA: AI Perception Layer Equipment ===== */
+
+/* --- Base kitchen equipment (category-specific) --- */
+var COMMON_BASE = [
+  {name:"不锈钢操作台",price:1200,priority:"P0",func:"食材切配、摆盘、临时存放的工作台面",ai:"AI通过操作台使用频率分析出餐节奏和动线效率",miss:"AI无法感知出餐节奏，高峰瓶颈无从诊断"},
+  {name:"双槽水槽",price:800,priority:"P0",func:"一洗一冲双槽分区，满足洗菜洗碗需求",ai:"合规经营基础——AI的食安分析依赖合规硬件环境",miss:"无法通过食安检查=停业=AI直接瘫痪"},
+  {name:"排烟系统",price:3000,priority:"P0",func:"烹饪油烟经净化后排出，保持厨房空气流通",ai:"AI监控排烟设备运行状态，异常时自动预警",miss:"排烟不达标被投诉停业，AI再聪明也没用"},
+  {name:"灭火器",price:150,priority:"P0",func:"厨房初期火灾应急扑灭，干粉/水基型",ai:"AI消防合规检查的必备硬件，摄像头可识别灭火器位置",miss:"消防检查不过关=无法开业"}
 ];
 
-const KITCHEN_DEVICES = {
-  "炒饭":[{name:"商用炒灶",price:2800,func:"猛火快炒，炒饭出餐核心设备"},{name:"大铁锅",price:200,func:"炒制容器"},{name:"蒸饭柜",price:3500,func:"批量蒸饭，保证出餐速度"},{name:"保温台",price:1500,func:"成品保温，保证出餐温度"}],
-  "盖码饭":[{name:"商用炒灶",price:2800,func:"猛火快炒"},{name:"大铁锅",price:200,func:"炒制容器"},{name:"蒸饭柜",price:3500,func:"批量蒸饭"},{name:"保温台",price:1500,func:"成品保温"}],
-  "面条":[{name:"商用炒灶",price:2800,func:"炒菜浇头"},{name:"煮面炉",price:2000,func:"多眼煮面，高效出餐"},{name:"高汤桶",price:500,func:"熬制汤底"},{name:"蒸饭柜",price:3500,func:"蒸饭备餐"}],
-  "粉":[{name:"煮面炉",price:2000,func:"烫粉煮粉"},{name:"高汤桶",price:500,func:"熬制汤底"},{name:"烫粉炉",price:1500,func:"专业烫粉设备"},{name:"保温台",price:1500,func:"成品保温"}],
-  "麻辣烫":[{name:"煮面炉",price:2000,func:"烫菜煮串"},{name:"展示冷柜",price:2800,func:"食材展示保鲜"},{name:"烫菜篮架",price:300,func:"分类烫菜"},{name:"调料台",price:1000,func:"调料配置"}],
-  "火锅":[{name:"电磁炉 ×5",price:2000,func:"桌边加热"},{name:"涮菜展示柜",price:3000,func:"食材展示保鲜"},{name:"调料台",price:1000,func:"自助调料"},{name:"电磁炉专用锅 ×5",price:750,func:"火锅锅具"}],
-  "烧烤":[{name:"烧烤炉",price:3000,func:"烤制核心设备"},{name:"排烟净化器",price:4000,func:"油烟净化，合规必备"},{name:"冷藏展示柜",price:3500,func:"食材保鲜展示"},{name:"保鲜工作台",price:2500,func:"备料操作台"}],
-  "炸鸡":[{name:"炸炉",price:3500,func:"油炸核心设备"},{name:"保温柜",price:2000,func:"成品保温"},{name:"裹粉台",price:800,func:"裹粉操作"},{name:"腌制机",price:1200,func:"腌制入味"}],
-  "奶茶":[{name:"封口机",price:1800,func:"杯口封口"},{name:"制冰机",price:2500,func:"制冰设备"},{name:"搅拌机",price:800,func:"搅拌混合"},{name:"奶精机",price:1200,func:"奶精分配"}],
-  "咖啡":[{name:"半自动咖啡机",price:8000,func:"萃取浓缩"},{name:"磨豆机",price:2000,func:"研磨咖啡豆"},{name:"制冰机",price:2500,func:"制冰设备"},{name:"奶泡机",price:800,func:"打奶泡"}],
-  "轻食":[{name:"沙拉操作台",price:2500,func:"沙拉制作台"},{name:"冷藏展示柜",price:3500,func:"食材保鲜展示"},{name:"商用搅拌机",price:1200,func:"制作酱汁"},{name:"保鲜工作台",price:2500,func:"备料操作台"}],
-  "汉堡":[{name:"扒炉",price:3000,func:"煎肉饼"},{name:"炸炉",price:3500,func:"炸薯条等"},{name:"汉堡包装机",price:1500,func:"包装汉堡"},{name:"保温柜",price:2000,func:"成品保温"}],
-  "卤味":[{name:"卤锅",price:800,func:"卤制容器"},{name:"保温展示柜",price:2500,func:"成品保温展示"},{name:"切配台",price:1200,func:"切配操作"},{name:"冷藏柜",price:3000,func:"食材保鲜"}],
-  "日料":[{name:"寿司操作台",price:2000,func:"寿司制作"},{name:"冷藏展示柜",price:3500,func:"食材保鲜"},{name:"刺身刀具套装",price:1500,func:"专业刀具"},{name:"制冰机",price:2500,func:"制冰设备"}],
-  "川菜":[{name:"商用炒灶",price:2800,func:"猛火快炒"},{name:"大铁锅",price:200,func:"炒制容器"},{name:"蒸饭柜",price:3500,func:"批量蒸饭"},{name:"保温台",price:1500,func:"成品保温"}]
+var SPECIAL = {
+  "炒饭":[
+    {name:"商用炒灶",price:2800,priority:"P0",func:"猛火快炒，炒饭出餐核心设备",ai:"AI通过炒灶使用数据优化火候参数和出餐时序",miss:"没它做不了炒饭，AI的菜品优化无从谈起"},
+    {name:"大铁锅",price:200,priority:"P0",func:"配合炒灶翻炒，直接受热烹饪容器",ai:"AI分析锅具使用频次预判更换周期，避免爆锅事故",miss:"炒灶的搭档，物理层面不可缺"},
+    {name:"蒸饭柜",price:3500,priority:"P0",func:"大容量蒸米饭，一次蒸几十份",ai:"AI根据历史销量预测每日蒸饭量，减少浪费",miss:"饭量大的话电饭煲来不及，AI算得再准没设备也白搭"},
+    {name:"保温台",price:1500,priority:"P1",func:"成品饭菜恒温保存，等待外卖骑手取餐",ai:"AI监控保温时长，超时自动预警避免出品质量下降",miss:"提前备餐无法追踪温度变化，AI不知道菜凉没凉"}
+  ],
+  "盖码饭":[
+    {name:"商用炒灶",price:2800,priority:"P0",func:"猛火炒菜做菜，盖码饭的核心出品设备",ai:"AI通过炒灶数据分析各菜品出餐效率，优化菜单排序",miss:"盖码饭全靠它出菜，AI的出品优化需要数据源"},
+    {name:"大铁锅",price:200,priority:"P0",func:"配合炒灶翻炒，直接受热烹饪容器",ai:"AI根据使用频次预判锅具寿命，提前提醒更换",miss:"物理层面不可缺"},
+    {name:"蒸饭柜",price:3500,priority:"P0",func:"大容量蒸米饭，一次蒸几十份",ai:"AI根据订单预测蒸饭量，避免蒸多浪费或蒸少断供",miss:"供饭跟不上，AI预测再好也救不了"},
+    {name:"保温台",price:1500,priority:"P1",func:"成品恒温保存，等待出餐",ai:"AI追踪每道菜的保温时长，超时预警保证出品",miss:"高峰期备菜无法监控品质，AI看不见菜的温度变化"}
+  ],
+  "面条":[
+    {name:"商用炒灶",price:2800,priority:"P0",func:"炒菜浇头、炒面，多功能烹饪",ai:"AI分析炒灶使用数据，优化浇头制作时序",miss:"浇头面条的灵魂设备"},
+    {name:"煮面炉",price:2000,priority:"P0",func:"多孔同时煮面，效率远超家用灶",ai:"AI通过煮面频次数据分析高峰时段和出品速度",miss:"高峰同时出十几碗面全靠它"},
+    {name:"高汤桶",price:500,priority:"P0",func:"大容量熬制骨汤/高汤，面条风味基础",ai:"AI监控熬汤时长和温度曲线，保证汤底品质一致",miss:"好汤靠经验更靠数据，没监控AI帮不了忙"},
+    {name:"蒸饭柜",price:3500,priority:"P1",func:"蒸米饭，兼顾米饭类需求",ai:"AI预测米饭用量，兼做盖码饭时自动调整蒸量",miss:"如果兼做盖码饭则必配"}
+  ],
+  "粉":[
+    {name:"煮面炉",price:2000,priority:"P0",func:"多孔煮粉，控制火候不糊汤",ai:"AI分析煮粉数据优化出品效率",miss:"粉店出餐主力"},
+    {name:"高汤桶",price:500,priority:"P0",func:"熬制骨汤，米粉的灵魂汤底",ai:"AI监控熬汤曲线，保证每碗汤底品质稳定",miss:"汤底决定复购率，AI无法量化没数据的汤底"},
+    {name:"烫粉炉",price:1500,priority:"P0",func:"快速烫热米粉，保持口感Q弹",ai:"AI分析烫粉时长数据，优化出餐速度",miss:"煮和烫分开效率翻倍"},
+    {name:"保温台",price:1500,priority:"P1",func:"浇头/配菜恒温保存",ai:"AI追踪浇头保温时长和温度，超时预警",miss:"提前备好的浇头品质无法监控"}
+  ],
+  "麻辣烫":[
+    {name:"煮面炉",price:2000,priority:"P0",func:"大容量烫煮菜品，麻辣烫核心加热设备",ai:"AI分析烫煮时长数据优化出品效率",miss:"没它烫不了菜"},
+    {name:"展示冷柜",price:2800,priority:"P0",func:"菜品冷藏展示，顾客自选夹取",ai:"AI通过摄像头分析菜品取用数据，优化补货策略",miss:"麻辣烫选菜体验核心，AI无法感知补货时机"},
+    {name:"烫菜篮架",price:300,priority:"P0",func:"分篮烫菜，每份独立不串味",ai:"标准化操作工具，AI基于标准流程做效率分析",miss:"没篮架每份菜捞不起来"},
+    {name:"调料台",price:1000,priority:"P1",func:"自助调料区，顾客自由搭配蘸料",ai:"AI分析调料消耗数据，预测补货周期",miss:"提升体验感，也是差异化竞争点"}
+  ],
+  "火锅":[
+    {name:"电磁炉 ×5",price:2000,priority:"P0",func:"桌面加热，顾客自助涮煮",ai:"AI通过电力数据分析各桌用餐时长和翻台效率",miss:"火锅没有加热源等于吃冷锅"},
+    {name:"涮菜展示柜",price:3000,priority:"P0",func:"冷藏展示涮菜，保鲜+美观",ai:"AI摄像头分析菜品陈列和销售速度，自动补货建议",miss:"菜品新鲜度直接决定客单价"},
+    {name:"调料台",price:1000,priority:"P0",func:"自助调料区，十几种小料自选",ai:"AI分析调料消耗速度，预判补货时间",miss:"火锅标配体验"},
+    {name:"电磁炉专用锅 ×5",price:750,priority:"P0",func:"配合电磁炉使用的火锅盆",ai:"物理配套设备",miss:"电磁炉的搭档"}
+  ],
+  "烧烤":[
+    {name:"烧烤炉",price:3000,priority:"P0",func:"炭烤/电烤，烧烤出品的核心设备",ai:"AI分析烤制时长和温度数据，优化出品品质",miss:"没炉子烤不了串"},
+    {name:"排烟净化器",price:4000,priority:"P0",func:"油烟净化处理，达标排放",ai:"AI监控净化器运行状态，滤网堵塞自动预警",miss:"烧烤油烟大，不装会被投诉到关门"},
+    {name:"冷藏展示柜",price:3500,priority:"P0",func:"食材冷藏保鲜，串好的串存放",ai:"AI监控冷藏温度异常，食材变质提前预警",miss:"肉类不冷藏半天就变质"},
+    {name:"保鲜工作台",price:2500,priority:"P1",func:"冷藏+操作台一体，边取边烤",ai:"AI分析出餐动线效率，工作台位置影响动线数据",miss:"省空间提效率"}
+  ],
+  "炸鸡":[
+    {name:"炸炉",price:3500,priority:"P0",func:"恒温 deep fry，炸鸡核心设备",ai:"AI分析油温和炸制时长数据，保证每批次品质一致",miss:"没炸炉做不了炸鸡"},
+    {name:"保温柜",price:2000,priority:"P0",func:"炸好的鸡块恒温保存，保持酥脆",ai:"AI追踪保温时长，超时自动预警避免出品下降",miss:"炸鸡凉了差评第一来源"},
+    {name:"裹粉台",price:800,priority:"P0",func:"炸鸡裹粉/挂糊操作台",ai:"标准化操作台，AI基于标准流程做效率分析",miss:"裹粉不均匀炸出来口感差一半"},
+    {name:"腌制机",price:1200,priority:"P1",func:"真空滚揉腌制，入味均匀快速",ai:"AI记录腌制时长和批次，保证风味可追溯",miss:"量大时手工腌太慢"}
+  ],
+  "奶茶":[
+    {name:"封口机",price:1800,priority:"P0",func:"杯口热封膜，防洒防漏",ai:"AI通过封口次数统计出品量，分析外卖洒漏率",miss:"不封口外卖必洒，差评第一杀手"},
+    {name:"制冰机",price:2500,priority:"P0",func:"持续产冰，冷饮必备",ai:"AI分析用冰量预测产冰需求，产冰不足提前预警",miss:"70%的奶茶要加冰"},
+    {name:"搅拌机",price:800,priority:"P0",func:"打冰沙、混合水果，饮品制作核心",ai:"AI分析使用频次和出品效率数据",miss:"水果茶奶昔全靠它"},
+    {name:"奶精机",price:1200,priority:"P1",func:"定量出奶精/植脂末，标准化配比",ai:"AI通过定量数据分析每杯原料消耗，精确核算成本",miss:"保证每杯口感一致，标准化是AI分析的前提"}
+  ],
+  "咖啡":[
+    {name:"半自动咖啡机",price:8000,priority:"P0",func:"萃取浓缩咖啡，咖啡出品的核心",ai:"AI分析萃取参数（温度/压力/时间），优化每杯品质",miss:"没咖啡机开不了咖啡店"},
+    {name:"磨豆机",price:2000,priority:"P0",func:"现磨咖啡豆，保证新鲜风味",ai:"AI记录研磨参数和出品关联，找到最佳研磨度",miss:"预磨粉5分钟就氧化"},
+    {name:"制冰机",price:2500,priority:"P0",func:"产冰，冰美式/冰拿铁必备",ai:"AI预测用冰高峰期，提前调整产冰量",miss:"夏天70%订单是冰咖啡"},
+    {name:"奶泡机",price:600,priority:"P1",func:"打发牛奶/燕麦奶，做拿铁拉花",ai:"AI分析奶泡温度和打发时长数据，保证拉花品质",miss:"拉花是咖啡颜值加分项"}
+  ],
+  "轻食":[
+    {name:"沙拉操作台",price:2500,priority:"P0",func:"冷藏台面+料盒位，边选边拌",ai:"AI分析各料盒消耗速度，预测补货时间和用量",miss:"轻食出餐效率核心"},
+    {name:"冷藏展示柜",price:3500,priority:"P0",func:"食材冷藏保鲜，蔬菜水果存放",ai:"AI监控冷藏温度+摄像头识别食材新鲜度",miss:"轻食食材新鲜度=生命"},
+    {name:"商用搅拌机",price:1200,priority:"P0",func:"打果汁、奶昔、smoothie",ai:"AI分析饮品出品数据，优化配方和备料计划",miss:"轻食店的饮品线全靠它"},
+    {name:"保鲜工作台",price:2500,priority:"P1",func:"额外冷藏+操作空间",ai:"AI分析双台面动线效率，优化出餐流程",miss:"高峰时多一个台面效率翻倍"}
+  ],
+  "汉堡":[
+    {name:"扒炉",price:3000,priority:"P0",func:"煎肉饼/加热面包，汉堡核心加热设备",ai:"AI分析煎制时长和温度数据，优化肉饼出品品质",miss:"没扒炉肉饼煎不了"},
+    {name:"炸炉",price:3500,priority:"P0",func:"炸薯条、炸鸡排等小食",ai:"AI分析油温和使用频次，预测换油周期",miss:"汉堡套餐的薯条是利润大头"},
+    {name:"冷藏展示柜",price:2500,priority:"P0",func:"肉饼/蔬菜/酱料冷藏存放",ai:"AI监控冷藏温度异常，食材效期自动追踪",miss:"牛肉饼不冷冻会变质"},
+    {name:"保温柜",price:1500,priority:"P1",func:"成品汉堡保温，等待出餐",ai:"AI追踪保温时长，超时预警避免品质下降",miss:"外卖单高峰期保温不变软"}
+  ],
+  "披萨":[
+    {name:"层式烤炉",price:8000,priority:"P0",func:"高温烤制披萨，300°C+均匀烘烤",ai:"AI分析烤制温度曲线和时间数据，优化披萨品质",miss:"没烤炉做不了披萨"},
+    {name:"和面机",price:2000,priority:"P0",func:"搅拌揉制面团，做披萨底",ai:"AI记录和面参数（时间/温度），保证面团品质一致",miss:"手工揉面太慢太累"},
+    {name:"冷藏展示柜",price:2500,priority:"P0",func:"芝士/酱料/配料冷藏保鲜",ai:"AI监控冷藏温度和食材库存，自动预警补货",miss:"披萨配料多，不冷藏串味变质"},
+    {name:"披萨台",price:2000,priority:"P1",func:"专业操作台，带料盒位铺料快",ai:"AI分析铺料效率数据，优化出餐速度",miss:"专业台面出餐效率远超普通操作台"}
+  ],
+  "甜品":[
+    {name:"商用烤箱",price:4000,priority:"P0",func:"烘焙蛋糕/饼干/泡芙等",ai:"AI分析烘焙温度曲线，找到最佳出品参数",miss:"没烤箱做不了甜品"},
+    {name:"厨师机",price:2000,priority:"P0",func:"打发奶油/揉面/搅拌多合一",ai:"AI记录搅拌参数和出品关联，标准化配方",miss:"手工打发太慢太累"},
+    {name:"冷藏展示柜",price:3500,priority:"P0",func:"成品蛋糕/甜点冷藏展示+保鲜",ai:"AI摄像头分析展示柜库存，预测补货需求",miss:"甜品需要冷藏保鲜"},
+    {name:"冰淇淋机",price:3000,priority:"P1",func:"制作软冰淇淋，夏季引流爆品",ai:"AI分析冰淇淋销量数据，优化备料和出品节奏",miss:"高毛利品类，夏天引流利器"}
+  ],
+  "小吃":[
+    {name:"商用炒灶",price:2800,priority:"P0",func:"炒菜/炒粉/炸前处理，多功能",ai:"AI分析炒灶使用数据优化出餐效率",miss:"小吃店万能基础设备"},
+    {name:"炸炉",price:3500,priority:"P0",func:"油炸类小吃核心设备",ai:"AI分析油温和炸制数据，预测换油周期保证品质",miss:"炸串/炸鸡/炸年糕都靠它"},
+    {name:"蒸饭柜",price:3500,priority:"P1",func:"蒸制类小吃（烧卖/蒸饺/馒头）",ai:"AI分析蒸制数据优化出品效率",miss:"如果做蒸制品类则必配"},
+    {name:"保温台",price:1500,priority:"P1",func:"成品恒温保存",ai:"AI追踪保温时长和温度，超时预警",miss:"小吃提前备货，高峰快速出餐"}
+  ],
+  "快餐":[
+    {name:"商用炒灶",price:2800,priority:"P0",func:"大批量炒菜，快餐出餐核心",ai:"AI分析各菜品出餐频次，优化备餐计划",miss:"快餐的灵魂设备"},
+    {name:"蒸饭柜",price:3500,priority:"P0",func:"大容量蒸米饭",ai:"AI根据订单预测蒸饭量，减少浪费",miss:"快餐米饭用量大"},
+    {name:"保温台",price:1500,priority:"P0",func:"菜品恒温保存，提前备好",ai:"AI追踪每道菜保温时长，超时预警保证出品",miss:"快餐就是快，保温台是关键"},
+    {name:"排烟系统增强",price:2000,priority:"P1",func:"大功率排烟，适配多灶同时工作",ai:"AI监控排烟设备运行状态，异常自动预警",miss:"快餐灶多烟大"}
+  ],
+  "粥":[
+    {name:"商用煮粥锅",price:3000,priority:"P0",func:"大容量慢熬粥，自动搅拌防糊底",ai:"AI监控熬粥时长和温度，保证粥品品质一致",miss:"粥店核心"},
+    {name:"蒸饭柜",price:3500,priority:"P0",func:"蒸制配菜（蒸饺/蒸包/蒸蛋）",ai:"AI分析蒸品出品数据，优化备货量",miss:"粥的黄金搭档——蒸品"},
+    {name:"保温台",price:1500,priority:"P0",func:"粥/配菜恒温保存",ai:"AI追踪粥品温度，凉了就预警",miss:"粥凉了口感极差"},
+    {name:"商用炒灶",price:2800,priority:"P1",func:"炒菜/炒浇头",ai:"AI分析炒菜数据优化出品效率",miss:"如果兼做炒菜粥或盖码饭则必配"}
+  ],
+  "饺子":[
+    {name:"煮面炉",price:2000,priority:"P0",func:"大锅煮饺子，多孔同时下",ai:"AI分析煮制时长和批次数据，优化出餐效率",miss:"煮饺子主力设备"},
+    {name:"和面机",price:2000,priority:"P0",func:"自动揉面，做饺子皮",ai:"AI记录和面参数，保证面皮品质一致",miss:"手工和面太慢"},
+    {name:"包饺子机",price:4000,priority:"P1",func:"自动包馅成型，效率是手工10倍",ai:"AI记录出品速度和馅料消耗，精确核算成本",miss:"量大时必备"},
+    {name:"蒸饭柜",price:3500,priority:"P1",func:"蒸饺专用，蒸制出品",ai:"AI分析蒸饺出品数据优化备货",miss:"如果主打蒸饺则必配"}
+  ],
+  "包子":[
+    {name:"和面机",price:2000,priority:"P0",func:"揉面团，包子皮基础",ai:"AI记录和面参数保证品质一致",miss:"包子店第一步"},
+    {name:"蒸饭柜",price:3500,priority:"P0",func:"蒸包子核心设备，大容量多层",ai:"AI分析蒸制数据优化出品效率",miss:"包子全靠蒸"},
+    {name:"商用炒灶",price:2800,priority:"P0",func:"炒制馅料（肉馅/菜馅调味炒制）",ai:"AI分析馅料制作批次和用量，精确成本核算",miss:"好的馅料是包子好味的基础"},
+    {name:"压面机",price:1500,priority:"P1",func:"压制面皮，厚薄均匀",ai:"AI分析压面参数和出品关联，优化面皮品质",miss:"面皮均匀包子才好看"}
+  ],
+  "烤鱼":[
+    {name:"商用烤炉",price:4000,priority:"P0",func:"烤制整鱼，外焦里嫩",ai:"AI分析烤制温度和时间数据，优化出品品质",miss:"烤鱼的核心"},
+    {name:"商用炒灶",price:2800,priority:"P0",func:"炒制底料/浇头/配菜",ai:"AI分析底料用量和批次，精确成本核算",miss:"烤鱼的灵魂在底料"},
+    {name:"冷藏展示柜",price:2500,priority:"P0",func:"鲜鱼/配菜冷藏保鲜",ai:"AI监控冷藏温度+摄像头识别食材新鲜度",miss:"鱼不冷藏一天就臭"},
+    {name:"保温台",price:1500,priority:"P1",func:"成品保温等待出餐",ai:"AI追踪出品到取餐的时间差，超时预警",miss:"烤鱼制作时间长，保温很重要"}
+  ],
+  "烤肉":[
+    {name:"烤肉炉",price:4000,priority:"P0",func:"桌面/后厨烤肉设备",ai:"AI分析烤制数据和翻台率，优化运营效率",miss:"烤肉店的核心体验设备"},
+    {name:"排烟净化器",price:4000,priority:"P0",func:"油烟净化排放，室内烤肉必备",ai:"AI监控净化器运行状态和滤网寿命",miss:"烤肉油烟极大"},
+    {name:"冷藏展示柜",price:2500,priority:"P0",func:"肉类/蔬菜冷藏保鲜展示",ai:"AI监控温度+摄像头分析菜品消耗速度",miss:"烤肉食材新鲜度关系口碑"},
+    {name:"切肉机",price:2000,priority:"P1",func:"均匀切肉片，厚薄一致",ai:"AI分析切肉量和损耗率，优化采购计划",miss:"手工切效率低且厚薄不均"}
+  ],
+  "日料":[
+    {name:"寿司冰箱",price:4000,priority:"P0",func:"专为寿司设计的冷藏柜，控温精准",ai:"AI监控精准温度数据，生鱼片保鲜可追溯",miss:"生鱼片对温度极敏感"},
+    {name:"商用炒灶",price:2800,priority:"P0",func:"炒菜/煮物/炸物等多功能",ai:"AI分析各品类出品数据优化效率",miss:"日料不只是生食"},
+    {name:"煮面炉",price:2000,priority:"P1",func:"煮拉面/乌冬面",ai:"AI分析面食出品数据",miss:"如果做面食类日料则必配"},
+    {name:"炸炉",price:3500,priority:"P1",func:"天妇罗等炸物制作",ai:"AI分析油温和出品数据优化品质",miss:"天妇罗是日料高毛利品类"}
+  ],
+  "韩料":[
+    {name:"商用炒灶",price:2800,priority:"P0",func:"炒菜/炒年糕/石锅拌饭",ai:"AI分析出品数据优化备餐和效率",miss:"韩料出品的基础设备"},
+    {name:"炭火烤肉炉",price:3000,priority:"P0",func:"韩式烤肉专用，桌面炭火",ai:"AI分析翻台率和烤肉出品数据",miss:"韩式烤肉的灵魂体验"},
+    {name:"大酱汤锅",price:800,priority:"P0",func:"慢炖大酱汤/泡菜汤",ai:"AI监控炖煮时长和温度，保证汤品品质",miss:"韩料汤类是标配"},
+    {name:"冷藏展示柜",price:2500,priority:"P1",func:"泡菜/食材冷藏保鲜",ai:"AI监控冷藏温度和泡菜发酵状态",miss:"泡菜需要持续冷藏"}
+  ],
+  "西餐":[
+    {name:"扒炉",price:3500,priority:"P0",func:"煎牛排/鸡排/鱼排，西餐核心",ai:"AI分析煎制温度曲线，找到每款肉的最佳参数",miss:"没扒炉做不了牛排"},
+    {name:"商用烤箱",price:4000,priority:"P0",func:"焗饭/焗面/烤肉/烤蔬菜",ai:"AI分析烤制温度和时长数据，优化焗品品质",miss:"西餐大量焗烤菜品"},
+    {name:"冷藏展示柜",price:2500,priority:"P0",func:"食材冷藏保鲜",ai:"AI监控温度和库存，自动预警食材效期",miss:"西餐食材讲究新鲜"},
+    {name:"意面炉",price:2000,priority:"P1",func:"专用煮意面，控温精准",ai:"AI分析煮面数据优化出品效率",miss:"如果主打意面则值得投入"}
+  ],
+  "粤菜":[
+    {name:"商用炒灶",price:2800,priority:"P0",func:"猛火快炒，粤菜镬气关键",ai:"AI分析火候和出餐数据，量化镬气标准",miss:"粤菜讲究镬气"},
+    {name:"蒸饭柜",price:3500,priority:"P0",func:"蒸点心/蒸鱼/蒸排骨",ai:"AI分析蒸制时间和温度数据，优化点心品质",miss:"粤式点心全靠蒸"},
+    {name:"高汤桶",price:500,priority:"P0",func:"熬制高汤，粤菜提鲜基础",ai:"AI监控熬汤曲线，量化汤底品质标准",miss:"粤菜用汤提鲜"},
+    {name:"烧腊炉",price:3000,priority:"P1",func:"烧鹅/叉烧/烧肉等广式烧腊",ai:"AI分析烤制曲线，找到最佳烧腊参数",miss:"如果做烧腊则必配"}
+  ],
+  "川菜":[
+    {name:"商用炒灶",price:2800,priority:"P0",func:"大火爆炒，川菜灵魂设备",ai:"AI分析火候和出餐效率数据",miss:"川菜全靠猛火炒"},
+    {name:"大铁锅",price:200,priority:"P0",func:"炒菜容器，配合炒灶使用",ai:"AI根据使用频次预判更换周期",miss:"炒灶的搭档"},
+    {name:"蒸饭柜",price:3500,priority:"P0",func:"蒸米饭",ai:"AI预测米饭用量减少浪费",miss:"川菜配米饭是刚需"},
+    {name:"保温台",price:1500,priority:"P1",func:"菜品恒温保存",ai:"AI追踪保温时长保证出品",miss:"高峰期提前备菜保温"}
+  ],
+  "湘菜":[
+    {name:"商用炒灶",price:2800,priority:"P0",func:"猛火爆炒，湘菜核心",ai:"AI分析火候数据和出餐效率",miss:"湘菜讲究鲜辣"},
+    {name:"大铁锅",price:200,priority:"P0",func:"配合炒灶使用",ai:"AI根据使用频次预判更换周期",miss:"炒菜的必备容器"},
+    {name:"蒸饭柜",price:3500,priority:"P0",func:"蒸米饭/蒸腊味",ai:"AI分析蒸制数据优化效率",miss:"湘菜配饭是标配"},
+    {name:"蒸菜柜",price:3000,priority:"P1",func:"做湘式蒸菜（蒸腊肉/蒸鱼头）",ai:"AI分析蒸菜出品数据，优化蒸菜品类运营",miss:"蒸菜是湘菜特色品类"}
+  ],
+  "卤味":[
+    {name:"卤水桶 ×2",price:600,priority:"P0",func:"大容量卤制，老卤越卤越香",ai:"AI监控卤制时长和卤水状态，量化老卤管理",miss:"没卤水桶做不了卤味"},
+    {name:"商用炒灶",price:2800,priority:"P0",func:"炒糖色/炒料/预处理",ai:"AI记录炒料配方参数，保证卤味口味一致",miss:"卤料需要先炒香"},
+    {name:"冷藏展示柜",price:2500,priority:"P0",func:"成品卤味冷藏展示销售",ai:"AI摄像头分析展示柜库存和顾客选购偏好",miss:"卤味展示柜就是门店的脸面"},
+    {name:"保温台",price:1500,priority:"P1",func:"热卤保温，冬天保持温度",ai:"AI追踪保温温度，保证冬天出品温度",miss:"冬天冷卤卖不动"}
+  ],
+  "冒菜":[
+    {name:"煮面炉",price:2000,priority:"P0",func:"大锅冒菜，烫煮食材",ai:"AI分析烫煮效率和出品数据",miss:"冒菜核心设备"},
+    {name:"展示冷柜",price:2800,priority:"P0",func:"菜品冷藏展示，顾客自选",ai:"AI通过摄像头分析选菜数据优化补货",miss:"冒菜的体验就是看着选菜"},
+    {name:"商用炒灶",price:2800,priority:"P0",func:"炒制底料/红油",ai:"AI记录底料配方参数和批次成本",miss:"冒菜的灵魂在底料"},
+    {name:"保温台",price:1500,priority:"P1",func:"成品保温",ai:"AI追踪出品温度保证到手品质",miss:"冒菜要趁热吃"}
+  ],
+  "砂锅":[
+    {name:"砂锅灶",price:2500,priority:"P0",func:"专用砂锅加热，文火慢炖",ai:"AI分析炖煮时长和温度曲线，优化出品品质",miss:"砂锅菜灵魂设备"},
+    {name:"商用炒灶",price:2800,priority:"P0",func:"炒菜/预制处理",ai:"AI分析前处理效率数据",miss:"砂锅菜的前处理需要"},
+    {name:"蒸饭柜",price:3500,priority:"P0",func:"蒸米饭",ai:"AI预测米饭用量减少浪费",miss:"砂锅配饭是刚需"},
+    {name:"保温台",price:1500,priority:"P1",func:"砂锅保温，保持滚烫上桌",ai:"AI追踪砂锅温度，保证上桌时的温度体验",miss:"砂锅菜要的就是滚烫"}
+  ],
+  "铁板烧":[
+    {name:"铁板烧设备",price:5000,priority:"P0",func:"铁板加热烹饪，现场制作",ai:"AI分析铁板温度和出品数据优化品质",miss:"铁板烧的核心"},
+    {name:"商用炒灶",price:2800,priority:"P0",func:"辅助烹饪/配菜炒制",ai:"AI分析出品效率数据",miss:"铁板烧的配菜和前处理需要"},
+    {name:"排烟净化器",price:4000,priority:"P0",func:"铁板油烟净化",ai:"AI监控净化器状态和滤网寿命",miss:"铁板烧油烟大"},
+    {name:"冷藏展示柜",price:2500,priority:"P1",func:"食材冷藏保鲜",ai:"AI监控温度和食材库存",miss:"铁板烧食材新鲜度要求高"}
+  ],
+  "寿司":[
+    {name:"寿司冰箱",price:4000,priority:"P0",func:"精准控温冷藏，寿司饭+鱼生鲜保存",ai:"AI监控精准温度数据，生鱼片保鲜全程可追溯",miss:"生鱼片对温度极敏感"},
+    {name:"煮饭灶",price:2000,priority:"P0",func:"煮寿司专用醋饭",ai:"AI分析煮饭参数保证醋饭品质一致",miss:"好醋饭是好寿司的基础"},
+    {name:"寿司操作台",price:2000,priority:"P0",func:"专用台面，带料盒位捏寿司",ai:"AI分析出餐速度和原料消耗数据",miss:"专业台面出餐效率大幅提升"},
+    {name:"冷藏展示柜",price:2500,priority:"P1",func:"成品寿司/刺身展示销售",ai:"AI摄像头分析展示柜库存和销量数据",miss:"展示柜促进购买也保鲜"}
+  ],
+  "其他":[
+    {name:"商用炒灶",price:2800,priority:"P0",func:"万能炒菜设备，适配大多数品类",ai:"AI分析出品数据优化运营效率",miss:"厨房基础设备"},
+    {name:"大铁锅",price:200,priority:"P0",func:"配合炒灶使用",ai:"AI根据使用频次预判更换周期",miss:"炒灶的搭档"},
+    {name:"蒸饭柜",price:3500,priority:"P0",func:"蒸米饭/蒸品",ai:"AI预测米饭用量减少浪费",miss:"有饭类出品就需要"},
+    {name:"保温台",price:1500,priority:"P1",func:"成品恒温保存",ai:"AI追踪保温时长保证出品",miss:"外卖保温必备"}
+  ]
 };
-KITCHEN_DEVICES["其他"] = KITCHEN_DEVICES["炒饭"];
 
-const REFRIGERATION = [{name:"四门冰箱",price:3500,func:"冷冻+冷藏分区存储"},{name:"冷藏展示柜",price:2500,func:"食材展示保鲜"}];
+/* --- Digital equipment: AI perception layer (universal) --- */
+var DIGITAL = [
+  {name:"外卖云打印机（飞鹅FP-V3-WHC）",price:269,priority:"P0",func:"自动接单打印，来单2秒内出纸，WiFi/4G双模",ai:"AI获取订单数据的入口——飞鹅API让AI分析销量趋势/高峰时段/复购规律",miss:"没它订单数据靠人肉记录，AI对经营状况一无所知"},
+  {name:"扫码枪（科密TE530D）",price:341,priority:"P0",func:"无线扫码入库，IP66工业级防护，离线存储",ai:"AI的库存数据入口——扫码即入库，AI自动核算每道菜的成本",miss:"没它库存数据靠手动录入，AI算不了成本，利润是笔糊涂账"},
+  {name:"电子秤（大华ACS-15Ab RS232）",price:300,priority:"P0",func:"称重数据通过RS232串口实时传到系统",ai:"AI的成本核算引擎——称重即入库，每克食材消耗AI都看得到",miss:"没它称重数据AI看不到，成本核算全靠猜，毛利算不准"},
+  {name:"摄像头-后厨（海康DS-2CD 4MP）",price:400,priority:"P0",func:"RTSP实时视频流，4MP高清，AI可做食安分析",ai:"AI的眼睛——实时流让AI做食安合规分析、员工操作识别、异常预警",miss:"没它AI是瞎子，后厨发生了什么AI完全不知道"},
+  {name:"摄像头-前厅（海康200万）",price:340,priority:"P1",func:"前厅实时监控，客流分析和防盗",ai:"AI的前厅视角——客流热力图、翻台率统计、纠纷取证",miss:"没它AI不知道前厅多忙，翻台率和客流数据全靠猜"},
+  {name:"边缘网关（树莓派Zero 2W）",price:200,priority:"P0",func:"本地串口秤+扫码枪+摄像头→数据推送云端",ai:"打通硬件和云端的桥梁——没有它所有本地设备全断连云端AI",miss:"没它本地硬件全是孤岛，数据到不了云端，AI就是瘫痪的"},
+  {name:"路由器（小米AX3000T）",price:129,priority:"P0",func:"WiFi6网络底座，所有设备联网基础",ai:"AI的基础设施——网络不稳=全部设备离线=AI瘫痪",miss:"没它所有智能设备都是废铁，网络是AI生存的氧气"}
+];
+
+/* --- Refrigeration --- */
+var REFRIGERATION_BASE = [
+  {name:"四门冰箱",price:3500,priority:"P0",func:"大容量冷冻+冷藏，食材批量存储",ai:"AI通过温度监控+库存管理，预测食材效期自动预警",miss:"没冰箱食材无法存放，AI的库存管理没有数据源"},
+  {name:"冷藏展示柜",price:2500,priority:"P1",func:"冷藏+展示一体，顾客可见食材新鲜度",ai:"AI摄像头分析展示柜陈列和消耗速度，自动补货建议",miss:"需要展示选品的品类没有它，AI无法感知库存消耗"}
+];
+
+/* categories that need showcase fridge */
+var SHOWCASE_CATS = ["麻辣烫","火锅","烧烤","奶茶","轻食","冒菜","卤味","寿司","日料","烤鱼","烤肉","小吃","快餐","粉","粥","饺子"];
+
+/* area scale */
+function getAreaScale(area){
+  if(area<=0) return {scale:1,label:"标准"};
+  if(area<30) return {scale:0.7,label:"精简"};
+  if(area<=60) return {scale:1,label:"标准"};
+  return {scale:1.3,label:"完整"};
+}
+
+function adjustItems(items,scale){
+  var arr=items.map(function(i){return Object.assign({},i)});
+  if(scale>=1.3) return arr;
+  if(scale<=0.7){
+    var p0=arr.filter(function(i){return i.priority==="P0"});
+    var p1=arr.filter(function(i){return i.priority==="P1"});
+    if(p1.length>1) p1=p1.slice(0,1);
+    return p0.concat(p1);
+  }
+  return arr;
+}
+
+/* render equipment card */
+function renderCard(item,optional){
+  var cls=optional?"eq-card optional":"eq-card";
+  var h='<div class="'+cls+'">';
+  h+='<div class="eq-head"><span class="eq-name">'+item.name+'</span><span class="eq-price">\u00a5'+item.price.toLocaleString()+'</span></div>';
+  h+='<div class="eq-line eq-func"><span class="ico">\ud83d\udd0c</span><span>\u529f\u80fd\uff1a'+item.func+'</span></div>';
+  h+='<div class="eq-line eq-ai"><span class="ico">\ud83e\udd16</span><span>AI\u4ef7\u503c\uff1a'+item.ai+'</span></div>';
+  h+='<div class="eq-line eq-miss"><span class="ico">\u274c</span><span>\u6ca1\u6709\u5b83\uff1a'+item.miss+'</span></div>';
+  h+='</div>';
+  return h;
+}
 
 function generate(){
-  const cat = document.getElementById("category").value;
-  const area = parseFloat(document.getElementById("area").value)||0;
-  const budget = parseFloat(document.getElementById("budget").value)||0;
-  if(!cat){alert("请填写品类");return}
-  if(!area){alert("请填写面积");return}
-  if(!budget){alert("请填写预算");return}
-  
-  const scale = area/20;
-  let kitchenDevices = KITCHEN_DEVICES[cat] || KITCHEN_DEVICES["其他"];
-  if(scale<0.8) kitchenDevices = kitchenDevices.slice(0,Math.max(2,Math.ceil(kitchenDevices.length*0.7)));
-  
-  const needFridge = ["炒饭","盖码饭","面条","粉","奶茶","烧烤","火锅","炸鸡","麻辣烫","轻食","咖啡","汉堡","卤味","日料","川菜","其他"];
-  let fridgeItems = [];
-  if(needFridge.includes(cat)){
-    fridgeItems = REFRIGERATION.map(d=>({...d}));
-    if(scale<0.8) fridgeItems = [REFRIGERATION[0]];
+  var cat=document.getElementById("category").value.trim();
+  var area=parseFloat(document.getElementById("area").value)||0;
+  var budget=parseFloat(document.getElementById("budget").value)||0;
+
+  if(!cat){alert("请选择或输入品类");return}
+  if(area<=0){alert("请输入店铺面积");return}
+  if(budget<=0){alert("请输入预算金额");return}
+
+  var sc=getAreaScale(area);
+  var scale=sc.scale;
+
+  /* 1. base equipment */
+  var commonItems=adjustItems(COMMON_BASE,scale);
+  var specRaw=SPECIAL[cat]||SPECIAL["其他"];
+  var specItems=adjustItems(specRaw,scale);
+  var baseItems=commonItems.concat(specItems);
+
+  /* 2. digital equipment (always same) */
+  var digitalItems=DIGITAL.map(function(i){return Object.assign({},i)});
+
+  /* 3. refrigeration */
+  var fridgeItems=adjustItems(REFRIGERATION_BASE,scale);
+  if(SHOWCASE_CATS.indexOf(cat)===-1){
+    fridgeItems=fridgeItems.filter(function(i){return i.name.indexOf("展示柜")===-1});
   }
-  
-  let p0Total = AI_DEVICES.reduce((s,i)=>s+i.price,0) + kitchenDevices.reduce((s,i)=>s+i.price,0) + fridgeItems.reduce((s,i)=>s+i.price,0);
-  const pct = p0Total/budget*100;
-  const barColor = pct<=80?'#10b981':pct<=100?'#eab308':'#ef4444';
-  
-  document.getElementById("result").classList.add("show");
-  document.getElementById("summary").innerHTML = `
-    <div class="intro-box">
-      <div class="intro-title">🤖 AI店长的感知层配置</div>
-      <div class="intro-content">每个设备都让AI多一个数据来源：打印机让AI看到订单、扫码枪让AI看到库存、摄像头让AI看到现场、电子秤让AI看到成本。<br><br><b style="color:#fbbf24">没有这些设备，AI就是瞎子聋子——看不见、听不到、算不准。</b></div>
-    </div>
-    <div class="summary-title">💰 预算概览</div>
-    <div class="summary-grid">
-      <div class="summary-item"><div class="summary-value">¥${p0Total.toLocaleString()}</div><div class="summary-label">设备总价</div></div>
-      <div class="summary-item"><div class="summary-value">${Math.round(pct)}%</div><div class="summary-label">预算使用率</div></div>
-    </div>
-    <div class="budget-bar-wrap">
-      <div class="budget-info"><span class="total">预算 ¥${budget.toLocaleString()}</span><span class="spent" style="color:${barColor}">¥${p0Total.toLocaleString()}</span></div>
-      <div class="bar-bg"><div class="bar-fill" style="width:${Math.min(pct,100)}%;background:${barColor}"></div></div>
-    </div>
-    ${pct>100?`<div class="warning"><div class="warning-text">⚠️ 超预算 ¥${(p0Total-budget).toLocaleString()}，建议优先保证P0设备</div></div>`:''}
-  `;
-  
-  let html = '<div class="section-title"><span class="icon">🤖</span>AI感知层设备 <span class="tag tag-p0">P0 · AI必需</span></div>';
-  AI_DEVICES.forEach(d=>{
-    html += `
-      <div class="device-card">
-        <div class="device-header"><span class="device-name">${d.name}</span><span class="device-price">¥${d.price.toLocaleString()}</span></div>
-        <div class="device-desc">
-          <div><span class="emoji">🔌</span>功能：${d.func}</div>
-          <div class="ai-value"><span class="emoji">🤖</span>AI价值：${d.aiValue}</div>
-          <div class="no-device"><span class="emoji">❌</span>没有它会：${d.noDevice}</div>
-        </div>
-      </div>`;
-  });
-  
-  html += `<div class="section-title" style="margin-top:20px"><span class="icon">🍳</span>${cat}厨房设备 <span class="tag tag-p0">P0 · 必需</span></div>`;
-  kitchenDevices.forEach(d=>{
-    html += `
-      <div class="device-card">
-        <div class="device-header"><span class="device-name">${d.name}</span><span class="device-price">¥${d.price.toLocaleString()}</span></div>
-        <div class="device-desc"><div><span class="emoji">🔌</span>功能：${d.func}</div></div>
-      </div>`;
-  });
-  
-  if(fridgeItems.length>0){
-    html += '<div class="section-title" style="margin-top:20px"><span class="icon">❄️</span>制冷设备 <span class="tag tag-p0">P0 · 必需</span></div>';
-    fridgeItems.forEach(d=>{
-      html += `
-        <div class="device-card">
-          <div class="device-header"><span class="device-name">${d.name}</span><span class="device-price">¥${d.price.toLocaleString()}</span></div>
-          <div class="device-desc"><div><span class="emoji">🔌</span>功能：${d.func}</div></div>
-        </div>`;
-    });
+
+  /* merge all for budget calc */
+  var allP0=baseItems.filter(function(i){return i.priority==="P0"})
+    .concat(digitalItems.filter(function(i){return i.priority==="P0"}))
+    .concat(fridgeItems.filter(function(i){return i.priority==="P0"}));
+  var allP1=baseItems.filter(function(i){return i.priority==="P1"})
+    .concat(digitalItems.filter(function(i){return i.priority==="P1"}))
+    .concat(fridgeItems.filter(function(i){return i.priority==="P1"}));
+
+  var totalP0=allP0.reduce(function(s,i){return s+i.price},0);
+  var totalP1=allP1.reduce(function(s,i){return s+i.price},0);
+  var totalAll=totalP0+totalP1;
+
+  var overBudget=totalAll>budget;
+  var requiredTotal=overBudget?totalP0:totalAll;
+  var optionalItems=overBudget?allP1:[];
+
+  /* budget bar */
+  var pct=Math.min(Math.round(requiredTotal/budget*100),150);
+  var barClass=pct>=100?"bar-red":pct>=80?"bar-yellow":"bar-green";
+  var barColor=barClass==="bar-red"?"#ef4444":barClass==="bar-yellow"?"#eab308":"#22c55e";
+
+  /* build HTML */
+  var html='';
+
+  /* AI banner */
+  html+='<div class="ai-banner">';
+  html+='<div class="ai-banner-title">\ud83d\udcf1 AI店长的感知层</div>';
+  html+='<div class="ai-banner-desc">这些设备不是简单的厨房工具，而是AI店长的眼睛、耳朵和神经——没有它们，AI看不见后厨、算不了成本、管不了库存。每一台设备都是AI感知世界的一个器官。</div>';
+  html+='</div>';
+
+  /* summary card */
+  html+='<div class="card">';
+  html+='<div class="summary-row"><span class="summary-label">预算</span><span class="summary-val">\u00a5'+budget.toLocaleString()+'</span></div>';
+  html+='<div class="budget-info"><span class="total">已配 \u00a5'+requiredTotal.toLocaleString()+'</span><span class="spent" style="color:'+barColor+'">'+Math.round(requiredTotal/budget*100)+'%</span></div>';
+  html+='<div class="bar-bg"><div class="bar-fill '+barClass+'" style="width:'+Math.min(pct,100)+'%"></div></div>';
+  if(overBudget){
+    html+='<span class="over-tag">超预算 \u00a5'+(totalAll-budget).toLocaleString()+'</span>';
+    html+='<div class="budget-note" style="color:#ef4444">已拆分为"AI必需 P0"和"AI增强 P1"，优先保障AI的基本感知能力</div>';
+  }else if(pct>=80){
+    html+='<div class="budget-note" style="color:#eab308">预算较紧凑，已优先保障AI必需设备</div>';
+  }else{
+    html+='<div class="budget-note" style="color:#22c55e">预算充足，建议配齐P1让AI感知更完整</div>';
   }
-  
-  document.getElementById("p0Section").innerHTML = html;
-  document.getElementById("p1Section").innerHTML = '';
-  
-  let channels = [];
-  if(budget<8000) channels=[{name:"1688批发",desc:"价格最低"},{name:"拼多多",desc:"百亿补贴"},{name:"闲鱼二手",desc:"性价比高"}];
-  else if(budget<15000) channels=[{name:"京东自营",desc:"正品+售后快"},{name:"京东商用",desc:"企业采购"},{name:"品牌官方店",desc:"官方直营"}];
-  else channels=[{name:"品牌直营",desc:"厂家供货"},{name:"京东商用",desc:"企业采购"},{name:"本地经销商",desc:"售后响应快"}];
-  let channelHtml='<div class="channel-box"><div class="channel-title">🛒 推荐采购渠道</div><div class="channel-list">';
-  channels.forEach(c=>{channelHtml+=`<div class="channel-tag">${c.name}<br><span style="font-size:.65rem;color:#94a3b8">${c.desc}</span></div>`;});
-  channelHtml+='</div></div>';
-  document.getElementById("channelBox").innerHTML=channelHtml;
-  document.getElementById("result").scrollIntoView({behavior:'smooth',block:'start'});
+  html+='</div>';
+
+  /* section 1: base equipment */
+  html+='<div class="card">';
+  html+='<div class="section-title">\ud83d\udd27 基础设备 <span class="tag tag-req">'+cat+'·品类必需</span></div>';
+  var baseP0=baseItems.filter(function(i){return i.priority==="P0"});
+  var baseP1=baseItems.filter(function(i){return i.priority==="P1"});
+  if(overBudget){
+    baseP0.forEach(function(i){html+=renderCard(i,false)});
+  }else{
+    baseP0.forEach(function(i){html+=renderCard(i,false)});
+    baseP1.forEach(function(i){html+=renderCard(i,false)});
+  }
+  html+='</div>';
+
+  /* section 2: digital - AI perception */
+  html+='<div class="card">';
+  html+='<div class="section-title">\ud83e\udde0 数字化感知设备 <span class="tag tag-p0">AI感知层·通用</span></div>';
+  var digP0=digitalItems.filter(function(i){return i.priority==="P0"});
+  var digP1=digitalItems.filter(function(i){return i.priority==="P1"});
+  if(overBudget){
+    digP0.forEach(function(i){html+=renderCard(i,false)});
+  }else{
+    digP0.forEach(function(i){html+=renderCard(i,false)});
+    digP1.forEach(function(i){html+=renderCard(i,false)});
+  }
+  html+='</div>';
+
+  /* section 3: refrigeration */
+  html+='<div class="card">';
+  html+='<div class="section-title">\u2744\ufe0f 制冷设备 <span class="tag tag-req">食材保鲜</span></div>';
+  var friP0=fridgeItems.filter(function(i){return i.priority==="P0"});
+  var friP1=fridgeItems.filter(function(i){return i.priority==="P1"});
+  if(overBudget){
+    friP0.forEach(function(i){html+=renderCard(i,false)});
+  }else{
+    friP0.forEach(function(i){html+=renderCard(i,false)});
+    friP1.forEach(function(i){html+=renderCard(i,false)});
+  }
+  html+='</div>';
+
+  /* optional upgrade (only when over budget) */
+  if(overBudget && optionalItems.length){
+    var optTotal=optionalItems.reduce(function(s,i){return s+i.price},0);
+    html+='<div class="card">';
+    html+='<div class="section-title">\u2b06\ufe0f AI增强 P1 <span class="tag tag-opt">预算充足再加</span></div>';
+    optionalItems.forEach(function(i){html+=renderCard(i,true)});
+    html+='<div style="font-size:.75rem;color:#94a3b8;margin-top:8px">以上合计 \u00a5'+optTotal.toLocaleString()+'</div>';
+    html+='<div style="font-size:.75rem;color:#eab308;margin-top:4px">P1设备让AI感知更完整——前厅摄像头看客流、保温台追品质、压面机提效率</div>';
+    html+='</div>';
+  }
+
+  /* tips */
+  html+='<div class="card"><div class="section-title">\ud83d\udca1 配置建议</div><ul class="tips">';
+  var tips=generateTips(cat,area,scale,budget,totalAll);
+  tips.forEach(function(t){html+='<li>'+t+'</li>'});
+  html+='</ul></div>';
+
+  /* channels */
+  var channels;
+  if(budget<15000) channels=["1688批发","拼多多商用","闲鱼二手设备"];
+  else if(budget<40000) channels=["京东商用","美团快驴","1688旗舰店"];
+  else channels=["品牌直营","京东商用","厨都汇","本地供应商"];
+  html+='<div class="card"><div class="section-title">\ud83d\uded2 推荐渠道</div><div class="channels">';
+  channels.forEach(function(c){html+='<span class="chip">'+c+'</span>'});
+  html+='</div></div>';
+
+  var res=document.getElementById("result");
+  res.innerHTML=html;
+  res.classList.add("show");
+  res.scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+function generateTips(cat,area,scale,budget,total){
+  var tips=[];
+  if(scale<1) tips.push("面积较小，已精简设备数量，但数字化感知设备不建议省——小店的AI化反而更重要");
+  if(scale>=1.3) tips.push("空间充裕，建议按动线合理分区，AI可基于摄像头数据持续优化动线效率");
+  if(budget<15000) tips.push("预算有限，基础设备可在1688采购，但数字化设备建议买新的——传感器精度直接影响AI数据质量");
+  if(budget>=40000) tips.push("预算充足，建议配齐P1设备让AI感知层完整——前厅摄像头+保温台+品类增强设备全上");
+  tips.push("数字化设备总价仅¥1,979（P0全配），这是让AI能工作的最低成本");
+  tips.push("路由器和边缘网关是最容易被忽略但最致命的设备——没网络=AI瘫痪");
+  tips.push("摄像头务必选支持RTSP实时流的型号，截图模式的摄像头AI做不了实时分析");
+  if(["奶茶","轻食","寿司","日料"].indexOf(cat)!==-1) tips.push(cat+"品类对冷藏依赖大，AI通过温度监控可提前预警食材变质风险");
+  if(["烧烤","火锅","烤肉","铁板烧"].indexOf(cat)!==-1) tips.push(cat+"品类油烟大，排烟净化器+AI监控=合规保障，AI可检测净化器是否正常运行");
+  return tips;
 }
 </script>
 </body>
