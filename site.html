@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>选址分析助手</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0f172a;--card:#1e293b;--text:#f1f5f9;--sub:#94a3b8;--grad1:#fbbf24;--grad2:#f97316;--r:16px}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;justify-content:center;padding:20px 16px 40px}
+.app{width:100%;max-width:520px}
+h1{font-size:28px;font-weight:700;text-align:center;margin:24px 0 4px;background:linear-gradient(135deg,var(--grad1),var(--grad2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.subtitle{text-align:center;color:var(--sub);font-size:14px;margin-bottom:32px}
+.form-group{margin-bottom:20px}
+label{display:block;font-size:13px;color:var(--sub);margin-bottom:8px;font-weight:500;letter-spacing:.5px}
+input,select{width:100%;height:52px;background:var(--card);border:1.5px solid #334155;border-radius:12px;padding:0 16px;font-size:16px;color:var(--text);outline:none;transition:border .2s}
+input:focus,select:focus{border-color:var(--grad1)}
+select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2394a3b8' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center}
+select option{background:var(--card);color:var(--text)}
+.btn{width:100%;height:56px;border:none;border-radius:14px;background:linear-gradient(135deg,var(--grad1),var(--grad2));color:#0f172a;font-size:17px;font-weight:700;cursor:pointer;margin-top:8px;transition:transform .15s,opacity .15s;letter-spacing:1px}
+.btn:active{transform:scale(.97);opacity:.9}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.result{display:none;margin-top:32px;animation:fadeUp .5s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.score-section{text-align:center;margin-bottom:28px}
+.score-ring{position:relative;width:160px;height:160px;margin:0 auto 12px}
+.score-ring svg{transform:rotate(-90deg)}
+.score-ring circle{fill:none;stroke-width:10}
+.score-ring .bg{stroke:#334155}
+.score-ring .fg{stroke:url(#grad);stroke-linecap:round;transition:stroke-dashoffset 1.2s ease}
+.score-num{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:42px;font-weight:800;background:linear-gradient(135deg,var(--grad1),var(--grad2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.score-label{font-size:14px;color:var(--sub)}
+.cards{display:flex;flex-direction:column;gap:16px}
+.card{background:var(--card);border-radius:var(--r);padding:20px;border:1px solid #334155}
+.card-title{font-size:15px;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.card-title .icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px}
+.icon-pro{background:rgba(34,197,94,.15);color:#22c55e}
+.icon-con{background:rgba(239,68,68,.15);color:#ef4444}
+.icon-tip{background:rgba(251,191,36,.15);color:#fbbf24}
+.card ul{list-style:none;padding:0}
+.card li{font-size:14px;color:var(--sub);line-height:1.7;padding-left:16px;position:relative}
+.card li::before{content:"";position:absolute;left:0;top:9px;width:6px;height:6px;border-radius:50%;background:#475569}
+.history{margin-top:36px}
+.history-title{font-size:15px;font-weight:600;color:var(--sub);margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+.history-clear{font-size:12px;color:#64748b;cursor:pointer;text-decoration:underline}
+.history-item{background:var(--card);border-radius:12px;padding:14px 16px;margin-bottom:10px;border:1px solid #334155;display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:border .2s}
+.history-item:hover{border-color:#475569}
+.hi-left{flex:1}
+.hi-name{font-size:15px;font-weight:600}
+.hi-meta{font-size:12px;color:var(--sub);margin-top:2px}
+.hi-score{font-size:22px;font-weight:800;background:linear-gradient(135deg,var(--grad1),var(--grad2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.empty{text-align:center;color:#475569;font-size:13px;padding:20px 0}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#ef4444;color:#fff;padding:10px 20px;border-radius:10px;font-size:14px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:99}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="app">
+<h1>选址分析助手</h1>
+<p class="subtitle">智能评估开店选址可行性</p>
+
+<div class="form-group">
+<label>区域名称</label>
+<input type="text" id="area" placeholder="如：长沙望城、深圳龙华" autocomplete="off">
+</div>
+<div class="form-group">
+<label>品类</label>
+<select id="category">
+<option value="">请选择品类</option>
+<option value="炒饭">炒饭</option>
+<option value="奶茶">奶茶</option>
+<option value="烧烤">烧烤</option>
+<option value="火锅">火锅</option>
+<option value="粉面">粉面</option>
+<option value="其他">其他</option>
+</select>
+</div>
+<div class="form-group">
+<label>月租预算</label>
+<select id="budget">
+<option value="">请选择预算范围</option>
+<option value="3000以下">3000以下</option>
+<option value="3000-5000">3000-5000</option>
+<option value="5000-8000">5000-8000</option>
+<option value="8000以上">8000以上</option>
+</select>
+</div>
+<button class="btn" id="analyzeBtn" onclick="analyze()">一键分析选址</button>
+
+<div class="result" id="result">
+<div class="score-section">
+<div class="score-ring">
+<svg width="160" height="160" viewBox="0 0 160 160">
+<defs><linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#fbbf24"/><stop offset="100%" stop-color="#f97316"/></linearGradient></defs>
+<circle class="bg" cx="80" cy="80" r="68"/>
+<circle class="fg" id="ring" cx="80" cy="80" r="68" stroke-dasharray="427.3" stroke-dashoffset="427.3"/>
+</svg>
+<div class="score-num" id="scoreNum">0</div>
+</div>
+<div class="score-label" id="scoreLabel">选址综合评分</div>
+</div>
+<div class="cards">
+<div class="card">
+<div class="card-title"><span class="icon icon-pro">✓</span>选址优势</div>
+<ul id="prosList"></ul>
+</div>
+<div class="card">
+<div class="card-title"><span class="icon icon-con">✕</span>潜在风险</div>
+<ul id="consList"></ul>
+</div>
+<div class="card">
+<div class="card-title"><span class="icon icon-tip">★</span>经营建议</div>
+<ul id="tipsList"></ul>
+</div>
+</div>
+</div>
+
+<div class="history" id="historySection" style="display:none">
+<div class="history-title">
+<span>最近分析</span>
+<span class="history-clear" onclick="clearHistory()">清除记录</span>
+</div>
+<div id="historyList"></div>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+
+var DATA = {
+"学校周边": {
+"炒饭":{score:82,pros:["学生客流稳定且密集","午餐晚餐高峰期集中出餐快","租金相对商圈低廉"],cons:["寒暑假客流骤降约60%","学生客单价低利润薄","同质化竞争激烈"],tips:["主推高性价比套餐组合","设计学生会员卡提升复购","假期考虑临时歇业降本"]},
+"奶茶":{score:88,pros:["学生群体为奶茶核心消费群","社交属性强易于传播","夏季销量可翻倍"],cons:["品牌连锁竞争激烈","原料保质期短损耗高","寒暑假影响明显"],tips:["差异化口味避免与连锁正面竞争","推出第二杯半价等促销","开学季提前备货"]},
+"烧烤":{score:65,pros:["学生夜宵需求旺盛","社交聚会场景多","毛利较高"],cons:["学校周边环保限制严格","油烟排放需合规","寒暑假几乎无收入"],tips:["确保油烟净化设备到位","主推外卖补充堂食","考虑学期内短期经营策略"]},
+"火锅":{score:58,pros:["学生聚餐需求大","客单价可观","冬季生意火爆"],cons:["学校周边租金面积要求高","投资回报周期长","学生消费频次有限"],tips:["推出学生特惠套餐","午市特价吸引客源","控制翻台时间提升效率"]},
+"粉面":{score:85,pros:["出餐速度快适合赶课学生","成本低利润率高","早餐午餐晚餐全时段覆盖"],cons:["客单价天花板低","品类替代性强","学校食堂分流严重"],tips:["打造特色浇头差异化","搭配小吃提升客单价","建立社群做预点餐"]},
+"其他":{score:72,pros:["学校周边消费需求多元","可灵活调整品类","客流相对稳定"],cons:["需精准匹配学生需求","消费能力有限","假期影响不可忽视"],tips:["做足学生群体调研","定价控制在15-25元区间","利用社交媒体做校园推广"]}
+},
+"商圈": {
+"炒饭":{score:68,pros:["商圈人流量大","白领午餐需求旺盛","品牌曝光度高"],cons:["租金成本高企","竞争品牌众多","停车不便影响外卖"],tips:["主攻工作日午餐时段","优化外卖包装和出餐速度","利用商圈流量做品牌"]},
+"奶茶":{score:90,pros:["商圈为奶茶黄金地段","消费者购买力强","品牌展示效果佳"],cons:["头部品牌密集","租金压力大","同质化严重"],tips:["选址靠近电影院/购物区","打造独特视觉吸引打卡","考虑档口模式降低面积"]},
+"烧烤":{score:75,pros:["商圈夜间消费活跃","聚餐场景丰富","客单价有提升空间"],cons:["商圈环保要求极高","深夜经营受限","竞品实力强"],tips:["选择有排烟条件的铺位","打造主题烧烤差异化","注重线上评价运营"]},
+"火锅":{score:85,pros:["商圈聚餐首选品类","品牌效应强","消费能力匹配"],cons:["投资额大","面积需求高","知名品牌聚集"],tips:["选择特色细分如鱼火锅","重视装修和体验感","做好排队系统提升体验"]},
+"粉面":{score:70,pros:["快餐属性契合商圈节奏","出餐效率高","全时段经营"],cons:["商圈租金挤压利润","品牌面馆竞争","翻台率要求高"],tips:["走精品路线提升客单价","主打特色单品","优化动线提升翻台"]},
+"其他":{score:73,pros:["商圈消费力强劲","品牌效应突出","客流质量好"],cons:["经营成本高","竞争压力大","消费者选择多忠诚低"],tips:["做好差异化定位","重视品牌视觉和体验","结合线上平台引流"]}
+},
+"社区": {
+"炒饭":{score:78,pros:["居民日常用餐刚需","复购率高且稳定","租金可控"],cons:["客群固定增长有限","对价格敏感","外卖平台分流"],tips:["建立邻里关系做口碑","推出家庭套餐","搭配社区团购渠道"]},
+"奶茶":{score:72,pros:["社区家庭消费稳定","儿童青少年需求大","租金低于商圈"],cons:["消费频次不如商圈","年轻人外流影响","品牌认知建立慢"],tips:["主打亲子健康概念","推出家庭分享装","做社区私域运营"]},
+"烧烤":{score:80,pros:["社区居民夜宵刚需","口碑传播效果好","回头客比例高"],cons:["扰民投诉风险","需远离住宅楼","季节波动明显"],tips:["做好隔音和排烟","维护好邻里关系","夏季增加外摆区域"]},
+"火锅":{score:70,pros:["社区聚餐需求稳定","居民信任后复购高","口碑效应强"],cons:["消费频次有限","居民更偏家常口味","投资回报周期较长"],tips:["主打社区性价比火锅","推出会员储值锁定客源","考虑午市自助模式"]},
+"粉面":{score:86,pros:["社区居民早餐刚需","消费频次高","经营成本可控"],cons:["利润空间有限","早班辛苦人手要求高","社区食堂竞争"],tips:["做好早餐时段","推出月卡套餐锁客","搭配卤味小菜提升毛利"]},
+"其他":{score:74,pros:["社区消费需求多元","邻里信任度高","经营相对稳定"],cons:["客群规模有限","需要精准匹配需求","增长空间受限于社区规模"],tips:["做好社区调研了解真实需求","利用微信群做预购","提供送货上门服务"]}
+},
+"工业区": {
+"炒饭":{score:80,pros:["工人用餐需求刚性","出餐快满足快节奏","竞争相对较少"],cons:["消费能力偏低","工作日集中周末冷清","环境品质要求低"],tips:["大份量实惠定价","做好工人团购优惠","考虑送餐到厂服务"]},
+"奶茶":{score:55,pros:["工人消暑解渴需求","竞争压力小","租金低廉"],cons:["消费群体有限","价格敏感度高","品质预期与成本矛盾"],tips:["定价控制在8-12元","大杯量满足需求","夏季主推冰饮冬季热饮"]},
+"烧烤":{score:72,pros:["工人下班后聚餐需求","夜宵场景匹配","租金便宜面积大"],cons:["消费频次有限","工人流动性大","消费能力一般"],tips:["推出工人特惠套餐","做好外卖辐射周边","注重分量满足需求"]},
+"火锅":{score:48,pros:["工业区竞争极少","租金极低","工人聚餐偶尔需求"],cons:["消费能力不匹配","频次极低","投资回报风险大"],tips:["不建议首选品类","如坚持可做小火锅自助","控制投资和面积"]},
+"粉面":{score:83,pros:["工人早餐午餐刚需","成本极低利润可观","出餐速度匹配"],cons:["客单价极低","环境投入回报低","工人换厂客流波动"],tips:["做实惠大碗路线","搭配加蛋加肉提升客单","做好固定工人关系"]},
+"其他":{score:62,pros:["工业区竞争少租金低","蓝领消费需求明确","进入门槛低"],cons:["整体消费能力有限","客流受工厂排班影响","品质升级空间小"],tips:["充分了解周边工厂规模和排班","做刚需品类优先","考虑早餐+午餐双时段"]}
+}
+};
+
+function detectAreaType(name) {
+var n = name.toLowerCase();
+var schoolWords = ["大学","学院","学校","校区","高中","中学","初中","小学","教育","学区","大学城","职教","附中","实验"];
+var bizWords = ["商圈","商业","广场","万达","天街"," Mall","mall","CBD","中心","步行街","购物","银泰","华润","万象"];
+var indWords = ["工业","产业","开发","科技园","高新","经济","制造","工厂","厂区","产业","仓储","物流","创业园"];
+for(var i=0;i<schoolWords.length;i++){if(n.indexOf(schoolWords[i])!==-1)return "学校周边";}
+for(var i=0;i<indWords.length;i++){if(n.indexOf(indWords[i])!==-1)return "工业区";}
+for(var i=0;i<bizWords.length;i++){if(n.indexOf(bizWords[i])!==-1)return "商圈";}
+return "社区";
+}
+
+function getResult(area,category,budget){
+var areaType = detectAreaType(area);
+var base = DATA[areaType] && DATA[areaType][category] ? DATA[areaType][category] : DATA["社区"]["其他"];
+var score = base.score;
+var pros = base.pros.slice();
+var cons = base.cons.slice();
+var tips = base.tips.slice();
+if(budget==="3000以下"){score+=3;tips.push("低预算策略可行，优先控制固定成本");}
+else if(budget==="3000-5000"){score+=5;tips.push("预算适中，可考虑适度装修提升体验");}
+else if(budget==="5000-8000"){score+=2;tips.push("中高预算，建议投入差异化装修");}
+else{score-=2;tips.push("高租金需更高营业额支撑，关注坪效");}
+score=Math.max(30,Math.min(98,score));
+return{score:score,areaType:areaType,pros:pros,cons:cons,tips:tips};
+}
+
+function showToast(msg){
+var t=document.getElementById("toast");
+t.textContent=msg;t.classList.add("show");
+setTimeout(function(){t.classList.remove("show");},2500);
+}
+
+function animateScore(target){
+var el=document.getElementById("scoreNum");
+var ring=document.getElementById("ring");
+var circumference=2*Math.PI*68;
+var current=0;
+var duration=1200;
+var start=null;
+function step(ts){
+if(!start)start=ts;
+var p=Math.min((ts-start)/duration,1);
+var ease=1-Math.pow(1-p,3);
+current=Math.round(ease*target);
+el.textContent=current;
+ring.style.strokeDashoffset=circumference-(circumference*ease*target/100);
+if(p<1)requestAnimationFrame(step);
+}
+ring.style.strokeDashoffset=circumference;
+requestAnimationFrame(step);
+}
+
+function renderResult(res){
+document.getElementById("result").style.display="block";
+var labels={"学校周边":"学校周边","商圈":"核心商圈","社区":"居民社区","工业区":"工业/产业园区"};
+document.getElementById("scoreLabel").textContent="「"+labels[res.areaType]+"」选址综合评分";
+animateScore(res.score);
+var pl=document.getElementById("prosList");pl.innerHTML="";
+res.pros.forEach(function(p){var li=document.createElement("li");li.textContent=p;pl.appendChild(li);});
+var cl=document.getElementById("consList");cl.innerHTML="";
+res.cons.forEach(function(c){var li=document.createElement("li");li.textContent=c;cl.appendChild(li);});
+var tl=document.getElementById("tipsList");tl.innerHTML="";
+res.tips.forEach(function(t){var li=document.createElement("li");li.textContent=t;tl.appendChild(li);});
+document.getElementById("result").scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+function saveRecord(area,category,budget,res){
+var records=JSON.parse(localStorage.getItem("site_records")||"[]");
+records.unshift({area:area,category:category,budget:budget,score:res.score,areaType:res.areaType,time:Date.now()});
+if(records.length>10)records=records.slice(0,10);
+localStorage.setItem("site_records",JSON.stringify(records));
+renderHistory();
+}
+
+function renderHistory(){
+var records=JSON.parse(localStorage.getItem("site_records")||"[]");
+var sec=document.getElementById("historySection");
+var list=document.getElementById("historyList");
+if(records.length===0){sec.style.display="none";return;}
+sec.style.display="block";
+list.innerHTML="";
+records.forEach(function(r){
+var div=document.createElement("div");
+div.className="history-item";
+var d=new Date(r.time);
+var ds=d.getMonth()+1+"/"+d.getDate()+" "+d.getHours()+":"+String(d.getMinutes()).padStart(2,"0");
+div.innerHTML='<div class="hi-left"><div class="hi-name">'+r.area+'</div><div class="hi-meta">'+r.category+' · '+r.budget+' · '+ds+'</div></div><div class="hi-score">'+r.score+'</div>';
+div.onclick=function(){
+document.getElementById("area").value=r.area;
+document.getElementById("category").value=r.category;
+document.getElementById("budget").value=r.budget;
+analyze();
+};
+list.appendChild(div);
+});
+}
+
+window.clearHistory=function(){
+localStorage.removeItem("site_records");
+renderHistory();
+};
+
+window.analyze=function(){
+var area=document.getElementById("area").value.trim();
+var category=document.getElementById("category").value;
+var budget=document.getElementById("budget").value;
+if(!area){showToast("请输入区域名称");return;}
+if(!category){showToast("请选择品类");return;}
+if(!budget){showToast("请选择预算范围");return;}
+var btn=document.getElementById("analyzeBtn");
+btn.disabled=true;btn.textContent="分析中...";
+setTimeout(function(){
+var res=getResult(area,category,budget);
+renderResult(res);
+saveRecord(area,category,budget,res);
+btn.disabled=false;btn.textContent="一键分析选址";
+},800);
+};
+
+renderHistory();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>招牌设计助手</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB',sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh;display:flex;justify-content:center;padding:24px 16px}
+.container{width:100%;max-width:520px}
+h1{font-size:22px;font-weight:700;text-align:center;margin-bottom:6px;background:linear-gradient(135deg,#fbbf24,#f97316);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.subtitle{text-align:center;font-size:13px;color:#64748b;margin-bottom:28px}
+.form-group{margin-bottom:18px}
+label{display:block;font-size:13px;color:#94a3b8;margin-bottom:6px;font-weight:500}
+input,select{width:100%;padding:12px 14px;background:#1e293b;border:1px solid #334155;border-radius:10px;color:#e2e8f0;font-size:15px;outline:none;transition:border .2s}
+input:focus,select:focus{border-color:#f97316}
+input::placeholder{color:#475569}
+select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8'%3E%3Cpath d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
+.btn{width:100%;padding:15px;background:linear-gradient(135deg,#fbbf24,#f97316);border:none;border-radius:12px;color:#0f172a;font-size:16px;font-weight:700;cursor:pointer;transition:opacity .2s,transform .1s;margin-top:8px}
+.btn:hover{opacity:.9}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.results{margin-top:32px}
+.result-card{background:#1e293b;border-radius:14px;padding:20px;margin-bottom:18px;border:1px solid #334155}
+.result-card h3{font-size:15px;color:#fbbf24;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.result-card h3 span{font-size:12px;background:linear-gradient(135deg,#fbbf24,#f97316);color:#0f172a;padding:2px 8px;border-radius:20px;font-weight:600}
+.section-label{font-size:12px;color:#64748b;margin-bottom:8px;font-weight:500;text-transform:uppercase;letter-spacing:.5px}
+.color-row{display:flex;gap:8px;margin-bottom:16px}
+.color-block{flex:1;height:42px;border-radius:8px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:4px;font-size:10px;color:rgba(255,255,255,.8);font-family:monospace}
+.font-rec{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.font-tag{padding:5px 12px;background:#0f172a;border-radius:20px;font-size:12px;color:#cbd5e1;border:1px solid #334155}
+.signboard-preview{border-radius:10px;padding:0;margin-bottom:14px;overflow:hidden;position:relative}
+.sign-inner{display:flex;align-items:center;justify-content:center;min-height:90px;padding:20px;position:relative}
+.sign-name{font-size:26px;font-weight:800;letter-spacing:4px;text-align:center;position:relative;z-index:1}
+.sign-deco{position:absolute;font-size:11px;opacity:.6}
+.sign-deco.top{top:8px;left:50%;transform:translateX(-50%)}
+.sign-deco.bottom{bottom:8px;left:50%;transform:translateX(-50%)}
+.sign-deco.left{left:12px;top:50%;transform:translateY(-50%) rotate(-90deg)}
+.sign-deco.right{right:12px;top:50%;transform:translateY(-50%) rotate(90deg)}
+.design-desc{font-size:13px;color:#94a3b8;line-height:1.7}
+.history-section{margin-top:32px;padding-top:24px;border-top:1px solid #1e293b}
+.history-section h2{font-size:15px;color:#64748b;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.history-clear{font-size:12px;color:#475569;cursor:pointer;background:none;border:1px solid #334155;padding:4px 10px;border-radius:6px}
+.history-clear:hover{color:#f97316;border-color:#f97316}
+.history-item{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#1e293b;border-radius:10px;margin-bottom:8px;border:1px solid #334155;cursor:pointer;transition:border .2s}
+.history-item:hover{border-color:#475569}
+.history-name{font-size:14px;font-weight:600;color:#e2e8f0}
+.history-meta{font-size:12px;color:#64748b}
+.empty{text-align:center;color:#475569;font-size:13px;padding:20px 0}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeIn .4s ease forwards}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>招牌设计助手</h1>
+  <p class="subtitle">AI 智能生成招牌方案</p>
+  <div class="form-group">
+    <label>店铺名称</label>
+    <input type="text" id="shopName" placeholder="输入你的店铺名称" maxlength="20">
+  </div>
+  <div class="form-group">
+    <label>经营品类</label>
+    <select id="category">
+      <option value="炒饭">炒饭</option>
+      <option value="奶茶">奶茶</option>
+      <option value="烧烤">烧烤</option>
+      <option value="火锅">火锅</option>
+      <option value="粉面">粉面</option>
+      <option value="其他">其他</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label>风格偏好</label>
+    <select id="style">
+      <option value="国潮风">国潮风</option>
+      <option value="简约风">简约风</option>
+      <option value="可爱风">可爱风</option>
+      <option value="工业风">工业风</option>
+    </select>
+  </div>
+  <button class="btn" id="designBtn" onclick="generateDesign()">一键设计招牌</button>
+  <div class="results" id="results"></div>
+  <div class="history-section" id="historySection" style="display:none">
+    <h2>设计记录 <button class="history-clear" onclick="clearHistory()">清空</button></h2>
+    <div id="historyList"></div>
+  </div>
+</div>
+<script>
+// ============ 预置配色方案库 (6品类×4风格=24种基础方案) ============
+const COLOR_DB = {
+  '炒饭': {
+    '国潮风': {colors:['#8B0000','#FFD700','#2F1B14','#FFF8DC','#C41E3A'],textColor:'#FFD700',bgGrad:'linear-gradient(135deg,#8B0000,#5C0010)',font:'思源宋体 / 方正清刻本悦宋',desc:'以宫墙红与琉璃金为主色调，搭配传统宋体字，彰显中华炒品的厚重底蕴。招牌边框可辅以回纹装饰，传递匠心传承感。'},
+    '简约风': {colors:['#1a1a2e','#e0c97f','#f5f5f0','#333333','#c9a84c'],textColor:'#e0c97f',bgGrad:'linear-gradient(135deg,#1a1a2e,#16213e)',font:'苹方-简 / Helvetica Neue',desc:'深藏青底色配以哑光金字，极简排版留白大方。适合商场或写字楼周边门店，传递品质感与现代格调。'},
+    '可爱风': {colors:['#FF6B35','#FFC947','#FFF5E1','#FF8C42','#FFE0B2'],textColor:'#FF6B35',bgGrad:'linear-gradient(135deg,#FFF5E1,#FFE0B2)',font:'站酷快乐体 / 汉仪娃娃篆',desc:'暖橙与奶黄搭配圆润可爱字体，营造食欲满满的活力氛围。适合年轻化社区与学校周边。'},
+    '工业风': {colors:['#2C2C2C','#D4A843','#8B8B8B','#E8D5B0','#1A1A1A'],textColor:'#D4A843',bgGrad:'linear-gradient(135deg,#2C2C2C,#1A1A1A)',font:'Oswald / 思源黑体 Bold',desc:'铁灰与古铜金搭配粗体无衬线字，裸露质感传递街头食肆的硬核个性。适合夜市与美食街区。'}
+  },
+  '奶茶': {
+    '国潮风': {colors:['#4A0E2E','#F0C27F','#FFF0DB','#8B4557','#D4A574'],textColor:'#F0C27F',bgGrad:'linear-gradient(135deg,#4A0E2E,#2D0A1F)',font:'方正清刻本悦宋 / 汉仪全唐诗',desc:'梅子紫与琥珀金碰撞，古风茶韵与现代茶饮融合。辅以水墨纹样，塑造新中式茶饮美学。'},
+    '简约风': {colors:['#F5F0EB','#8B7355','#3C3C3C','#D4C5B2','#FFFFFF'],textColor:'#8B7355',bgGrad:'linear-gradient(135deg,#F5F0EB,#EDE4DA)',font:'SF Pro Display / 思源黑体 Light',desc:'奶白底色配摩卡棕文字，日式侘寂风格留白。传递纯净、天然的原料理念，适合中高端定位。'},
+    '可爱风': {colors:['#FFB5C2','#FFF0F3','#FF7EB3','#FFFFFF','#FFC8DD'],textColor:'#FF7EB3',bgGrad:'linear-gradient(135deg,#FFF0F3,#FFE0E6)',font:'站酷小薇体 / 圆体',desc:'樱花粉与奶白搭配圆润POP字体，甜美元气十足。适合 targeting 学生群体和女性消费者。'},
+    '工业风': {colors:['#1C1C1C','#C0A882','#4A4A4A','#E8DDD0','#2A2A2A'],textColor:'#C0A882',bgGrad:'linear-gradient(135deg,#1C1C1C,#2A2A2A)',font:'Bebas Neue / 思源黑体 Medium',desc:'水泥灰与焦糖铜的冷酷搭配，工业风字体硬朗有力。适合潮流街区与创意园区。'}
+  },
+  '烧烤': {
+    '国潮风': {colors:['#8B0000','#FF4500','#1A0A00','#FFD700','#CC3300'],textColor:'#FF4500',bgGrad:'linear-gradient(135deg,#1A0A00,#330000)',font:'颜体 / 方正启体',desc:'炭火红与暗夜黑为基调，书法体字势如烈火。烟火气与国潮文化交融，打造江湖烧烤氛围。'},
+    '简约风': {colors:['#2D2D2D','#FF6B35','#F5F5F5','#4A4A4A','#E85D2C'],textColor:'#FF6B35',bgGrad:'linear-gradient(135deg,#2D2D2D,#1F1F1F)',font:'Montserrat / 苹方 Medium',desc:'深灰底配火焰橙点缀，极简中透出热情。几何线条勾勒烧烤架意象，现代感十足。'},
+    '可爱风': {colors:['#FF8C00','#FFD93D','#FFF8E7','#FF6347','#FFEDCC'],textColor:'#FF6347',bgGrad:'linear-gradient(135deg,#FFF8E7,#FFEDCC)',font:'汉仪糖糖体 / 站酷快乐体',desc:'橘黄与明黄的暖色系搭配俏皮圆润字体，让烧烤氛围更亲切活泼，适合家庭社区。'},
+    '工业风': {colors:['#1A1A1A','#FF4500','#333333','#888888','#CC3300'],textColor:'#FF4500',bgGrad:'linear-gradient(135deg,#1A1A1A,#262626)',font:'Anton / 思源黑体 Heavy',desc:'纯黑底配以信号橙，仿铁板烧质感。金属铆钉装饰元素，硬核夜宵风格。'}
+  },
+  '火锅': {
+    '国潮风': {colors:['#800020','#FFD700','#2B0A0A','#FF6347','#DAA520'],textColor:'#FFD700',bgGrad:'linear-gradient(135deg,#800020,#4A0010)',font:'柳公权楷书 / 方正魏碑',desc:'宫廷红配金色字体，传统书法彰显百年老店的厚重感。龙凤纹样辅饰，大气磅礴。'},
+    '简约风': {colors:['#F8F4F0','#C0392B','#2C2C2C','#E8E0D8','#A93226'],textColor:'#C0392B',bgGrad:'linear-gradient(135deg,#F8F4F0,#F0E8E0)',font:'Noto Sans / 思源黑体 Regular',desc:'象牙白底配以中国红点睛，极简排版中透出火锅的热情与温度。适合商场高端店。'},
+    '可爱风': {colors:['#FF4444','#FFCC02','#FFF5F5','#FF7777','#FFE066'],textColor:'#FF4444',bgGrad:'linear-gradient(135deg,#FFF5F5,#FFE8E8)',font:'方正喵呜体 / 华康少女文字',desc:'辣椒红与蛋黄暖色搭配Q萌字体，让火锅氛围变得轻松有趣，适合年轻潮店。'},
+    '工业风': {colors:['#0D0D0D','#FF2D00','#1A1A1A','#FF6600','#333333'],textColor:'#FF2D00',bgGrad:'linear-gradient(135deg,#0D0D0D,#1A1A1A)',font:'Bebas Neue / Impact',desc:'深渊黑底配以岩浆红橙渐变，工业烟囱意象。适合夜生活区与潮流聚集地。'}
+  },
+  '粉面': {
+    '国潮风': {colors:['#5C3317','#F5DEB3','#FFF8F0','#8B6914','#D2B48C'],textColor:'#F5DEB3',bgGrad:'linear-gradient(135deg,#5C3317,#3E2210)',font:'颜真卿多宝塔 / 方正苏新诗柳楷',desc:'檀木棕与米黄主调，古朴面馆气质。楷书字体传达手工拉面的匠心精神，辅以竹帘纹样。'},
+    '简约风': {colors:['#FAF9F6','#6B5B4F','#3C3C3C','#D4C9BC','#E8E0D5'],textColor:'#6B5B4F',bgGrad:'linear-gradient(135deg,#FAF9F6,#F2EDE8)',font:'Optima / 思源黑体 Light',desc:'暖白底配可可棕文字，日式面馆般的克制美学。一碗清面的纯净感，适合写字楼午餐场景。'},
+    '可爱风': {colors:['#FFB347','#FFCC80','#FFF8E1','#FF9800','#FFE0B2'],textColor:'#FF9800',bgGrad:'linear-gradient(135deg,#FFF8E1,#FFECB3)',font:'站酷快乐体 / 方正少儿体',desc:'南瓜橙与奶油色搭配童趣字体，让一碗面也充满欢乐。适合社区家庭消费场景。'},
+    '工业风': {colors:['#222222','#CD853F','#444444','#DEB887','#1A1A1A'],textColor:'#CD853F',bgGrad:'linear-gradient(135deg,#222222,#2F2F2F)',font:'Roboto Condensed / 思源黑体 Bold',desc:'炭黑底配古铜色字，钢管与水泥的粗犷质感。街头面馆的硬核表达。'}
+  },
+  '其他': {
+    '国潮风': {colors:['#1B3A4B','#F0C27F','#FFF5E6','#C9A96E','#2C5F6E'],textColor:'#F0C27F',bgGrad:'linear-gradient(135deg,#1B3A4B,#0F2530)',font:'方正清刻本悦宋 / 汉仪昌黎宋',desc:'靛蓝与鎏金搭配，传统文人气质。宋体字端正典雅，适合中式餐饮全品类通用方案。'},
+    '简约风': {colors:['#F7F7F7','#333333','#666666','#E0E0E0','#1A1A1A'],textColor:'#333333',bgGrad:'linear-gradient(135deg,#F7F7F7,#EFEFEF)',font:'SF Pro Text / 苹方 Regular',desc:'黑白灰三色极简配色，无彩色系永不过时。适合任何品类的百搭基础方案。'},
+    '可爱风': {colors:['#A8E6CF','#FFD3B6','#FFF5EE','#FF8B94','#DCEDC1'],textColor:'#FF8B94',bgGrad:'linear-gradient(135deg,#FFF5EE,#FFE8E0)',font:'站酷小薇体 / 汉仪乐喵体',desc:'马卡龙色系搭配圆润POP字体，清新甜美不分品类。适合 targeting Z世代消费群。'},
+    '工业风': {colors:['#1E1E1E','#B8860B','#3A3A3A','#708090','#2F2F2F'],textColor:'#B8860B',bgGrad:'linear-gradient(135deg,#1E1E1E,#282828)',font:'Barlow Condensed / 思源黑体 Medium',desc:'铁灰配暗金，裸露螺栓与做旧质感。适合任何品类的潮流工业风表达。'}
+  }
+};
+
+// 风格装饰元素
+const STYLE_DECO = {
+  '国潮风': {border:'3px double',extra:'回纹边框',symbol:'◆'},
+  '简约风': {border:'1px solid',extra:'无装饰',symbol:''},
+  '可爱风': {border:'3px dashed',extra:'圆角+波浪',symbol:'★'},
+  '工业风': {border:'2px solid',extra:'铆钉角标',symbol:'▬'}
+};
+
+// ============ 生成3套方案 ============
+function generateDesign() {
+  const name = document.getElementById('shopName').value.trim();
+  if (!name) { shakeInput(); return; }
+  const cat = document.getElementById('category').value;
+  const sty = document.getElementById('style').value;
+  const btn = document.getElementById('designBtn');
+  btn.disabled = true;
+  btn.textContent = '设计中...';
+
+  setTimeout(() => {
+    const schemes = buildSchemes(name, cat, sty);
+    renderResults(schemes);
+    saveHistory(name, cat, sty);
+    btn.disabled = false;
+    btn.textContent = '一键设计招牌';
+  }, 600);
+}
+
+function buildSchemes(name, cat, sty) {
+  const base = COLOR_DB[cat][sty];
+  const deco = STYLE_DECO[sty];
+  const schemes = [];
+
+  // 方案1：原始配色
+  schemes.push({
+    title: '经典方案',
+    colors: base.colors,
+    textColor: base.textColor,
+    bgGrad: base.bgGrad,
+    font: base.font,
+    desc: base.desc,
+    deco: deco,
+    layout: 'center',
+    name: name
+  });
+
+  // 方案2：反色/变体
+  const variantColors = [base.colors[2] || base.colors[0], base.colors[0], base.colors[1], base.colors[3] || base.colors[1], base.colors[4] || base.colors[0]];
+  const isDarkBg = sty === '简约风' && (cat === '奶茶' || cat === '粉面' || cat === '火锅');
+  schemes.push({
+    title: '对比方案',
+    colors: isDarkBg ? base.colors : variantColors,
+    textColor: isDarkBg ? base.textColor : (base.colors[0]),
+    bgGrad: isDarkBg ? base.bgGrad : 'linear-gradient(135deg,' + (base.colors[2] || '#f5f5f0') + ',' + (base.colors[3] || '#ede4da') + ')',
+    font: base.font.split(' / ')[1] + ' / ' + base.font.split(' / ')[0],
+    desc: '以' + (base.colors[2] || '#f5f5f0') + '为底，' + base.colors[0] + '为主视觉色，形成强烈对比反差，视觉冲击力强，适合需要高辨识度的街边店场景。',
+    deco: deco,
+    layout: 'left',
+    name: name
+  });
+
+  // 方案3：渐变融合
+  const gradColors = [base.colors[0], base.colors[1]];
+  schemes.push({
+    title: '渐变方案',
+    colors: [base.colors[1], base.colors[4] || base.colors[0], base.colors[3] || base.colors[2], base.colors[2] || '#333', base.colors[0]],
+    textColor: sty === '可爱风' ? '#FFFFFF' : base.colors[0],
+    bgGrad: 'linear-gradient(135deg,' + base.colors[1] + ',' + (base.colors[4] || base.colors[0]) + ')',
+    font: base.font,
+    desc: '采用' + base.colors[1] + '到' + (base.colors[4] || base.colors[0]) + '的渐变融合，现代感与品牌识别兼顾，适合连锁品牌标准化门头。',
+    deco: deco,
+    layout: 'center-deco',
+    name: name
+  });
+
+  return schemes;
+}
+
+function renderResults(schemes) {
+  const container = document.getElementById('results');
+  container.innerHTML = '';
+  schemes.forEach((s, i) => {
+    const card = document.createElement('div');
+    card.className = 'result-card fade-in';
+    card.style.animationDelay = (i * 0.15) + 's';
+
+    // 色块
+    let colorBlocks = '';
+    s.colors.forEach(c => {
+      colorBlocks += '<div class="color-block" style="background:' + c + '">' + c + '</div>';
+    });
+
+    // 字体标签
+    const fonts = s.font.split(' / ');
+    let fontTags = '';
+    fonts.forEach(f => {
+      fontTags += '<span class="font-tag">' + f.trim() + '</span>';
+    });
+
+    // 招牌预览
+    let decoHTML = '';
+    if (s.layout === 'center-deco' && s.deco.symbol) {
+      decoHTML = '<span class="sign-deco top">' + s.deco.symbol + ' ' + s.name + ' ' + s.deco.symbol + '</span>';
+    }
+
+    const previewStyle = s.layout === 'left' ? 'text-align:left;padding-left:30px;' : '';
+    const borderStyle = s.deco.border + ' ' + (s.colors[1] || '#fbbf24');
+
+    card.innerHTML =
+      '<h3><span>方案' + (i + 1) + '</span>' + s.title + '</h3>' +
+      '<div class="section-label">配色方案</div>' +
+      '<div class="color-row">' + colorBlocks + '</div>' +
+      '<div class="section-label">推荐字体</div>' +
+      '<div class="font-rec">' + fontTags + '</div>' +
+      '<div class="section-label">招牌预览</div>' +
+      '<div class="signboard-preview" style="background:' + s.bgGrad + ';border:' + borderStyle + '">' +
+        '<div class="sign-inner" style="' + previewStyle + '">' +
+          decoHTML +
+          '<span class="sign-name" style="color:' + s.textColor + '">' + s.name + '</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="section-label">设计说明</div>' +
+      '<div class="design-desc">' + s.desc + '</div>';
+
+    container.appendChild(card);
+  });
+}
+
+function shakeInput() {
+  const inp = document.getElementById('shopName');
+  inp.style.border = '1px solid #ef4444';
+  inp.style.animation = 'none';
+  setTimeout(() => {
+    inp.style.animation = 'shake .4s ease';
+    inp.style.border = '1px solid #ef4444';
+  }, 10);
+  setTimeout(() => { inp.style.border = '1px solid #334155'; }, 2000);
+}
+
+// ============ localStorage 历史记录 ============
+function saveHistory(name, cat, sty) {
+  let records = JSON.parse(localStorage.getItem('brand_history') || '[]');
+  records.unshift({ name: name, cat: cat, sty: sty, time: new Date().toLocaleString('zh-CN') });
+  if (records.length > 10) records = records.slice(0, 10);
+  localStorage.setItem('brand_history', JSON.stringify(records));
+  renderHistory();
+}
+
+function renderHistory() {
+  const records = JSON.parse(localStorage.getItem('brand_history') || '[]');
+  const section = document.getElementById('historySection');
+  const list = document.getElementById('historyList');
+  if (records.length === 0) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+  list.innerHTML = '';
+  records.forEach(r => {
+    const div = document.createElement('div');
+    div.className = 'history-item';
+    div.innerHTML = '<span class="history-name">' + r.name + '</span><span class="history-meta">' + r.cat + ' · ' + r.sty + ' · ' + r.time + '</span>';
+    div.onclick = function() {
+      document.getElementById('shopName').value = r.name;
+      document.getElementById('category').value = r.cat;
+      document.getElementById('style').value = r.sty;
+      generateDesign();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    list.appendChild(div);
+  });
+}
+
+function clearHistory() {
+  localStorage.removeItem('brand_history');
+  renderHistory();
+}
+
+// 初始化
+renderHistory();
+
+// shake动画
+const style = document.createElement('style');
+style.textContent = '@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}';
+document.head.appendChild(style);
+</script>
+</body>
+</html>
