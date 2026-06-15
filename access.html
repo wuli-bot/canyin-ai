@@ -37,14 +37,14 @@ input:focus { outline:none; border-color:#f97316; }
 <body>
 <div class="login-card">
   <h1>🍽️ 餐饮AI店长</h1>
-  <p class="sub">输入访问令牌，进入您的AI管理后台</p>
+  <p class="sub">输入专属通行码，进入您的AI管理后台</p>
   
-  <label for="tokenInput">访问令牌</label>
-  <input type="password" id="tokenInput" placeholder="粘贴您的Token" autocomplete="off">
+  <label for="tokenInput">专属通行码</label>
+  <input type="password" id="tokenInput" placeholder="粘贴您的通行码" autocomplete="off">
   <button class="login-btn" id="loginBtn">进入系统</button>
   <div class="error" id="errorMsg"></div>
   
-  <div class="divider"><span>还没有令牌？</span></div>
+  <div class="divider"><span>还没有通行码？</span></div>
   
   <div class="steps">
     <h3>3步开通，即刻使用</h3>
@@ -58,7 +58,7 @@ input:focus { outline:none; border-color:#f97316; }
     </div>
     <div class="step">
       <div class="step-num">3</div>
-      <div>客服发送专属令牌链接，点击即自动登录</div>
+      <div>客服发送专属通行码链接，点击即自动登录</div>
     </div>
   </div>
   
@@ -76,7 +76,7 @@ const errorDiv = document.getElementById('errorMsg');
 loginBtn.onclick = async () => {
   const token = tokenInput.value.trim();
   if (!token) {
-    showError('请输入令牌');
+    showError('请输入通行码');
     return;
   }
   loginBtn.disabled = true;
@@ -87,7 +87,7 @@ loginBtn.onclick = async () => {
     setToken(token);
     window.location.href = 'dashboard.html';
   } else {
-    showError('令牌无效或已过期，请联系客服微信 Air19770809');
+    showError('通行码不正确或已过期，请联系客服微信 Air19770809');
     loginBtn.disabled = false;
     loginBtn.innerText = '进入系统';
   }
