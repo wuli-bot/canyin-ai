@@ -9,35 +9,65 @@
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 body { background:#0f172a; display:flex; justify-content:center; align-items:center; min-height:100vh; font-family:system-ui,-apple-system,sans-serif; padding:20px; }
-.login-card { background:#1e293b; border-radius:24px; padding:32px; width:100%; max-width:400px; box-shadow:0 20px 35px -8px rgba(0,0,0,0.5); }
-h1 { font-size:1.8rem; margin-bottom:8px; background:linear-gradient(135deg,#fbbf24,#f97316); -webkit-background-clip:text; background-clip:text; color:transparent; }
-.sub { color:#94a3b8; margin-bottom:24px; font-size:0.9rem; }
+.login-card { background:#1e293b; border-radius:24px; padding:32px; width:100%; max-width:420px; box-shadow:0 20px 35px -8px rgba(0,0,0,0.5); }
+h1 { font-size:1.8rem; margin-bottom:6px; background:linear-gradient(135deg,#fbbf24,#f97316); -webkit-background-clip:text; background-clip:text; color:transparent; text-align:center; }
+.sub { color:#94a3b8; margin-bottom:20px; font-size:0.9rem; text-align:center; }
 label { display:block; font-size:0.85rem; margin-bottom:6px; color:#cbd5e1; }
-input { width:100%; padding:12px; background:#0f172a; border:1px solid #334155; border-radius:12px; color:white; font-size:1rem; margin-bottom:20px; }
+input { width:100%; padding:12px; background:#0f172a; border:1px solid #334155; border-radius:12px; color:white; font-size:1rem; margin-bottom:16px; }
 input:focus { outline:none; border-color:#f97316; }
-button { width:100%; background:#f97316; border:none; padding:12px; border-radius:12px; font-weight:bold; font-size:1rem; cursor:pointer; transition:0.2s; color:#0f172a; }
-button:hover { background:#fb923c; }
-button:disabled { opacity:0.6; cursor:not-allowed; }
-.error { color:#f87171; font-size:0.85rem; margin-top:12px; text-align:center; display:none; }
-.pricing-link { text-align:center; margin-top:24px; font-size:0.85rem; }
-.pricing-link a { color:#f97316; text-decoration:none; }
-.pricing-link a:hover { text-decoration:underline; }
-.logo-icon { font-size:3rem; text-align:center; margin-bottom:16px; }
+.login-btn { width:100%; background:#f97316; border:none; padding:13px; border-radius:12px; font-weight:bold; font-size:1rem; cursor:pointer; transition:0.2s; color:#0f172a; }
+.login-btn:hover { background:#fb923c; }
+.login-btn:disabled { opacity:0.6; cursor:not-allowed; }
+.error { color:#f87171; font-size:0.85rem; margin-top:10px; text-align:center; display:none; }
+.divider { display:flex; align-items:center; margin:20px 0; color:#475569; font-size:0.8rem; }
+.divider::before, .divider::after { content:''; flex:1; height:1px; background:#334155; }
+.divider span { padding:0 12px; }
+.steps { background:#0f172a; border-radius:16px; padding:16px; margin-bottom:20px; }
+.steps h3 { color:#fbbf24; font-size:0.9rem; margin-bottom:10px; text-align:center; }
+.step { display:flex; align-items:flex-start; gap:10px; margin-bottom:8px; font-size:0.82rem; color:#94a3b8; line-height:1.4; }
+.step:last-child { margin-bottom:0; }
+.step-num { background:#334155; color:#fbbf24; border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:0.7rem; font-weight:bold; flex-shrink:0; margin-top:1px; }
+.step a { color:#f97316; text-decoration:none; font-weight:600; }
+.step a:hover { text-decoration:underline; }
+.bottom-links { text-align:center; margin-top:16px; font-size:0.82rem; }
+.bottom-links a { color:#64748b; text-decoration:none; margin:0 8px; }
+.bottom-links a:hover { color:#f97316; }
 </style>
 </head>
 <body>
 <div class="login-card">
-  <div class="logo-icon">🍽️</div>
-  <h1>餐饮AI店长</h1>
-  <p class="sub">请输入您的访问令牌</p>
+  <h1>🍽️ 餐饮AI店长</h1>
+  <p class="sub">输入访问令牌，进入您的AI管理后台</p>
+  
   <label for="tokenInput">访问令牌</label>
   <input type="password" id="tokenInput" placeholder="粘贴您的Token" autocomplete="off">
-  <button id="loginBtn">进入系统</button>
+  <button class="login-btn" id="loginBtn">进入系统</button>
   <div class="error" id="errorMsg"></div>
-  <div class="pricing-link">
-    还没有账号？<a href="portal.html#pricing">查看套餐</a>
+  
+  <div class="divider"><span>还没有令牌？</span></div>
+  
+  <div class="steps">
+    <h3>3步开通，即刻使用</h3>
+    <div class="step">
+      <div class="step-num">1</div>
+      <div><a href="portal.html#pricing">选择套餐</a>，微信扫码付款</div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div>添加客服微信 <strong style="color:#fbbf24">Air19770809</strong>，发送付款截图</div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div>客服发送专属令牌链接，点击即自动登录</div>
+    </div>
+  </div>
+  
+  <div class="bottom-links">
+    <a href="portal.html">← 返回首页</a>
+    <a href="portal.html#pricing">查看套餐价格</a>
   </div>
 </div>
+
 <script>
 const loginBtn = document.getElementById('loginBtn');
 const tokenInput = document.getElementById('tokenInput');
@@ -57,18 +87,16 @@ loginBtn.onclick = async () => {
     setToken(token);
     window.location.href = 'dashboard.html';
   } else {
-    showError('令牌无效或已过期，请联系客服');
+    showError('令牌无效或已过期，请联系客服微信 Air19770809');
     loginBtn.disabled = false;
     loginBtn.innerText = '进入系统';
   }
 };
 
-// 回车提交
 tokenInput.addEventListener('keypress', (e) => {
   if (e.key === 'Enter') loginBtn.click();
 });
 
-// URL参数自动登录
 window.addEventListener('DOMContentLoaded', async () => {
   const urlParams = new URLSearchParams(window.location.search);
   const urlToken = urlParams.get('token');

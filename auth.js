@@ -3,7 +3,7 @@ const CANYIN_AUTH = {
   SUPABASE_URL: 'https://xxxxx.supabase.co',
   SUPABASE_ANON_KEY: 'YOUR_ANON_KEY_HERE',
   TOKEN_EXPIRE_DAYS: 7,
-  ENABLED: true,
+  ENABLED: false,
 };
 
 let _supabaseClient = null;
