@@ -545,78 +545,6 @@ footer{
 // ===== Agent Data =====
 var agents = [
   {
-    emoji: "📊",
-    name: "成本核算官",
-    tag: "资深财务分析师",
-    summary: "帮你把每道菜的成本和利润算得明明白白",
-    url: "https://wuli-bot.github.io/canyin-ai/",
-    skills: [
-      "输入食材+采购价+售价，自动算每道菜毛利",
-      "支持美团/京东/饿了么各平台抽成对比",
-      "一键倒推定价：想要多少利润→该卖多少钱"
-    ]
-  },
-  {
-    emoji: "🛡️",
-    name: "差评处理官",
-    tag: "危机公关专家",
-    summary: "差评来了不慌，自动生成专业回复方案",
-    url: "https://wuli-bot.github.io/canyin-ai/chaping.html",
-    skills: [
-      "粘贴差评，自动诊断问题严重度",
-      "生成3版专业回复方案（道歉/解释/补偿）",
-      "区分恶意差评vs真实反馈，给处理建议"
-    ]
-  },
-  {
-    emoji: "📋",
-    name: "菜单设计官",
-    tag: "品类策划师",
-    summary: "帮你设计科学的菜品结构，提升客单价",
-    url: "https://wuli-bot.github.io/canyin-ai/menu.html",
-    skills: [
-      "帮你设计菜品结构：引流款+利润款+凑单款",
-      "堂食/外卖双版本菜单排版策略",
-      "菜品命名方案+套餐组合建议"
-    ]
-  },
-  {
-    emoji: "💰",
-    name: "定价策略官",
-    tag: "收益精算师",
-    summary: "根据成本自动算各平台最优定价",
-    url: "https://wuli-bot.github.io/canyin-ai/pricing.html",
-    skills: [
-      "根据成本自动算各平台最优定价",
-      "满减活动设计：引流不亏钱",
-      "价格定位分析：高中低端怎么选"
-    ]
-  },
-  {
-    emoji: "🏪",
-    name: "招牌设计官",
-    tag: "品牌创意总监",
-    summary: "从命名到门头，帮你打造品牌视觉",
-    url: "https://wuli-bot.github.io/canyin-ai/brand.html",
-    skills: [
-      "品牌命名方案",
-      "Logo设计方向+配色建议",
-      "门头排版参考+制作尺寸"
-    ]
-  },
-  {
-    emoji: "🔧",
-    name: "设备选型官",
-    tag: "采购顾问",
-    summary: "帮你选对设备不踩坑，省下冤枉钱",
-    url: "https://wuli-bot.github.io/canyin-ai/equipment.html",
-    skills: [
-      "根据品类输出完整设备采购清单",
-      "型号参数推荐+预算表",
-      "渠道建议+避坑指南"
-    ]
-  },
-  {
     emoji: "📍",
     name: "选址分析官",
     tag: "商圈研究员",
@@ -641,15 +569,75 @@ var agents = [
     ]
   },
   {
-    emoji: "📈",
-    name: "财务报表官",
-    tag: "数据分析师",
-    summary: "每天赚了多少钱，一眼看清楚",
-    url: "https://wuli-bot.github.io/canyin-ai/finance.html",
+    emoji: "🏪",
+    name: "招牌设计官",
+    tag: "品牌创意总监",
+    summary: "从命名到门头，帮你打造品牌视觉",
+    url: "https://wuli-bot.github.io/canyin-ai/brand.html",
     skills: [
-      "日/周/月报自动生成",
-      "渠道分账+利润趋势",
-      "漏洞诊断：哪块在漏钱"
+      "品牌命名方案",
+      "Logo设计方向+配色建议",
+      "门头排版参考+制作尺寸"
+    ]
+  },
+  {
+    emoji: "📋",
+    name: "菜单设计官",
+    tag: "品类策划师",
+    summary: "帮你设计科学的菜品结构，提升客单价",
+    url: "https://wuli-bot.github.io/canyin-ai/menu.html",
+    skills: [
+      "帮你设计菜品结构：引流款+利润款+凑单款",
+      "堂食/外卖双版本菜单排版策略",
+      "菜品命名方案+套餐组合建议"
+    ]
+  },
+  {
+    emoji: "📊",
+    name: "成本核算官",
+    tag: "资深财务分析师",
+    summary: "帮你把每道菜的成本和利润算得明明白白",
+    url: "https://wuli-bot.github.io/canyin-ai/",
+    skills: [
+      "输入食材+采购价+售价，自动算每道菜毛利",
+      "支持美团/京东/饿了么各平台抽成对比",
+      "一键倒推定价：想要多少利润→该卖多少钱"
+    ]
+  },
+  {
+    emoji: "💰",
+    name: "定价策略官",
+    tag: "收益精算师",
+    summary: "根据成本自动算各平台最优定价",
+    url: "https://wuli-bot.github.io/canyin-ai/pricing.html",
+    skills: [
+      "根据成本自动算各平台最优定价",
+      "满减活动设计：引流不亏钱",
+      "价格定位分析：高中低端怎么选"
+    ]
+  },
+  {
+    emoji: "🔧",
+    name: "设备选型官",
+    tag: "采购顾问",
+    summary: "帮你选对设备不踩坑，省下冤枉钱",
+    url: "https://wuli-bot.github.io/canyin-ai/equipment.html",
+    skills: [
+      "根据品类输出完整设备采购清单",
+      "型号参数推荐+预算表",
+      "渠道建议+避坑指南"
+    ]
+  },
+  {
+    emoji: "🛡️",
+    name: "差评处理官",
+    tag: "危机公关专家",
+    summary: "差评来了不慌，自动生成专业回复方案",
+    url: "https://wuli-bot.github.io/canyin-ai/chaping.html",
+    skills: [
+      "粘贴差评，自动诊断问题严重度",
+      "生成3版专业回复方案（道歉/解释/补偿）",
+      "区分恶意差评vs真实反馈，给处理建议"
     ]
   },
   {
@@ -662,6 +650,18 @@ var agents = [
       "食材采购计划+安全库存预警",
       "供应商对比+损耗控制标准",
       "每周补货计划自动生成"
+    ]
+  },
+  {
+    emoji: "📈",
+    name: "财务报表官",
+    tag: "数据分析师",
+    summary: "每天赚了多少钱，一眼看清楚",
+    url: "https://wuli-bot.github.io/canyin-ai/finance.html",
+    skills: [
+      "日/周/月报自动生成",
+      "渠道分账+利润趋势",
+      "漏洞诊断：哪块在漏钱"
     ]
   },
   {
