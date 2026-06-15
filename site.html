@@ -65,25 +65,11 @@ select option{background:var(--card);color:var(--text)}
 </div>
 <div class="form-group">
 <label>品类</label>
-<select id="category">
-<option value="">请选择品类</option>
-<option value="炒饭">炒饭</option>
-<option value="奶茶">奶茶</option>
-<option value="烧烤">烧烤</option>
-<option value="火锅">火锅</option>
-<option value="粉面">粉面</option>
-<option value="其他">其他</option>
-</select>
+<input type="text" id="category" list="category_list" placeholder="如：炒饭、奶茶、烧烤..." autocomplete="off"><datalist id="category_list"><option value="炒饭"><option value="盖码饭"><option value="面条"><option value="粉"><option value="麻辣烫"><option value="火锅"><option value="烧烤"><option value="炸鸡"><option value="奶茶"><option value="咖啡"><option value="轻食"><option value="汉堡"><option value="披萨"><option value="甜品"><option value="小吃"><option value="快餐"><option value="粥"><option value="饺子"><option value="包子"><option value="烤鱼"><option value="烤肉"><option value="日料"><option value="韩料"><option value="西餐"><option value="粤菜"><option value="川菜"><option value="湘菜"><option value="卤味"><option value="冒菜"><option value="砂锅"><option value="铁板烧"><option value="寿司"><option value="其他"></datalist>
 </div>
 <div class="form-group">
 <label>月租预算</label>
-<select id="budget">
-<option value="">请选择预算范围</option>
-<option value="3000以下">3000以下</option>
-<option value="3000-5000">3000-5000</option>
-<option value="5000-8000">5000-8000</option>
-<option value="8000以上">8000以上</option>
-</select>
+<input type="text" id="budget" list="budget_list" placeholder="如：3000-5000、10000、自定义..." autocomplete="off"><datalist id="budget_list"><option value="3000以下"><option value="3000-5000"><option value="5000-8000"><option value="8000-15000"><option value="15000-30000"><option value="30000以上"></datalist>
 </div>
 <button class="btn" id="analyzeBtn" onclick="analyze()">一键分析选址</button>
 

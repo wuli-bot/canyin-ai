@@ -60,15 +60,7 @@ select:focus{border-color:#fbbf24}
 <div class="card">
   <div style="margin-bottom:16px">
     <label>经营品类</label>
-    <select id="category">
-      <option value="">请选择品类</option>
-      <option value="chaofan">炒饭</option>
-      <option value="naicha">奶茶</option>
-      <option value="shaokao">烧烤</option>
-      <option value="huoguo">火锅</option>
-      <option value="fenmian">粉面</option>
-      <option value="qita">其他</option>
-    </select>
+    <input type="text" id="category" list="category_list" placeholder="如：炒饭、奶茶、烧烤..." autocomplete="off"><datalist id="category_list"><option value="炒饭"><option value="盖码饭"><option value="面条"><option value="粉"><option value="麻辣烫"><option value="火锅"><option value="烧烤"><option value="炸鸡"><option value="奶茶"><option value="咖啡"><option value="轻食"><option value="汉堡"><option value="披萨"><option value="甜品"><option value="小吃"><option value="快餐"><option value="粥"><option value="饺子"><option value="包子"><option value="烤鱼"><option value="烤肉"><option value="日料"><option value="韩料"><option value="西餐"><option value="粤菜"><option value="川菜"><option value="湘菜"><option value="卤味"><option value="冒菜"><option value="砂锅"><option value="铁板烧"><option value="寿司"><option value="其他"></datalist>
   </div>
   <div>
     <label>经营方式</label>
@@ -76,6 +68,7 @@ select:focus{border-color:#fbbf24}
       <div class="radio-item"><input type="radio" name="mode" id="m1" value="tangshi"><label for="m1">堂食</label></div>
       <div class="radio-item"><input type="radio" name="mode" id="m2" value="waimai"><label for="m2">外卖</label></div>
       <div class="radio-item"><input type="radio" name="mode" id="m3" value="both"><label for="m3">堂食+外卖</label></div>
+      <div class="radio-item" style="min-width:auto"><input type="radio" name="mode" id="m4" value="custom"><label for="m4" style="gap:6px;display:inline-flex;align-items:center">其他<input type="text" id="customMode" placeholder="填写..." style="width:70px;padding:2px 6px;background:transparent;border:1px solid #334155;border-radius:6px;color:#e2e8f0;font-size:12px;outline:none" onclick="event.stopPropagation();document.getElementById('m4').checked=true"></label></div>
     </div>
   </div>
   <button class="btn" id="generateBtn" onclick="generate()">一键生成开店清单</button>

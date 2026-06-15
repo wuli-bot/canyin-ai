@@ -61,23 +61,11 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
   </div>
   <div class="form-group">
     <label>经营品类</label>
-    <select id="category">
-      <option value="炒饭">炒饭</option>
-      <option value="奶茶">奶茶</option>
-      <option value="烧烤">烧烤</option>
-      <option value="火锅">火锅</option>
-      <option value="粉面">粉面</option>
-      <option value="其他">其他</option>
-    </select>
+    <input type="text" id="category" list="category_list" placeholder="如：炒饭、奶茶、烧烤..." autocomplete="off"><datalist id="category_list"><option value="炒饭"><option value="盖码饭"><option value="面条"><option value="粉"><option value="麻辣烫"><option value="火锅"><option value="烧烤"><option value="炸鸡"><option value="奶茶"><option value="咖啡"><option value="轻食"><option value="汉堡"><option value="披萨"><option value="甜品"><option value="小吃"><option value="快餐"><option value="粥"><option value="饺子"><option value="包子"><option value="烤鱼"><option value="烤肉"><option value="日料"><option value="韩料"><option value="西餐"><option value="粤菜"><option value="川菜"><option value="湘菜"><option value="卤味"><option value="冒菜"><option value="砂锅"><option value="铁板烧"><option value="寿司"><option value="其他"></datalist>
   </div>
   <div class="form-group">
     <label>风格偏好</label>
-    <select id="style">
-      <option value="国潮风">国潮风</option>
-      <option value="简约风">简约风</option>
-      <option value="可爱风">可爱风</option>
-      <option value="工业风">工业风</option>
-    </select>
+    <input type="text" id="style" list="style_list" placeholder="如：国潮风、简约风..." autocomplete="off"><datalist id="style_list"><option value="国潮风"><option value="简约风"><option value="可爱风"><option value="工业风"><option value="日式和风"><option value="复古怀旧"><option value="赛博朋克"><option value="田园自然"><option value="ins风"><option value="新中式"><option value="极简黑白"></datalist>
   </div>
   <button class="btn" id="designBtn" onclick="generateDesign()">一键设计招牌</button>
   <div class="results" id="results"></div>
