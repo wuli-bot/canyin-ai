@@ -52,6 +52,8 @@ body{background:#0f172a;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
 .back-btn:hover{text-decoration:underline}
 .hidden{display:none!important}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js"></script>
 </head>
 <body>
 <div class="container">
@@ -96,7 +98,14 @@ body{background:#0f172a;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFo
 </div>
 
 <script>
-var DB_KEY = 'menu_designs_v1';
+
+// === 鉴权门禁 ===
+(async function() {
+  const authed = await requireAuth();
+  if (!authed) return;
+
+  // === 以下为原有业务代码 ===
+  var DB_KEY = 'menu_designs_v1';
 
 var MENU_DB = {
   '炒饭': [
@@ -577,6 +586,8 @@ function toggleHistory() {
 }
 
 renderHistory();
+})();
+
 </script>
 </body>
 </html>

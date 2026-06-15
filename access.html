@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>餐饮AI店长 · 登录</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#0f172a; display:flex; justify-content:center; align-items:center; min-height:100vh; font-family:system-ui,-apple-system,sans-serif; padding:20px; }
+.login-card { background:#1e293b; border-radius:24px; padding:32px; width:100%; max-width:400px; box-shadow:0 20px 35px -8px rgba(0,0,0,0.5); }
+h1 { font-size:1.8rem; margin-bottom:8px; background:linear-gradient(135deg,#fbbf24,#f97316); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.sub { color:#94a3b8; margin-bottom:24px; font-size:0.9rem; }
+label { display:block; font-size:0.85rem; margin-bottom:6px; color:#cbd5e1; }
+input { width:100%; padding:12px; background:#0f172a; border:1px solid #334155; border-radius:12px; color:white; font-size:1rem; margin-bottom:20px; }
+input:focus { outline:none; border-color:#f97316; }
+button { width:100%; background:#f97316; border:none; padding:12px; border-radius:12px; font-weight:bold; font-size:1rem; cursor:pointer; transition:0.2s; color:#0f172a; }
+button:hover { background:#fb923c; }
+button:disabled { opacity:0.6; cursor:not-allowed; }
+.error { color:#f87171; font-size:0.85rem; margin-top:12px; text-align:center; display:none; }
+.pricing-link { text-align:center; margin-top:24px; font-size:0.85rem; }
+.pricing-link a { color:#f97316; text-decoration:none; }
+.pricing-link a:hover { text-decoration:underline; }
+.logo-icon { font-size:3rem; text-align:center; margin-bottom:16px; }
+</style>
+</head>
+<body>
+<div class="login-card">
+  <div class="logo-icon">🍽️</div>
+  <h1>餐饮AI店长</h1>
+  <p class="sub">请输入您的访问令牌</p>
+  <label for="tokenInput">访问令牌</label>
+  <input type="password" id="tokenInput" placeholder="粘贴您的Token" autocomplete="off">
+  <button id="loginBtn">进入系统</button>
+  <div class="error" id="errorMsg"></div>
+  <div class="pricing-link">
+    还没有账号？<a href="portal.html#pricing">查看套餐</a>
+  </div>
+</div>
+<script>
+const loginBtn = document.getElementById('loginBtn');
+const tokenInput = document.getElementById('tokenInput');
+const errorDiv = document.getElementById('errorMsg');
+
+loginBtn.onclick = async () => {
+  const token = tokenInput.value.trim();
+  if (!token) {
+    showError('请输入令牌');
+    return;
+  }
+  loginBtn.disabled = true;
+  loginBtn.innerText = '验证中...';
+
+  const isValid = await validateToken(token);
+  if (isValid) {
+    setToken(token);
+    window.location.href = 'dashboard.html';
+  } else {
+    showError('令牌无效或已过期，请联系客服');
+    loginBtn.disabled = false;
+    loginBtn.innerText = '进入系统';
+  }
+};
+
+// 回车提交
+tokenInput.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') loginBtn.click();
+});
+
+// URL参数自动登录
+window.addEventListener('DOMContentLoaded', async () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlToken = urlParams.get('token');
+  if (urlToken) {
+    tokenInput.value = urlToken;
+    loginBtn.click();
+  }
+});
+
+function showError(msg) {
+  errorDiv.innerText = msg;
+  errorDiv.style.display = 'block';
+}
+</script>
+</body>
+</html>

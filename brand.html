@@ -50,6 +50,8 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
 @keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 .fade-in{animation:fadeIn .4s ease forwards}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js"></script>
 </head>
 <body>
 <div class="container">
@@ -75,7 +77,14 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
   </div>
 </div>
 <script>
-// ============ 预置配色方案库 (6品类×4风格=24种基础方案) ============
+
+// === 鉴权门禁 ===
+(async function() {
+  const authed = await requireAuth();
+  if (!authed) return;
+
+  // === 以下为原有业务代码 ===
+  // ============ 预置配色方案库 (6品类×4风格=24种基础方案) ============
 const COLOR_DB = {
   '炒饭': {
     '国潮风': {colors:['#8B0000','#FFD700','#2F1B14','#FFF8DC','#C41E3A'],textColor:'#FFD700',bgGrad:'linear-gradient(135deg,#8B0000,#5C0010)',font:'思源宋体 / 方正清刻本悦宋',desc:'以宫墙红与琉璃金为主色调，搭配传统宋体字，彰显中华炒品的厚重底蕴。招牌边框可辅以回纹装饰，传递匠心传承感。'},
@@ -296,6 +305,8 @@ renderHistory();
 const style = document.createElement('style');
 style.textContent = '@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}';
 document.head.appendChild(style);
+})();
+
 </script>
 </body>
 </html>

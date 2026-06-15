@@ -53,6 +53,8 @@ select option{background:var(--card);color:var(--text)}
 .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#ef4444;color:#fff;padding:10px 20px;border-radius:10px;font-size:14px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:99}
 .toast.show{opacity:1}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js"></script>
 </head>
 <body>
 <div class="app">
@@ -112,7 +114,14 @@ select option{background:var(--card);color:var(--text)}
 <div class="toast" id="toast"></div>
 
 <script>
-(function(){
+
+// === 鉴权门禁 ===
+(async function() {
+  const authed = await requireAuth();
+  if (!authed) return;
+
+  // === 以下为原有业务代码 ===
+  (function(){
 "use strict";
 
 var DATA = {
@@ -271,6 +280,8 @@ btn.disabled=false;btn.textContent="一键分析选址";
 
 renderHistory();
 })();
+})();
+
 </script>
 </body>
 </html>

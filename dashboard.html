@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>餐饮AI店长 · 驾驶舱</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0f172a;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:#e2e8f0;padding:20px;min-height:100vh}
+.dashboard-container{max-width:1400px;margin:0 auto}
+.navbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;background:#1e293b;border-radius:20px;padding:16px 24px;margin-bottom:32px;border:1px solid #334155}
+.logo h1{font-size:1.6rem;font-weight:600;background:linear-gradient(135deg,#fbbf24,#f97316);-webkit-background-clip:text;background-clip:text;color:transparent}
+.user-area{display:flex;align-items:center;gap:16px}
+.user-name{background:#0f172a;padding:6px 14px;border-radius:40px;font-size:0.9rem;border:1px solid #334155}
+.logout-btn{background:transparent;border:1px solid #f97316;color:#f97316;padding:6px 14px;border-radius:40px;cursor:pointer;transition:0.2s;font-size:0.9rem}
+.logout-btn:hover{background:#f97316;color:#0f172a}
+.welcome{font-size:1.1rem;color:#94a3b8;margin-bottom:24px}
+.welcome span{color:#fbbf24;font-weight:600}
+.tools-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px}
+.tool-card{background:#1e293b;border-radius:20px;padding:24px;transition:transform 0.2s,box-shadow 0.2s;border:1px solid #334155;cursor:pointer}
+.tool-card:hover{transform:translateY(-4px);box-shadow:0 10px 20px rgba(0,0,0,0.3);border-color:#f97316}
+.card-icon{font-size:2rem;margin-bottom:16px;background:linear-gradient(135deg,#fbbf24,#f97316);-webkit-background-clip:text;background-clip:text;color:transparent}
+.card-title{font-size:1.15rem;font-weight:600;margin-bottom:6px}
+.card-desc{font-size:0.85rem;color:#94a3b8;margin-bottom:16px;line-height:1.4}
+.use-btn{background:#f97316;border:none;color:#0f172a;padding:10px 16px;border-radius:12px;cursor:pointer;font-weight:600;width:100%;transition:0.2s;font-size:0.95rem}
+.use-btn:hover{background:#fb923c}
+.coming-soon .use-btn{background:#334155;color:#64748b;cursor:not-allowed}
+@media(max-width:640px){
+  .navbar{flex-direction:column;gap:12px;align-items:stretch}
+  .user-area{justify-content:space-between}
+  .tools-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="dashboard-container">
+  <nav class="navbar">
+    <div class="logo"><h1>🍳 餐饮AI店长</h1></div>
+    <div class="user-area">
+      <span class="user-name" id="userNameDisplay">加载中...</span>
+      <button class="logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> 退出</button>
+    </div>
+  </nav>
+  <p class="welcome">欢迎回来，<span id="welcomeName">店主</span> 👋</p>
+  <div class="tools-grid" id="toolsGrid"></div>
+</div>
+
+<script src="auth.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  const authed = await requireAuth();
+  if (!authed) return;
+
+  // 获取用户信息
+  const token = getToken();
+  let displayName = '店主';
+  if (token) {
+    const sb = (typeof getSupabaseClient === 'function') ? getSupabaseClient() : null;
+    if (sb) {
+      const { data } = await sb.from('profiles').select('store_name, phone').eq('access_token', token).single();
+      if (data) displayName = data.store_name || data.phone || '店主';
+    }
+  }
+  document.getElementById('userNameDisplay').innerText = displayName;
+  document.getElementById('welcomeName').innerText = displayName;
+
+  // 登出
+  document.getElementById('logoutBtn').onclick = () => { clearToken(); window.location.href = 'access.html'; };
+
+  // 12模块卡片
+  const tools = [
+    { name: '成本核算', desc: 'BOM成本·多平台利润·毛利率', icon: 'fa-calculator', link: 'index.html' },
+    { name: '差评处理', desc: 'AI回复·工单预警·处理建议', icon: 'fa-comment-dots', link: 'chaping.html' },
+    { name: '菜单设计', desc: '引流款·利润款·加料搭配', icon: 'fa-utensils', link: 'menu.html' },
+    { name: '定价策略', desc: '满减模拟·平台定价·到手价', icon: 'fa-tags', link: 'pricing.html' },
+    { name: '招牌设计', desc: 'Logo·门头·品牌视觉', icon: 'fa-palette', link: 'brand.html' },
+    { name: '设备选型', desc: 'AI感知层·采购清单·预算', icon: 'fa-microchip', link: 'equipment.html' },
+    { name: '选址分析', desc: '商圈·竞品·客流评估', icon: 'fa-map-marker-alt', link: 'site.html' },
+    { name: '开店流程', desc: '证照·平台入驻·开业清单', icon: 'fa-store', link: 'opening.html' },
+    { name: '财务报表', desc: '利润·日报·趋势分析', icon: 'fa-chart-line', link: 'finance.html' },
+    { name: '库存管理', desc: '入库·预警·盘点·补货', icon: 'fa-boxes-stacked', link: 'stock.html' },
+    { name: '私域引流', desc: '企微·社群·包裹卡', icon: 'fa-users', link: null, note: '即将上线' },
+    { name: '复购引擎', desc: '会员·积分·沉睡唤醒', icon: 'fa-rotate', link: null, note: '即将上线' }
+  ];
+
+  const grid = document.getElementById('toolsGrid');
+  tools.forEach(t => {
+    const card = document.createElement('div');
+    card.className = 'tool-card' + (t.link ? '' : ' coming-soon');
+    card.innerHTML = `
+      <div class="card-icon"><i class="fas ${t.icon}"></i></div>
+      <div class="card-title">${t.name}</div>
+      <div class="card-desc">${t.desc}</div>
+      <button class="use-btn">${t.link ? '使用' : (t.note || '即将上线')}</button>
+    `;
+    if (t.link) {
+      card.querySelector('.use-btn').onclick = () => window.open(t.link, '_blank');
+    }
+    grid.appendChild(card);
+  });
+});
+</script>
+</body>
+</html>

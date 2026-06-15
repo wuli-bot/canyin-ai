@@ -136,6 +136,8 @@ textarea::placeholder { color: #475569; }
 }
 .loading p { color: #64748b; font-size: 0.85rem; margin-top: 12px; }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js"></script>
 </head>
 <body>
 <div class="container">
@@ -203,7 +205,14 @@ textarea::placeholder { color: #475569; }
 </div>
 
 <script>
-var TEMPLATES = {
+
+// === 鉴权门禁 ===
+(async function() {
+  const authed = await requireAuth();
+  if (!authed) return;
+
+  // === 以下为原有业务代码 ===
+  var TEMPLATES = {
   flavor: {
     label: '口味问题',
     a: '尊敬的顾客，非常抱歉我们的菜品口味没能达到您的期望！您的反馈对我们非常重要。我们已将您的意见转达给后厨团队，会立即对菜品口味进行调整和优化。每一道菜我们都用心制作，但这次显然没有做到最好，我们深感愧疚。希望您能再给我们一次机会，我们一定让您品尝到满意的味道。',
@@ -393,6 +402,8 @@ function showCopied(btn) {
 var shakeStyle = document.createElement('style');
 shakeStyle.textContent = '@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}';
 document.head.appendChild(shakeStyle);
+})();
+
 </script>
 </body>
 </html>

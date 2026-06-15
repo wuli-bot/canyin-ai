@@ -38,6 +38,8 @@ select:focus,input:focus{border-color:#fbbf24}
 .fade-in{animation:fadeIn .4s ease}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -81,7 +83,14 @@ select:focus,input:focus{border-color:#fbbf24}
 </div>
 
 <script>
-var DB = {
+
+// === 鉴权门禁 ===
+(async function() {
+  const authed = await requireAuth();
+  if (!authed) return;
+
+  // === 以下为原有业务代码 ===
+  var DB = {
   chaofan: {
     name: "炒饭/炒面",
     items: [
@@ -245,6 +254,8 @@ function generate(){
 }
 
 loadSaved();
+})();
+
 </script>
 </body>
 </html>

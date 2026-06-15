@@ -51,6 +51,8 @@ select:focus{border-color:#fbbf24}
 .fade-in{animation:fadeIn .3s ease}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js"></script>
 </head>
 <body>
 <div class="app">
@@ -79,7 +81,14 @@ select:focus{border-color:#fbbf24}
 </div>
 
 <script>
-var DATA={
+
+// === 鉴权门禁 ===
+(async function() {
+  const authed = await requireAuth();
+  if (!authed) return;
+
+  // === 以下为原有业务代码 ===
+  var DATA={
 chaofan:{tangshi:{stages:[
 {name:"证照办理",icon:"📋",days:"15-25天",todos:["办理营业执照（个体工商户/公司）","办理食品经营许可证","办理健康证（全员）","办理消防安全检查合格证","办理环保排污许可证","税务登记及银行开户"],note:"炒饭类需重点关注油烟排放，建议提前咨询环保部门。食品经营许可证需现场核查厨房布局。"},
 {name:"选址装修",icon:"🏠",days:"30-45天",todos:["选择人流量大的商圈/写字楼/学校周边","面积建议40-80㎡","厨房设计需满足明火操作要求","安装强力排烟系统（炒饭油烟大）","配置堂食桌椅10-15桌","装修估算：500-800元/㎡"],note:"炒饭油烟较大，选址需确认物业允许明火及排烟条件。建议预留足够的排烟管道安装空间。"},
@@ -268,6 +277,8 @@ if(data)renderResult(data,cat,mode);
 }
 
 renderHistory();
+})();
+
 </script>
 </body>
 </html>

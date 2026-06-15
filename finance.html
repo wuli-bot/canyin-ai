@@ -44,6 +44,8 @@ h1{font-size:1.5rem;font-weight:700;margin-bottom:4px}
 .hist-rev{color:#e2e8f0}
 .hist-profit{font-weight:600}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -68,7 +70,14 @@ h1{font-size:1.5rem;font-weight:700;margin-bottom:4px}
 <div class="history-list" id="historyList"></div>
 </div>
 <script>
-var KEY="finance_daily",MAX=30;
+
+// === 鉴权门禁 ===
+(async function() {
+  const authed = await requireAuth();
+  if (!authed) return;
+
+  // === 以下为原有业务代码 ===
+  var KEY="finance_daily",MAX=30;
 function loadData(){try{return JSON.parse(localStorage.getItem(KEY))||[]}catch(e){return[]}}
 function saveData(d){var a=loadData(),t=new Date().toISOString().slice(0,10),i=a.findIndex(function(x){return x.date===t});if(i>=0)a[i]=d;else{a.push(d);if(a.length>MAX)a=a.slice(-MAX)}localStorage.setItem(KEY,JSON.stringify(a))}
 function fmt(n){return"¥"+n.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,",")}
@@ -107,6 +116,8 @@ document.getElementById("historyList").innerHTML=html||'<div style="color:#94a3b
 el.classList.add("open")}
 // prefill today
 (function(){var d=loadData().find(function(x){return x.date===new Date().toISOString().slice(0,10)});if(d){document.getElementById("revenue").value=d.revenue;document.getElementById("foodCost").value=d.foodCost;document.getElementById("otherCost").value=d.otherCost}})();
+})();
+
 </script>
 </body>
 </html>
