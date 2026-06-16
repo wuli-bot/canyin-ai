@@ -1,85 +1,81 @@
-// auth.js - 餐饮AI店长 · 通用Token门禁 v2
-const CANYIN_AUTH = {
-  SUPABASE_URL: 'https://vovzgflfdwngfuqnxjc.supabase.co',
-  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvdnpnZmxmZHduZ2Z1cW54amMiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc4MTU5ODQ5NiwiZXhwIjoyMDk3MTc0NDk2fQ.p8e3LcWgBqWxQ3jYk7mN2vR4sT8uY6zA9bC1dE5fG3h',
-  TOKEN_EXPIRE_DAYS: 7,
-  ENABLED: true,
-};
+// Supabase配置
+const SUPABASE_URL = "https://brnpknbqxdrqxkylqbty.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_V1P_qESwEP4c1T18pu6iRg_prLPNaik";
+const SUPABASE_ENABLED = true;
 
-let _supabaseClient = null;
-function getSupabase() {
-  if (!_supabaseClient && window.supabase) {
-    _supabaseClient = window.supabase.createClient(
-      CANYIN_AUTH.SUPABASE_URL,
-      CANYIN_AUTH.SUPABASE_ANON_KEY
-    );
-  }
-  return _supabaseClient;
-}
-
-function getToken() {
-  return localStorage.getItem('canyin_token');
-}
-
-function setToken(token) {
-  localStorage.setItem('canyin_token', token);
-  localStorage.setItem('canyin_token_time', Date.now().toString());
-}
-
-function clearToken() {
-  localStorage.removeItem('canyin_token');
-  localStorage.removeItem('canyin_token_time');
-}
-
-function isTokenExpired() {
-  const saved = localStorage.getItem('canyin_token_time');
-  if (!saved) return true;
-  const days = (Date.now() - parseInt(saved)) / (1000 * 60 * 60 * 24);
-  return days > CANYIN_AUTH.TOKEN_EXPIRE_DAYS;
-}
-
+// Token验证函数
 async function validateToken(token) {
-  if (!token) return false;
-  const supabase = getSupabase();
-  if (!supabase) {
-    console.warn('[auth] Supabase未就绪');
-    return !CANYIN_AUTH.ENABLED;
+  if (!SUPABASE_ENABLED) {
+    return { valid: false, error: "Supabase not enabled" };
   }
-  // 查询 access_tokens 表，字段：token, account_name, expire_at
-  const { data, error } = await supabase
-    .from('access_tokens')
-    .select('token, account_name, expire_at')
-    .eq('token', token)
-    .single();
-  if (error || !data) {
-    console.warn('[auth] token验证失败:', error?.message);
-    return false;
+  
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/access_tokens?token=eq.${encodeURIComponent(token)}&select=*`, {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    
+    if (!data || data.length === 0) {
+      return { valid: false, error: "Token not found" };
+    }
+    
+    const tokenData = data[0];
+    const now = new Date();
+    const expiresAt = new Date(tokenData.expire_at);
+    
+    if (expiresAt < now) {
+      return { valid: false, error: "Token expired" };
+    }
+    
+    return {
+      valid: true,
+      accountName: tokenData.account_name,
+      expiresAt: tokenData.expire_at
+    };
+  } catch (error) {
+    return { valid: false, error: error.message };
   }
-  // 检查是否过期
-  if (data.expire_at && new Date(data.expire_at) < new Date()) {
-    console.warn('[auth] token已过期:', data.expire_at);
-    return false;
-  }
-  console.log('[auth] token验证通过:', data.account_name);
-  return true;
 }
 
-async function requireAuth() {
-  if (!CANYIN_AUTH.ENABLED) return true;
-  const token = getToken();
-  if (!token) { redirectToLogin(); return false; }
-  if (isTokenExpired()) { clearToken(); redirectToLogin(); return false; }
-  const valid = await validateToken(token);
-  if (!valid) { clearToken(); redirectToLogin(); return false; }
-  return true;
-}
+// 页面加载时自动验证
+document.addEventListener('DOMContentLoaded', async () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const token = urlParams.get('token');
+  
+  if (!token) {
+    showError("缺少通行码参数");
+    return;
+  }
+  
+  try {
+    const result = await validateToken(token);
+    
+    if (result.valid) {
+      // 验证成功，跳转到dashboard
+      localStorage.setItem('access_token', token);
+      localStorage.setItem('account_name', result.accountName);
+      window.location.href = 'dashboard.html';
+    } else {
+      showError(`通行码验证失败：${result.error}`);
+    }
+  } catch (error) {
+    showError(`验证过程出错：${error.message}`);
+  }
+});
 
-function redirectToLogin() {
-  if (window.location.pathname.includes('access.html')) return;
-  window.location.href = 'access.html';
-}
-
-function logout() {
-  clearToken();
-  window.location.href = 'access.html';
+function showError(message) {
+  const errorDiv = document.getElementById('error-message');
+  if (errorDiv) {
+    errorDiv.textContent = message;
+    errorDiv.style.display = 'block';
+  }
 }
