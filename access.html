@@ -32,6 +32,51 @@ input:focus { outline:none; border-color:#f97316; }
 .bottom-links { text-align:center; margin-top:16px; font-size:0.82rem; }
 .bottom-links a { color:#64748b; text-decoration:none; margin:0 8px; }
 .bottom-links a:hover { color:#f97316; }
+
+/* 绑定弹窗样式 */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7);
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+}
+.modal-content {
+  background: #1e293b;
+  border-radius: 24px;
+  padding: 32px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 20px 35px -8px rgba(0,0,0,0.5);
+}
+.modal-title {
+  font-size: 1.5rem;
+  margin-bottom: 8px;
+  background: linear-gradient(135deg,#fbbf24,#f97316);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-align: center;
+}
+.modal-desc {
+  color: #94a3b8;
+  font-size: 0.9rem;
+  text-align: center;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+.account-badge {
+  background: #334155;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 16px;
+  text-align: center;
+  color: #fbbf24;
+  font-size: 0.85rem;
+}
 </style>
 </head>
 <body>
@@ -68,6 +113,22 @@ input:focus { outline:none; border-color:#f97316; }
   </div>
 </div>
 
+<!-- 绑定手机号弹窗 -->
+<div class="modal-overlay" id="bindModal">
+  <div class="modal-content">
+    <h2 class="modal-title">🔐 绑定手机号</h2>
+    <p class="modal-desc">
+      为保障您的账户安全，此通行码需要绑定手机号。<br>
+      绑定后仅您本人可使用，他人无法共用。
+    </p>
+    <div class="account-badge" id="bindAccountName"></div>
+    <label for="phoneInput">手机号码</label>
+    <input type="tel" id="phoneInput" placeholder="请输入11位手机号" maxlength="11" autocomplete="off">
+    <button class="login-btn" id="bindBtn" onclick="handleBind()">确认绑定</button>
+    <div class="error" id="bindError"></div>
+  </div>
+</div>
+
 <script>
 const loginBtn = document.getElementById('loginBtn');
 const tokenInput = document.getElementById('tokenInput');
@@ -82,12 +143,20 @@ loginBtn.onclick = async () => {
   loginBtn.disabled = true;
   loginBtn.innerText = '验证中...';
 
-  const isValid = await validateToken(token);
-  if (isValid) {
+  const result = await validateToken(token);
+  
+  if (result.valid && !result.needBind) {
+    // 已绑定，直接跳转
     setToken(token);
     window.location.href = 'dashboard.html';
+  } else if (result.valid && result.needBind) {
+    // 未绑定，显示绑定弹窗
+    showBindModal(token, result.accountName);
+    loginBtn.disabled = false;
+    loginBtn.innerText = '进入系统';
   } else {
-    showError('通行码不正确或已过期，请联系客服微信 Air19770809');
+    // 验证失败
+    showError(`通行码不正确或已过期，请联系客服微信 Air19770809`);
     loginBtn.disabled = false;
     loginBtn.innerText = '进入系统';
   }
@@ -95,6 +164,16 @@ loginBtn.onclick = async () => {
 
 tokenInput.addEventListener('keypress', (e) => {
   if (e.key === 'Enter') loginBtn.click();
+});
+
+// 手机号输入框只允许数字
+document.getElementById('phoneInput').addEventListener('input', function(e) {
+  this.value = this.value.replace(/[^0-9]/g, '');
+});
+
+// 绑定弹窗回车键触发绑定
+document.getElementById('phoneInput').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') handleBind();
 });
 
 window.addEventListener('DOMContentLoaded', async () => {
