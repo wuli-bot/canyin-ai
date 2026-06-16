@@ -1,13 +1,12 @@
 // auth.js - 餐饮AI店长 · 通用Token门禁
 const CANYIN_AUTH = {
-  SUPABASE_URL: 'https://xxxxx.supabase.co',
-  SUPABASE_ANON_KEY: 'YOUR_ANON_KEY_HERE',
+  SUPABASE_URL: 'https://vovzgflfdwngfuqnxjc.supabase.co',
+  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvdnpnZmxmZHduZ2Z1cW54amMiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc4MTU5ODQ5NiwiZXhwIjoyMDk3MTc0NDk2fQ.p8e3LcWgBqWxQ3jYk7mN2vR4sT8uY6zA9bC1dE5fG3h',
   TOKEN_EXPIRE_DAYS: 7,
-  ENABLED: false,
+  ENABLED: true,
 };
 
 let _supabaseClient = null;
-
 function getSupabase() {
   if (!_supabaseClient && window.supabase) {
     _supabaseClient = window.supabase.createClient(
@@ -46,15 +45,12 @@ async function validateToken(token) {
     console.warn('[auth] Supabase未就绪');
     return !CANYIN_AUTH.ENABLED;
   }
-
   const { data, error } = await supabase
     .from('profiles')
     .select('subscription_tier, subscription_expires_at')
     .eq('access_token', token)
     .single();
-
   if (error || !data) return false;
-
   if (data.subscription_tier !== 'free' && data.subscription_expires_at) {
     if (new Date(data.subscription_expires_at) < new Date()) return false;
   }
@@ -63,11 +59,9 @@ async function validateToken(token) {
 
 async function requireAuth() {
   if (!CANYIN_AUTH.ENABLED) return true;
-
   const token = getToken();
   if (!token) { redirectToLogin(); return false; }
   if (isTokenExpired()) { clearToken(); redirectToLogin(); return false; }
-
   const valid = await validateToken(token);
   if (!valid) { clearToken(); redirectToLogin(); return false; }
   return true;
