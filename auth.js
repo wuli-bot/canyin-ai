@@ -1,4 +1,4 @@
-// auth.js - 餐饮AI店长 · 通用Token门禁
+// auth.js - 餐饮AI店长 · 通用Token门禁 v2
 const CANYIN_AUTH = {
   SUPABASE_URL: 'https://vovzgflfdwngfuqnxjc.supabase.co',
   SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvdnpnZmxmZHduZ2Z1cW54amMiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc4MTU5ODQ5NiwiZXhwIjoyMDk3MTc0NDk2fQ.p8e3LcWgBqWxQ3jYk7mN2vR4sT8uY6zA9bC1dE5fG3h',
@@ -45,15 +45,22 @@ async function validateToken(token) {
     console.warn('[auth] Supabase未就绪');
     return !CANYIN_AUTH.ENABLED;
   }
+  // 查询 access_tokens 表，字段：token, account_name, expire_at
   const { data, error } = await supabase
-    .from('profiles')
-    .select('subscription_tier, subscription_expires_at')
-    .eq('access_token', token)
+    .from('access_tokens')
+    .select('token, account_name, expire_at')
+    .eq('token', token)
     .single();
-  if (error || !data) return false;
-  if (data.subscription_tier !== 'free' && data.subscription_expires_at) {
-    if (new Date(data.subscription_expires_at) < new Date()) return false;
+  if (error || !data) {
+    console.warn('[auth] token验证失败:', error?.message);
+    return false;
   }
+  // 检查是否过期
+  if (data.expire_at && new Date(data.expire_at) < new Date()) {
+    console.warn('[auth] token已过期:', data.expire_at);
+    return false;
+  }
+  console.log('[auth] token验证通过:', data.account_name);
   return true;
 }
 
