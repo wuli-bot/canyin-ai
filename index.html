@@ -450,28 +450,33 @@ textarea.input { min-height: 100px; resize: vertical; }
 <!-- Opening -->
 <div class="module-page" id="page-opening">
   <div class="page-topbar"><button class="back-btn" onclick="navigateTo('portal')">← 返回</button><div class="page-topbar-title">📋 开店流程</div></div>
-  <div class="page-subtitle">证照办理 · 平台入驻 · 开店清单</div>
+  <div class="page-subtitle">证照办理 · 平台入驻 · 开店清单（完整流程约需1-2分钟）</div>
   <div class="card">
     <div class="card-title">店铺基本信息</div>
-    <div style="margin-bottom:10px">
+    <div style="margin-bottom:12px">
       <label style="font-size:13px;color:#94a3b8;margin-bottom:4px;display:block">餐饮品类</label>
-      <select id="openingCategorySelect" class="input" onchange="if(this.value==='__custom__'){document.getElementById('openingCategoryInput').style.display='block';document.getElementById('openingCategoryInput').focus()}else{document.getElementById('openingCategoryInput').style.display='none'}">
-        <option value="">请选择品类</option>
-        <option value="炒饭/盖饭">炒饭/盖饭</option>
-        <option value="粉面">粉面</option>
-        <option value="快餐便当">快餐便当</option>
-        <option value="烧烤">烧烤</option>
-        <option value="火锅">火锅</option>
-        <option value="奶茶饮品">奶茶饮品</option>
-        <option value="小吃">小吃</option>
-        <option value="正餐">正餐</option>
-        <option value="__custom__">手动输入...</option>
-      </select>
-      <input id="openingCategoryInput" class="input" placeholder="输入你的品类" style="display:none;margin-top:6px">
+      <input type="text" class="input" id="openingCategory" placeholder="如：炒饭、盖饭、奶茶...">
     </div>
-    <textarea class="input" id="openingInput" placeholder="例如：在长沙望城区开一家20㎡的炒饭店，帮我生成完整开店清单"></textarea>
-    <div style="margin-top:8px">
-      <button class="voice-btn" id="openingVoiceBtn" onmousedown="startVoice('openingInput','openingVoiceBtn')" onmouseup="stopVoice()" ontouchstart="event.preventDefault();startVoice('openingInput','openingVoiceBtn')" ontouchend="stopVoice()">🎤 按住说话</button>
+    <div style="margin-bottom:12px">
+      <label style="font-size:13px;color:#94a3b8;margin-bottom:4px;display:block">开店地址</label>
+      <input type="text" class="input" id="openingLocation" placeholder="如：长沙望月湖">
+    </div>
+    <div style="margin-bottom:12px">
+      <label style="font-size:13px;color:#94a3b8;margin-bottom:6px;display:block">目标平台（可多选）</label>
+      <div style="display:flex;gap:16px;flex-wrap:wrap">
+        <label style="display:flex;align-items:center;gap:4px;font-size:14px;color:#e2e8f0">
+          <input type="checkbox" value="meituan" checked style="width:auto"> 美团
+        </label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:14px;color:#e2e8f0">
+          <input type="checkbox" value="jd" checked style="width:auto"> 京东
+        </label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:14px;color:#e2e8f0">
+          <input type="checkbox" value="eleme" style="width:auto"> 饿了么
+        </label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:14px;color:#e2e8f0">
+          <input type="checkbox" value="douyin" style="width:auto"> 抖音
+        </label>
+      </div>
     </div>
     <div class="btn-row">
       <button class="btn btn-primary" id="openingBtn" onclick="generateOpening()">📋 一键生成开店清单</button>
@@ -1902,12 +1907,20 @@ async function generateBrand() {
 
 // ===== OPENING =====
 async function generateOpening() {
-  // 获取品类（优先手动输入）
-  let category = document.getElementById('openingCategoryInput').value.trim();
-  if (!category) category = document.getElementById('openingCategorySelect').value;
+  const category = document.getElementById('openingCategory').value.trim();
+  const location = document.getElementById('openingLocation').value.trim();
   
-  const text = document.getElementById('openingInput').value.trim();
-  if (!text && !category) { alert('请至少选择品类或输入需求'); return; }
+  if (!category || !location) {
+    alert('请填写餐饮品类和开店地址');
+    return;
+  }
+  
+  const platforms = Array.from(document.querySelectorAll('#page-opening input[type="checkbox"]:checked')).map(cb => cb.value);
+  
+  if (platforms.length === 0) {
+    alert('请至少选择一个目标平台');
+    return;
+  }
   
   const btn = document.getElementById('openingBtn');
   const div = document.getElementById('openingResult');
@@ -1915,101 +1928,58 @@ async function generateOpening() {
   btn.innerHTML = '<span class="loading-spinner"></span> 生成中...';
   btn.disabled = true;
   
-  const prompt = `【重要提示】你现在是一个通用的餐饮开店专家，不是成本核算助手。请回答用户的开店流程问题，用Markdown格式输出，不要用JSON。
-
-你是一个餐饮证照注册和平台入驻的指导专家。
-
-**重要**：用纯Markdown格式输出，不要用JSON！不要用代码块！不要输出任何代码！
-
-你的工作是：手把手教用户怎么注册营业执照、怎么办食品经营许可证、怎么入驻各个外卖平台。每一步都要写清楚，让用户照着做就能搞定。
-
-用户信息：
-- 品类：${category || '餐饮店'}
-- 需求：${text || '工商注册+卫生许可证+各平台入驻'}
-
-请按以下结构输出，每个都要给出具体的、可操作的步骤指导：
-
-## 一、工商注册（营业执照）
-
-**办理部门**：当地市场监督管理局（原工商局）
-
-**Step 1**：准备材料
-- 列出具体需要什么材料
-
-**Step 2**：核名（店铺名称预审）
-- 怎么核名，在哪里操作
-
-**Step 3**：提交申请
-- 线上还是线下，具体怎么操作
-
-**Step 4**：领取营业执照
-- 几个工作日，去哪里领
-
-**Step 5**：刻章
-- 公章、财务章等
-
-## 二、食品经营许可证（卫生许可证）
-
-**办理部门**：当地食品药品监督管理局
-
-**Step 1**：准备材料
-- 详细列出
-
-**Step 2**：从业人员办理健康证
-- 去哪里办，需要什么
-
-**Step 3**：提交申请
-- 线上还是线下
-
-**Step 4**：现场检查
-- 检查什么内容，怎么准备
-
-**Step 5**：领取许可证
-- 周期多久
-
-## 三、税务登记
-
-**办理部门**：当地税务局
-- 怎么办理，需要准备什么，个体户和小规模纳税人区别
-
-## 四、各平台入驻注册流程
-
-### 1. 美团外卖入驻
-**Step 1**：下载美团商家版APP / 访问商家入驻网站
-**Step 2**：注册账号
-**Step 3**：上传资质（营业执照、食品经营许可证、身份证、银行卡）
-**Step 4**：填写店铺信息（店名、地址、品类、营业时间）
-**Step 5**：等待审核（1-3个工作日）
-**Step 6**：审核通过后设置菜单、配送范围、起送价
-**Step 7**：正式上线
-
-### 2. 饿了么入驻
-**Step 1-7**：同样的详细步骤
-
-### 3. 京东外卖入驻
-**Step 1-7**：同样的详细步骤
-
-### 4. 抖音本地生活入驻
-**Step 1-6**：同样的详细步骤
-
-## 五、常见问题
-- 没有实体店面能不能入驻？
-- 个体户和公司有什么区别？
-- 被驳回了怎么办？
-
-请根据${category || '餐饮店'}给出针对性的建议。每个步骤都要具体到「打开什么APP」「点什么按钮」「上传什么材料」这种程度。`;
+  div.innerHTML = '<div class="card"><div class="reply-text" style="color:#94a3b8;text-align:center;padding:20px">正在生成开店清单（完整流程约需1-2分钟），请稍候...</div></div>';
   
-  const answer = await callBot(BOT_IDS.opening, prompt);
-  
-  btn.innerHTML = '📋 一键生成开店清单';
-  btn.disabled = false;
-  
-  if (answer) {
+  try {
+    const input = `${category}，地址：${location}，平台：${platforms.join('、')}`;
+    
+    // 创建对话
+    const chatResult = await cozeRequest('POST', '/v3/chat', {
+      bot_id: BOT_IDS.opening,
+      user_id: 'opening_' + Date.now(),
+      stream: false,
+      additional_messages: [{
+        role: 'user',
+        type: 'question',
+        content_type: 'text',
+        content: input
+      }]
+    });
+    
+    if (!chatResult.data) throw new Error(chatResult.msg || '创建对话失败');
+    
+    const chatId = chatResult.data.id;
+    const convId = chatResult.data.conversation_id;
+    let status = chatResult.data.status;
+    
+    // 轮询等待结果（最多120秒）
+    for (let i = 0; i < 60; i++) {
+      if (status === 'completed' || status === 'failed') break;
+      await new Promise(r => setTimeout(r, 2000));
+      const poll = await cozeRequest('GET', '/v3/chat/retrieve', null, { conversation_id: convId, chat_id: chatId });
+      if (poll.data) status = poll.data.status;
+    }
+    
+    if (status !== 'completed') throw new Error('处理超时，请重试');
+    
+    // 获取回复
+    const msgs = await cozeRequest('GET', '/v3/chat/message/list', null, { conversation_id: convId, chat_id: chatId });
+    if (!msgs.data) throw new Error('获取回复失败');
+    
+    const answerMsg = msgs.data.find(m => m.type === 'answer' && m.role === 'assistant');
+    if (!answerMsg) throw new Error('未找到回复内容');
+    
+    const answer = answerMsg.content;
     div.innerHTML = '<div class="card"><div class="card-title">📋 开店流程清单</div><div class="reply-text" style="line-height:1.8">' + formatMarkdown(parseBotResponse(answer)) + '</div></div>';
-  } else {
-    div.innerHTML = '<div class="card"><div class="reply-text error">生成失败，请重试</div></div>';
+    
+  } catch (err) {
+    div.innerHTML = '<div class="card"><div class="reply-text error">❌ ' + err.message + '</div></div>';
+  } finally {
+    btn.innerHTML = '📋 一键生成开店清单';
+    btn.disabled = false;
   }
 }
+
 
 // ===== EQUIPMENT =====
 async function generateEquipment() {
