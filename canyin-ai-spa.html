@@ -396,6 +396,21 @@ textarea.input { min-height: 100px; resize: vertical; }
   <div class="page-topbar"><button class="back-btn" onclick="navigateTo('portal')">← 返回</button><div class="page-topbar-title">📍 选址分析</div></div>
   <div class="page-subtitle">商圈画像 · 竞品密度 · 客群分析 · 选址评分</div>
   <div class="card">
+    <div class="card-title">选择经营品类</div>
+    <select class="input" id="siteCategory" style="height:48px">
+      <option value="">请选择品类</option>
+      <option value="炒饭/盖饭">炒饭/盖饭</option>
+      <option value="粉面">粉面</option>
+      <option value="快餐便当">快餐便当</option>
+      <option value="烧烤">烧烤</option>
+      <option value="火锅">火锅</option>
+      <option value="奶茶饮品">奶茶饮品</option>
+      <option value="小吃">小吃</option>
+      <option value="正餐">正餐</option>
+      <option value="其他">其他</option>
+    </select>
+  </div>
+  <div class="card">
     <div class="card-title">输入选址信息</div>
     <textarea class="input" id="siteInput" placeholder="例如：长沙望城区湖南外国语职业学院北食堂，周边有3所学校，日均人流量约2000人"></textarea>
     <div style="margin-top:8px">
@@ -1005,20 +1020,39 @@ function startVoice(inputId, btnId) {
   
   recognition = new SR();
   recognition.lang = 'zh-CN';
-  recognition.continuous = false;
+  recognition.continuous = true;  // 持续监听，直到手动停止
   recognition.interimResults = true;  // 显示中间结果
   recognition.maxAlternatives = 1;
   
   const btn = document.getElementById(btnId);
   const originalText = btn.textContent;
   btn.classList.add('recording');
-  btn.textContent = '🎤 请说话...';
+  btn.textContent = '🎤 正在听...';
   btn.style.background = '#ef4444';
+  
+  // 添加音频级别指示器
+  const input = document.getElementById(inputId);
+  if (input) {
+    input.style.borderColor = '#ef4444';
+    input.style.boxShadow = '0 0 10px rgba(239, 68, 68, 0.3)';
+  }
+  
+  let startTime = Date.now();
+  let audioLevelInterval = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    if (elapsed < 10) {
+      btn.textContent = `🎤 正在听... (${elapsed}s)`;
+      // 添加脉冲动画
+      btn.style.transform = elapsed % 2 === 0 ? 'scale(1.05)' : 'scale(1)';
+    } else {
+      btn.textContent = `🎤 还在听... (${elapsed}s)`;
+    }
+  }, 1000);
   
   // 请求麦克风权限
   recognition.onstart = () => {
     console.log('语音识别已启动');
-    btn.textContent = '🎤 正在听...';
+    startTime = Date.now();
   };
   
   recognition.onresult = (e) => {
@@ -1029,8 +1063,10 @@ function startVoice(inputId, btnId) {
       const transcript = e.results[i][0].transcript;
       if (e.results[i].isFinal) {
         finalTranscript += transcript;
+        console.log('最终识别结果:', transcript);
       } else {
         interimTranscript += transcript;
+        console.log('中间结果:', transcript);
       }
     }
     
@@ -1040,22 +1076,35 @@ function startVoice(inputId, btnId) {
         el.value = finalTranscript;
         btn.textContent = '✅ 识别完成';
         btn.style.background = '#22c55e';
+        btn.style.transform = 'scale(1)';
+        clearInterval(audioLevelInterval);
+        if (input) {
+          input.style.borderColor = '';
+          input.style.boxShadow = '';
+        }
         setTimeout(() => {
           btn.textContent = originalText;
           btn.style.background = '';
-        }, 1000);
+        }, 1500);
       } else if (interimTranscript) {
-        // 显示中间结果
+        // 显示中间结果，让用户知道系统在工作
         el.value = interimTranscript;
-        btn.textContent = '🎤 ' + interimTranscript.slice(-10);
+        el.style.color = '#94a3b8'; // 灰色表示中间结果
+        btn.textContent = '🎤 ' + interimTranscript.slice(-15);
       }
     }
   };
   
   recognition.onerror = (e) => {
     console.error('语音识别错误:', e.error);
+    clearInterval(audioLevelInterval);
     btn.classList.remove('recording');
     btn.style.background = '';
+    btn.style.transform = 'scale(1)';
+    if (input) {
+      input.style.borderColor = '';
+      input.style.boxShadow = '';
+    }
     
     let errorMsg = '⚠️ 语音识别失败';
     if (e.error === 'not-allowed') {
@@ -1064,23 +1113,36 @@ function startVoice(inputId, btnId) {
       errorMsg = '⚠️ 没有检测到语音，请重试';
     } else if (e.error === 'network') {
       errorMsg = '⚠️ 网络连接错误';
+    } else if (e.error === 'audio-capture') {
+      errorMsg = '⚠️ 无法访问麦克风，请检查设备';
     } else if (e.error === 'aborted') {
       errorMsg = originalText;
     }
     
     btn.textContent = errorMsg;
     if (e.error !== 'aborted') {
+      showToast(errorMsg, 'error');
       setTimeout(() => {
         btn.textContent = originalText;
-      }, 2000);
+      }, 2500);
     }
   };
   
   recognition.onend = () => {
     console.log('语音识别结束');
+    clearInterval(audioLevelInterval);
     btn.classList.remove('recording');
     btn.style.background = '';
-    if (btn.textContent.includes('请说话') || btn.textContent.includes('正在听')) {
+    btn.style.transform = 'scale(1)';
+    if (input) {
+      input.style.borderColor = '';
+      input.style.boxShadow = '';
+      // 如果中间结果是灰色，恢复为正常颜色
+      if (input.style.color === 'rgb(148, 163, 184)') {
+        input.style.color = '';
+      }
+    }
+    if (btn.textContent.includes('请说话') || btn.textContent.includes('正在听') || btn.textContent.includes('还在听')) {
       btn.textContent = originalText;
     }
   };
@@ -1089,12 +1151,25 @@ function startVoice(inputId, btnId) {
     recognition.start();
   } catch(e) {
     console.error('启动语音识别失败:', e);
+    clearInterval(audioLevelInterval);
     showToast('⚠️ 启动语音识别失败: ' + e.message, 'error');
     btn.classList.remove('recording');
+    btn.style.background = '';
+    btn.style.transform = 'scale(1)';
+    if (input) {
+      input.style.borderColor = '';
+      input.style.boxShadow = '';
+    }
     btn.textContent = originalText;
   }
 }
-function stopVoice() { if (recognition) try { recognition.stop(); } catch(e) {} }
+function stopVoice() {
+  if (recognition) {
+    try { recognition.stop(); } catch(e) {}
+  }
+  // 清理所有录音状态
+  document.querySelectorAll('.recording').forEach(el => el.classList.remove('recording'));
+}
 
 // ===== ROUTING =====
 function navigateTo(id) {
@@ -1617,14 +1692,16 @@ function loadReport() {
 // ===== SITE ANALYSIS =====
 async function analyzeSite() {
   const text = document.getElementById('siteInput').value.trim();
+  const category = document.getElementById('siteCategory').value;
   if (!text) { alert('请输入选址信息'); return; }
+  if (!category) { alert('请选择经营品类'); return; }
   const btn = document.getElementById('siteBtn');
   const div = document.getElementById('siteResult');
   div.classList.remove('hidden');
   btn.innerHTML = '<span class="loading-spinner"></span> 分析中...';
   btn.disabled = true;
   
-  const prompt = `你是餐饮选址分析专家。请根据以下选址信息，给出专业的选址分析报告，用Markdown格式输出，包括：
+  const prompt = `你是餐饮选址分析专家。请根据以下信息，给出专业的选址分析报告，用Markdown格式输出，包括：
 
 ## 📊 选址综合评分
 给出0-100分的评分和评分理由
@@ -1644,6 +1721,7 @@ async function analyzeSite() {
 ## 💡 建议
 给出具体可行的经营建议
 
+经营品类：${category}
 选址信息：${text}
 
 注意：请用Markdown格式输出，不要用JSON格式。`;
