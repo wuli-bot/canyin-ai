@@ -446,6 +446,41 @@ textarea.input { min-height: 100px; resize: vertical; }
   <div class="meta">餐饮AI店长 · 招牌设计</div>
 </div>
 
+
+<!-- Opening -->
+<div class="module-page" id="page-opening">
+  <div class="page-topbar"><button class="back-btn" onclick="navigateTo('portal')">← 返回</button><div class="page-topbar-title">📋 开店流程</div></div>
+  <div class="page-subtitle">证照办理 · 平台入驻 · 开店清单</div>
+  <div class="card">
+    <div class="card-title">店铺基本信息</div>
+    <div style="margin-bottom:10px">
+      <label style="font-size:13px;color:#94a3b8;margin-bottom:4px;display:block">餐饮品类</label>
+      <select id="openingCategorySelect" class="input" onchange="if(this.value==='__custom__'){document.getElementById('openingCategoryInput').style.display='block';document.getElementById('openingCategoryInput').focus()}else{document.getElementById('openingCategoryInput').style.display='none'}">
+        <option value="">请选择品类</option>
+        <option value="炒饭/盖饭">炒饭/盖饭</option>
+        <option value="粉面">粉面</option>
+        <option value="快餐便当">快餐便当</option>
+        <option value="烧烤">烧烤</option>
+        <option value="火锅">火锅</option>
+        <option value="奶茶饮品">奶茶饮品</option>
+        <option value="小吃">小吃</option>
+        <option value="正餐">正餐</option>
+        <option value="__custom__">手动输入...</option>
+      </select>
+      <input id="openingCategoryInput" class="input" placeholder="输入你的品类" style="display:none;margin-top:6px">
+    </div>
+    <textarea class="input" id="openingInput" placeholder="例如：在长沙望城区开一家20㎡的炒饭店，帮我生成完整开店清单"></textarea>
+    <div style="margin-top:8px">
+      <button class="voice-btn" id="openingVoiceBtn" onmousedown="startVoice('openingInput','openingVoiceBtn')" onmouseup="stopVoice()" ontouchstart="event.preventDefault();startVoice('openingInput','openingVoiceBtn')" ontouchend="stopVoice()">🎤 按住说话</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="openingBtn" onclick="generateOpening()">📋 一键生成开店清单</button>
+    </div>
+  </div>
+  <div id="openingResult" class="hidden"></div>
+  <div class="meta">餐饮AI店长 · 开店流程</div>
+</div>
+
 <!-- Equipment -->
 <div class="module-page" id="page-equipment">
   <div class="page-topbar"><button class="back-btn" onclick="navigateTo('portal')">← 返回</button><div class="page-topbar-title">🔧 AI设备选型</div></div>
@@ -737,7 +772,7 @@ textarea.input { min-height: 100px; resize: vertical; }
 const MODULES = [
   // 12个全链路模块（按业务流程排序）
   { id: 'site', emoji: '📍', name: '选址分析', desc: '商圈画像·竞品密度·客群分析' },
-  { id: 'opening', emoji: '📋', name: '开店流程', desc: '证照办理·平台入驻全流程', url: 'https://wuli-bot.github.io/canyin-ai/opening.html' },
+  { id: 'opening', emoji: '📋', name: '开店流程', desc: '证照办理·平台入驻全流程' },
   { id: 'brand', emoji: '🎨', name: '招牌设计', desc: '品牌命名·Logo方向·门头排版' },
   { id: 'equipment', emoji: '🔧', name: '设备选型', desc: 'AI智能设备·采购清单·预算表' },
   { id: 'menu', emoji: '📝', name: '菜单设计', desc: '引流款·利润款·套餐搭配' },
@@ -1821,6 +1856,78 @@ async function generateBrand() {
   }
 }
 
+
+
+// ===== OPENING =====
+async function generateOpening() {
+  // 获取品类（优先手动输入）
+  let category = document.getElementById('openingCategoryInput').value.trim();
+  if (!category) category = document.getElementById('openingCategorySelect').value;
+  
+  const text = document.getElementById('openingInput').value.trim();
+  if (!text && !category) { alert('请至少选择品类或输入需求'); return; }
+  
+  const btn = document.getElementById('openingBtn');
+  const div = document.getElementById('openingResult');
+  div.classList.remove('hidden');
+  btn.innerHTML = '<span class="loading-spinner"></span> 生成中...';
+  btn.disabled = true;
+  
+  const prompt = `你是餐饮开店专家。请根据以下信息，生成完整的开店流程和清单，用Markdown格式输出：
+
+## 📋 完整开店清单
+
+**品类**：${category || '未指定'}
+**需求**：${text || '标准开店流程'}
+
+### 📝 证照办理清单
+| 序号 | 证照名称 | 办理部门 | 所需材料 | 办理周期 | 费用 |
+|-----|---------|---------|---------|---------|-----|
+（列出所有需要的证照）
+
+### 🏪 选址装修流程
+- 选址要点
+- 装修步骤
+- 设备采购清单
+- 验收标准
+
+### 📱 平台入驻流程
+- 美团外卖入驻步骤
+- 饿了么入驻步骤
+- 抖音/大众点评入驻
+
+### 🍽️ 开业准备清单
+- 菜单设计
+- 定价策略
+- 人员招聘
+- 试营业流程
+
+### ⏰ 时间规划表
+| 阶段 | 任务 | 预计时间 | 负责人 |
+|-----|------|---------|-------|
+（列出各阶段时间安排）
+
+### ⚠️ 避坑指南
+- 常见踩坑点
+- 省钱技巧
+- 注意事项
+
+注意：
+1. 针对${category || '餐饮店'}给出具体建议
+2. 用Markdown格式输出
+3. 给出具体可执行的步骤`;
+  
+  const answer = await callBot(BOT_IDS.cost, prompt);
+  
+  btn.innerHTML = '📋 一键生成开店清单';
+  btn.disabled = false;
+  
+  if (answer) {
+    div.innerHTML = '<div class="card"><div class="card-title">📋 开店流程清单</div><div class="reply-text" style="line-height:1.8">' + formatMarkdown(answer) + '</div></div>';
+  } else {
+    div.innerHTML = '<div class="card"><div class="reply-text error">生成失败，请重试</div></div>';
+  }
+}
 
 // ===== EQUIPMENT =====
 async function generateEquipment() {
