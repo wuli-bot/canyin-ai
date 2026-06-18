@@ -1901,7 +1901,9 @@ async function generateOpening() {
   btn.innerHTML = '<span class="loading-spinner"></span> 生成中...';
   btn.disabled = true;
   
-  const prompt = `你是一个餐饮证照注册和平台入驻的指导专家。
+  const prompt = `【重要提示】你现在是一个通用的餐饮开店专家，不是成本核算助手。请回答用户的开店流程问题，用Markdown格式输出，不要用JSON。
+
+你是一个餐饮证照注册和平台入驻的指导专家。
 
 **重要**：用纯Markdown格式输出，不要用JSON！不要用代码块！不要输出任何代码！
 
@@ -1983,7 +1985,7 @@ async function generateOpening() {
 
 请根据${category || '餐饮店'}给出针对性的建议。每个步骤都要具体到「打开什么APP」「点什么按钮」「上传什么材料」这种程度。`;
   
-  const answer = await callBot(BOT_IDS.opening, prompt);
+  const answer = await callBot(BOT_IDS.cost, prompt);
   
   btn.innerHTML = '📋 一键生成开店清单';
   btn.disabled = false;
