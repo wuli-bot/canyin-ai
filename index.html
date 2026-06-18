@@ -63,6 +63,11 @@ textarea.input { min-height: 100px; resize: vertical; }
 .result-row:last-child { border-bottom: none; }
 .result-label { color: #94a3b8; }
 .result-value { font-weight: 600; }
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .loading-spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #334155; border-top-color: #3b82f6; border-radius: 50%; animation: spin 0.6s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .hidden { display: none; }
@@ -1577,6 +1582,95 @@ async function genWelcome() {
 }
 
 // ===== VOICE ORDER =====
+// ===== 订单合并提醒 =====
+const MERGE_WINDOW = 2 * 60 * 1000; // 2分钟窗口
+
+function addOrderToPool(orderId, items) {
+  const pool = JSON.parse(localStorage.getItem('order_pool') || '[]');
+  const order = {
+    id: orderId,
+    time: Date.now(),
+    items: items.map(item => ({ name: item.name || item.菜品 || '', qty: item.qty || item.quantity || item.数量 || 1 })),
+    status: 'pending'
+  };
+  pool.push(order);
+  // 清理超过10分钟的旧订单
+  const cutoff = Date.now() - 10 * 60 * 1000;
+  const filtered = pool.filter(o => o.time > cutoff);
+  localStorage.setItem('order_pool', JSON.stringify(filtered));
+  return order;
+}
+
+function checkMerge() {
+  const pool = JSON.parse(localStorage.getItem('order_pool') || '[]');
+  const cutoff = Date.now() - MERGE_WINDOW;
+  
+  // 过滤：2分钟内 + 待出餐
+  const validOrders = pool.filter(o => o.time > cutoff && o.status === 'pending');
+  
+  // 按菜品名统计
+  const dishCount = {};
+  validOrders.forEach(order => {
+    order.items.forEach(item => {
+      const name = item.name.trim();
+      if (!name) return;
+      const qty = item.qty || 1;
+      if (!dishCount[name]) {
+        dishCount[name] = { total: 0, orderIds: [] };
+      }
+      dishCount[name].total += qty;
+      dishCount[name].orderIds.push(order.id);
+    });
+  });
+  
+  // 找出≥2份的菜品
+  const mergeable = [];
+  Object.keys(dishCount).forEach(name => {
+    if (dishCount[name].total >= 2) {
+      mergeable.push({
+        name: name,
+        count: dishCount[name].total,
+        orders: dishCount[name].orderIds
+      });
+    }
+  });
+  
+  return mergeable;
+}
+
+function showMergeAlert(mergeable) {
+  if (!mergeable || mergeable.length === 0) return;
+  
+  const messages = mergeable.map(m => `发现${m.count}份${m.name}，可合并出餐`);
+  
+  const alertHtml = `
+    <div class="card merge-alert" style="background:#fef3c7;border:2px solid #f59e0b;margin-bottom:16px;animation:slideIn 0.3s">
+      <div class="card-title" style="color:#92400e;margin-bottom:8px">🔔 合并提醒</div>
+      <div style="color:#78350f;font-size:15px;line-height:1.8">
+        ${messages.map(m => `<div style="padding:4px 0">• ${m}</div>`).join('')}
+      </div>
+      <button onclick="this.parentElement.parentElement.remove()" style="margin-top:12px;padding:6px 16px;background:#f59e0b;border:none;border-radius:6px;color:#fff;cursor:pointer;font-size:13px;font-weight:600">✓ 已确认</button>
+    </div>
+  `;
+  
+  // 插入到语音点餐结果区域上方
+  const voiceOrderDiv = document.getElementById('voiceOrderResult');
+  if (voiceOrderDiv) {
+    voiceOrderDiv.insertAdjacentHTML('beforebegin', alertHtml);
+  }
+  
+  // 语音播报
+  if ('speechSynthesis' in window) {
+    speechSynthesis.cancel();
+    const text = messages.join('；');
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'zh-CN';
+    utterance.rate = 1.1;
+    utterance.volume = 0.8;
+    setTimeout(() => speechSynthesis.speak(utterance), 100);
+  }
+}
+
 async function sendVoiceOrder() {
   const text = document.getElementById('voiceOrderInput').value.trim(); if (!text) return;
   const btn = document.getElementById('voiceOrderBtn'); btn.innerHTML = '<span class="loading-spinner"></span> 解析中...'; btn.disabled = true;
@@ -1594,6 +1688,14 @@ async function sendVoiceOrder() {
       html += '</div>';
     });
     html += '</div>'; div.innerHTML = html;
+    
+    // 存入订单池并检测合并
+    const orderId = json.order_id || 'order_' + Date.now();
+    addOrderToPool(orderId, json.items);
+    const mergeable = checkMerge();
+    if (mergeable.length > 0) {
+      showMergeAlert(mergeable);
+    }
   } else {
     div.innerHTML = '<div class="card"><div class="card-title">🍳 订单解析</div><div class="reply-text" style="line-height:1.8">' + answer.replace(/\n/g, '<br>') + '</div></div>';
   }
@@ -1657,6 +1759,16 @@ async function handleOrder() {
     
     html += '</div>';
     div.innerHTML = html;
+    
+    // 存入订单池并检测合并
+    if (json.items && Array.isArray(json.items)) {
+      const orderId = json.order_id || 'order_' + Date.now();
+      addOrderToPool(orderId, json.items);
+      const mergeable = checkMerge();
+      if (mergeable.length > 0) {
+        showMergeAlert(mergeable);
+      }
+    }
   } else {
     // 非JSON格式
     div.innerHTML = '<div class="card"><div class="card-title">📋 格式化结果</div><div class="reply-text" style="line-height:1.8;white-space:pre-wrap">' + answer + '</div></div>';
