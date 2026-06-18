@@ -805,6 +805,20 @@ const BOT_IDS = {
   opening: '7652559944881192970'
 };
 
+// ===== 积分优化配置 (2026-06-18) =====
+// 所有Bot已配置为豆包Lite模型，仅复杂推理场景使用高性能模型
+// 优化规则详见：/canyin-ai/积分优化规则.txt
+const OPTIMIZATION = {
+  enabled: true,
+  default_model: 'doubao_lite',
+  rules: {
+    // 成本计算、差评回复、平台入驻等 → Lite
+    // 复杂分析、诊断问题、方案设计 → Pro
+    complexity_threshold: 'simple' // 默认走Lite
+  }
+};
+console.log('🌙 积分优化已启用，默认模型：豆包Lite');
+
 // ===== COZE API 直连 =====
 const COZE_API = 'https://api.coze.cn';
 const API_TOKEN = 'sat_LvCuUkueRmeZlNEJFdSBf1qXCu61fPi32jkbpTWKpktSUkTVY6oH16QKqYLQNIfY';
