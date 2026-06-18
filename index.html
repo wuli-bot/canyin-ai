@@ -397,8 +397,8 @@ textarea.input { min-height: 100px; resize: vertical; }
   <div class="page-subtitle">商圈画像 · 竞品密度 · 客群分析 · 选址评分</div>
   <div class="card">
     <div class="card-title">选择经营品类</div>
-    <select class="input" id="siteCategory" style="height:48px">
-      <option value="">请选择品类</option>
+    <select class="input" id="siteCategorySelect" style="height:48px" onchange="onCategorySelect()">
+      <option value="">常用品类（可选）</option>
       <option value="炒饭/盖饭">炒饭/盖饭</option>
       <option value="粉面">粉面</option>
       <option value="快餐便当">快餐便当</option>
@@ -407,8 +407,12 @@ textarea.input { min-height: 100px; resize: vertical; }
       <option value="奶茶饮品">奶茶饮品</option>
       <option value="小吃">小吃</option>
       <option value="正餐">正餐</option>
-      <option value="其他">其他</option>
+      <option value="__custom__">其他（手动输入）</option>
     </select>
+    <input class="input" id="siteCategoryInput" type="text" placeholder="或手动输入品类（如：炸鸡、麻辣烫、面包蛋糕...）" style="margin-top:8px" onfocus="document.getElementById('siteCategorySelect').value='__custom__'">
+    <div style="margin-top:8px">
+      <button class="voice-btn" id="siteCategoryVoiceBtn" onmousedown="startVoice('siteCategoryInput','siteCategoryVoiceBtn')" onmouseup="stopVoice()" ontouchstart="event.preventDefault();startVoice('siteCategoryInput','siteCategoryVoiceBtn')" ontouchend="stopVoice()">🎤 按住说话</button>
+    </div>
   </div>
   <div class="card">
     <div class="card-title">输入选址信息</div>
@@ -1692,9 +1696,10 @@ function loadReport() {
 // ===== SITE ANALYSIS =====
 async function analyzeSite() {
   const text = document.getElementById('siteInput').value.trim();
-  const category = document.getElementById('siteCategory').value;
+  let category = document.getElementById('siteCategoryInput').value.trim();
+  if (!category) { category = document.getElementById('siteCategorySelect').value; }
+  if (category === '__custom__' || !category) { alert('请选择或输入经营品类'); return; }
   if (!text) { alert('请输入选址信息'); return; }
-  if (!category) { alert('请选择经营品类'); return; }
   const btn = document.getElementById('siteBtn');
   const div = document.getElementById('siteResult');
   div.classList.remove('hidden');
