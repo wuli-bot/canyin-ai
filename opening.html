@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>开店流程 - 餐饮AI店长</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f5f5f5; padding: 20px; }
+    .container { max-width: 800px; margin: 0 auto; background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    h1 { font-size: 24px; margin-bottom: 8px; color: #1a1a1a; }
+    .desc { color: #666; font-size: 14px; margin-bottom: 24px; }
+    .form-group { margin-bottom: 16px; }
+    label { display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px; color: #333; }
+    input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
+    textarea { min-height: 80px; resize: vertical; }
+    .btn { width: 100%; padding: 14px; background: #ff6b35; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 500; cursor: pointer; margin-top: 16px; }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .result { margin-top: 24px; padding: 16px; background: #f9f9f9; border-radius: 8px; white-space: pre-wrap; font-size: 14px; line-height: 1.6; max-height: 500px; overflow-y: auto; }
+    .loading { text-align: center; padding: 40px; color: #999; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📋 开店流程</h1>
+    <p class="desc">一键生成外卖平台开店清单</p>
+    
+    <div class="form-group">
+      <label>餐饮品类</label>
+      <input type="text" id="category" placeholder="如：炒饭、盖饭、奶茶..." value="炒饭和盖饭">
+    </div>
+    
+    <div class="form-group">
+      <label>开店地址</label>
+      <input type="text" id="location" placeholder="如：长沙望月湖" value="长沙望月湖">
+    </div>
+    
+    <div class="form-group">
+      <label>目标平台（可多选）</label>
+      <div style="display: flex; gap: 20px; margin-top: 8px;">
+        <label style="display: flex; align-items: center; gap: 6px;">
+          <input type="checkbox" value="meituan" checked style="width: auto;"> 美团
+        </label>
+        <label style="display: flex; align-items: center; gap: 6px;">
+          <input type="checkbox" value="jd" checked style="width: auto;"> 京东
+        </label>
+        <label style="display: flex; align-items: center; gap: 6px;">
+          <input type="checkbox" value="eleme" style="width: auto;"> 饿了么
+        </label>
+        <label style="display: flex; align-items: align-items: center; gap: 6px;">
+          <input type="checkbox" value="douyin" style="width: auto;"> 抖音
+        </label>
+      </div>
+    </div>
+    
+    <button class="btn" id="generateBtn" onclick="generateList()">一键生成开店清单</button>
+    
+    <div id="resultArea" style="display: none;"></div>
+  </div>
+
+  <script>
+    const BOT_ID = "7652559944881192970";
+    const API_BASE = "https://api.coze.cn";
+    const TOKEN = "sat_LvCuUkueRmeZlNEJFdSBf1qXCu61fPi32jkbpTWKpktSUkTVY6oH16QKqYLQNIfY";
+
+    async function generateList() {
+      const category = document.getElementById('category').value.trim();
+      const location = document.getElementById('location').value.trim();
+      
+      if (!category || !location) {
+        alert('请填写餐饮品类和开店地址');
+        return;
+      }
+      
+      const platforms = Array.from(document.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+      
+      if (platforms.length === 0) {
+        alert('请至少选择一个目标平台');
+        return;
+      }
+      
+      const btn = document.getElementById('generateBtn');
+      const resultArea = document.getElementById('resultArea');
+      
+      btn.disabled = true;
+      btn.textContent = '生成中...';
+      resultArea.style.display = 'block';
+      resultArea.innerHTML = '<div class="loading">正在生成开店清单，请稍候...</div>';
+      
+      try {
+        const input = `${category}，地址：${location}，平台：${platforms.join('、')}`;
+        
+        // 创建Chat
+        const chatResp = await fetch(`${API_BASE}/v3/chat`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${TOKEN}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            bot_id: BOT_ID,
+            user_id: 'opening_page_' + Date.now(),
+            stream: false,
+            additional_messages: [{
+              role: 'user',
+              type: 'question',
+              content_type: 'text',
+              content: input
+            }]
+          })
+        });
+        
+        const chatResult = await chatResp.json();
+        
+        if (chatResult.code !== 0) {
+          throw new Error(`创建对话失败: ${chatResult.msg || '未知错误'}`);
+        }
+        
+        const chatId = chatResult.data.id;
+        const convId = chatResult.data.conversation_id;
+        
+        // 轮询等待结果
+        let status = 'created';
+        for (let i = 0; i < 30; i++) {
+          await new Promise(r => setTimeout(r, 2000));
+          
+          const pollResp = await fetch(`${API_BASE}/v3/chat/retrieve?conversation_id=${convId}&chat_id=${chatId}`, {
+            headers: { 'Authorization': `Bearer ${TOKEN}` }
+          });
+          const pollResult = await pollResp.json();
+          status = pollResult.data?.status || 'unknown';
+          
+          if (status === 'completed' || status === 'failed') break;
+        }
+        
+        if (status !== 'completed') {
+          throw new Error('处理超时，请重试');
+        }
+        
+        // 获取回复
+        const msgResp = await fetch(`${API_BASE}/v3/chat/message/list?conversation_id=${convId}&chat_id=${chatId}`, {
+          headers: { 'Authorization': `Bearer ${TOKEN}` }
+        });
+        const msgResult = await msgResp.json();
+        
+        if (msgResult.code !== 0 || !msgResult.data) {
+          throw new Error('获取回复失败');
+        }
+        
+        const answer = msgResult.data.find(m => m.type === 'answer' && m.role === 'assistant');
+        if (!answer) {
+          throw new Error('未找到回复内容');
+        }
+        
+        resultArea.innerHTML = `<div class="result">${answer.content}</div>`;
+        
+      } catch (err) {
+        resultArea.innerHTML = `<div class="result" style="color: #d32f2f;">❌ ${err.message}</div>`;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '一键生成开店清单';
+      }
+    }
+  </script>
+</body>
+</html>
