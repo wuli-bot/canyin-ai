@@ -85,7 +85,7 @@
       btn.disabled = true;
       btn.textContent = '生成中...';
       resultArea.style.display = 'block';
-      resultArea.innerHTML = '<div class="loading">正在生成开店清单，请稍候...</div>';
+      resultArea.innerHTML = '<div class="loading">正在生成开店清单（完整流程约需1-2分钟），请稍候...</div>';
       
       try {
         const input = `${category}，地址：${location}，平台：${platforms.join('、')}`;
@@ -121,7 +121,7 @@
         
         // 轮询等待结果
         let status = 'created';
-        for (let i = 0; i < 30; i++) {
+        for (let i = 0; i < 60; i++) {
           await new Promise(r => setTimeout(r, 2000));
           
           const pollResp = await fetch(`${API_BASE}/v3/chat/retrieve?conversation_id=${convId}&chat_id=${chatId}`, {
