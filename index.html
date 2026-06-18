@@ -58,6 +58,36 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .dash-cost-input label { font-size: 12px; color: #64748b; }
 .dash-cost-input input { padding: 6px 10px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: #f1f5f9; font-size: 14px; outline: none; width: 100%; box-sizing: border-box; }
 .dash-cost-input input:focus { border-color: #3b82f6; }
+/* Floating costs */
+.dash-floating-costs { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 16px; margin: 0 8px 16px; }
+.dash-floating-costs-title { font-size: 14px; font-weight: 600; color: #94a3b8; margin-bottom: 12px; cursor: pointer; }
+.dash-cost-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #0f172a; border-radius: 8px; margin-bottom: 8px; }
+.dash-cost-item .item-info { display: flex; align-items: center; gap: 10px; }
+.dash-cost-item .item-icon { font-size: 18px; }
+.dash-cost-item .item-name { font-size: 14px; font-weight: 500; }
+.dash-cost-item .item-period { font-size: 11px; color: #64748b; }
+.dash-cost-item .item-amount { font-size: 14px; font-weight: 600; color: #f97316; }
+.dash-cost-item .item-actions { display: flex; gap: 8px; }
+.dash-cost-item .item-actions button { padding: 4px 10px; background: #334155; border: none; border-radius: 6px; color: #94a3b8; font-size: 12px; cursor: pointer; }
+.dash-cost-item .item-actions button:hover { background: #475569; }
+.dash-cost-item .item-actions .delete-btn:hover { background: #ef4444; color: #fff; }
+.dash-add-cost-btn { display: inline-block; margin-top: 8px; padding: 6px 16px; background: #334155; border: 1px solid #475569; border-radius: 8px; color: #94a3b8; font-size: 13px; cursor: pointer; }
+.dash-add-cost-btn:hover { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+.dash-cost-estimate { font-size: 11px; color: #f59e0b; margin-top: 8px; padding: 6px 10px; background: rgba(245,158,11,0.1); border-radius: 6px; }
+/* Cost entry modal */
+.cost-modal-content { max-height: 70vh; overflow-y: auto; }
+.cost-modal-section { margin-bottom: 16px; }
+.cost-modal-section label { display: block; font-size: 13px; color: #94a3b8; margin-bottom: 6px; }
+.cost-modal-section .type-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.cost-modal-section .type-btn { padding: 8px 16px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #94a3b8; font-size: 13px; cursor: pointer; }
+.cost-modal-section .type-btn.active { background: #3b82f6; border-color: #3b82f6; color: #fff; }
+.cost-modal-section .date-range { display: flex; gap: 8px; align-items: center; }
+.cost-modal-section .date-range input { flex: 1; }
+.cost-modal-section .date-range span { color: #64748b; }
+.cost-modal-estimate { background: #0f172a; border-radius: 8px; padding: 12px; margin-top: 12px; }
+.cost-modal-estimate .estimate-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; }
+.cost-modal-estimate .estimate-row .label { color: #94a3b8; }
+.cost-modal-estimate .estimate-row .value { color: #f1f5f9; font-weight: 500; }
 /* Quick add modal */
 .dash-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 1000; display: flex; align-items: center; justify-content: center; }
 .dash-modal { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 24px; width: 320px; max-width: 90vw; }
@@ -169,6 +199,7 @@ textarea.input { min-height: 100px; resize: vertical; }
   <div id="dashboardContainer" style="padding:0 8px;margin-bottom:16px"></div>
   <div id="monthlySummaryContainer"></div>
   <div id="fixedCostsContainer"></div>
+  <div id="floatingCostsContainer"></div>
   <div class="portal-grid" id="portalModules"></div>
   <div style="text-align:center;margin-bottom:16px">
     <button onclick="testAPIConnection()" style="padding:6px 16px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#94a3b8;font-size:12px;cursor:pointer">🔍 连接诊断</button>
@@ -1445,7 +1476,17 @@ function renderPortal() {
   var fc = getFixedCosts();
   var monthlyFixedTotal = (fc.rent || 0) + (fc.labor || 0) + (fc.utilities || 0) + (fc.other || 0);
   var dailyFixed = monthlyFixedTotal / 30;
-  var todayNetProfit = t.total - t.purchases - dailyFixed;
+  
+  // 计算浮动费用（水电气）
+  var dailyFloating = getDailyFloatingCost(new Date());
+  var dailyFloatingAmount = dailyFloating.amount;
+  
+  // 如果没有实际浮动费用，但有营收，用4%估算
+  if (!dailyFloating.hasActual && t.total > 0) {
+    dailyFloatingAmount = t.total * 0.04;
+  }
+  
+  var todayNetProfit = t.total - t.purchases - dailyFixed - dailyFloatingAmount;
   var hasFixedCosts = monthlyFixedTotal > 0;
   
   // 7 dashboard cards
@@ -1473,7 +1514,7 @@ function renderPortal() {
       '<div class="dash-icon">💎</div><div class="dash-label">今日净利润</div>' +
       (hasFixedCosts ? 
         '<div class="dash-value" style="color:' + (todayNetProfit >= 0 ? '#22c55e' : '#ef4444') + '">¥' + todayNetProfit.toFixed(0) + '</div>' +
-        '<div class="dash-profit-hint">采购¥' + t.purchases.toFixed(0) + ' · 固定¥' + dailyFixed.toFixed(0) + '</div>'
+        '<div class="dash-profit-hint">采购¥' + t.purchases.toFixed(0) + ' · 固定¥' + dailyFixed.toFixed(0) + ' · 水电气¥' + dailyFloatingAmount.toFixed(0) + '</div>'
         : 
         '<div class="dash-value" style="color:#94a3b8;font-size:16px">--</div>' +
         '<div class="dash-profit-setup" onclick="event.stopPropagation();toggleFixedCosts();document.getElementById(\'fixedCostsContainer\').scrollIntoView({behavior:\'smooth\'})">请设置固定支出以查看净利润</div>'
@@ -1486,16 +1527,20 @@ function renderPortal() {
 
   // Monthly summary
   var m = getMonthlyTotals();
-  var monthlyNetProfit = m.total - m.purchases - dailyFixed * (m.days || 1);
+  var now = new Date();
+  var monthlyFloating = getMonthlyFloatingCost(now.getFullYear(), now.getMonth());
+  var monthlyNetProfit = m.total - m.purchases - dailyFixed * (m.days || 1) - monthlyFloating.amount;
   
   document.getElementById('monthlySummaryContainer').innerHTML = '<div class="dash-monthly">' +
     '<div class="dash-monthly-title">📅 本月累计（' + (m.days || 0) + '天）</div>' +
     '<div class="dash-monthly-grid">' +
       '<div class="dash-monthly-item"><div class="label">总营收</div><div class="value" style="color:#f97316">¥' + m.total.toFixed(0) + '</div></div>' +
       '<div class="dash-monthly-item"><div class="label">总采购</div><div class="value" style="color:#3b82f6">¥' + m.purchases.toFixed(0) + '</div></div>' +
-      '<div class="dash-monthly-item"><div class="label">固定支出/日</div><div class="value" style="color:#ef4444">¥' + dailyFixed.toFixed(0) + '</div></div>' +
+      '<div class="dash-monthly-item"><div class="label">水电气等</div><div class="value" style="color:#f97316">¥' + monthlyFloating.amount.toFixed(0) + (monthlyFloating.hasEstimate ? '*' : '') + '</div></div>' +
       '<div class="dash-monthly-item"><div class="label">净利润(估)</div><div class="value" style="color:' + (monthlyNetProfit >= 0 ? '#22c55e' : '#ef4444') + '">¥' + monthlyNetProfit.toFixed(0) + '</div></div>' +
-    '</div></div>';
+    '</div>' +
+    (monthlyFloating.hasEstimate ? '<div style="font-size:11px;color:#f59e0b;margin-top:8px">* 部分数据为预估值</div>' : '') +
+  '</div>';
 
   // Fixed costs settings
   document.getElementById('fixedCostsContainer').innerHTML = '<div class="dash-fixed-costs">' +
@@ -1506,6 +1551,9 @@ function renderPortal() {
       '<div class="dash-cost-input"><label>水电气</label><input type="number" value="' + (fc.utilities||'') + '" placeholder="0" onchange="updateFixedCost(\'utilities\',this.value)"></div>' +
       '<div class="dash-cost-input"><label>其他</label><input type="number" value="' + (fc.other||'') + '" placeholder="0" onchange="updateFixedCost(\'other\',this.value)"></div>' +
     '</div></div></div>';
+
+  // Floating costs section
+  renderFloatingCosts();
 
   // Module cards
   var HIDDEN_MODULES = ['portal', 'voice-store', 'voice-control', 'voice-order', 'order'];
@@ -1532,6 +1580,268 @@ function updateFixedCost(key, val) {
   fc[key] = parseFloat(val) || 0;
   saveFixedCosts(fc);
   renderPortal();
+}
+
+// ===== FLOATING COSTS (水电气等浮动费用) =====
+function getFloatingCosts() {
+  return JSON.parse(localStorage.getItem('dash_floating_costs') || '[]');
+}
+function saveFloatingCosts(costs) {
+  localStorage.setItem('dash_floating_costs', JSON.stringify(costs));
+}
+function addFloatingCost(cost) {
+  var costs = getFloatingCosts();
+  cost.id = 'fc_' + Date.now();
+  cost.createdAt = new Date().toISOString();
+  costs.push(cost);
+  saveFloatingCosts(costs);
+  renderPortal();
+}
+function deleteFloatingCost(id) {
+  if (!confirm('确定删除这笔费用？')) return;
+  var costs = getFloatingCosts().filter(function(c) { return c.id !== id; });
+  saveFloatingCosts(costs);
+  renderPortal();
+}
+
+// 计算某天的浮动费用分摊（按账单周期）
+function getDailyFloatingCost(date) {
+  var dateStr = typeof date === 'string' ? date : date.toISOString().slice(0,10);
+  var costs = getFloatingCosts();
+  var dailyTotal = 0;
+  var hasActual = false;
+  
+  costs.forEach(function(cost) {
+    if (cost.mode === 'period') {
+      // 按账单周期：在起止日期内分摊
+      if (dateStr >= cost.startDate && dateStr <= cost.endDate) {
+        var start = new Date(cost.startDate);
+        var end = new Date(cost.endDate);
+        var days = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1);
+        dailyTotal += cost.amount / days;
+        hasActual = true;
+      }
+    } else if (cost.mode === 'prepaid') {
+      // 预付费：从充值日起，按预计使用天数分摊
+      var rechargeDate = new Date(cost.rechargeDate);
+      var useDays = cost.useDays || 30;
+      var endDate = new Date(rechargeDate);
+      endDate.setDate(endDate.getDate() + useDays - 1);
+      var endStr = endDate.toISOString().slice(0,10);
+      
+      if (dateStr >= cost.rechargeDate && dateStr <= endStr) {
+        dailyTotal += cost.amount / useDays;
+        hasActual = true;
+      }
+    }
+  });
+  
+  return { amount: dailyTotal, hasActual: hasActual };
+}
+
+// 计算月度浮动费用（包含预估）
+function getMonthlyFloatingCost(year, month) {
+  var total = 0;
+  var daysWithActual = 0;
+  var daysWithEstimate = 0;
+  
+  for (var d = 1; d <= 31; d++) {
+    var date = new Date(year, month, d);
+    if (date.getMonth() !== month) break;
+    var daily = getDailyFloatingCost(date);
+    if (daily.hasActual) {
+      total += daily.amount;
+      daysWithActual++;
+    }
+  }
+  
+  // 计算有营收但无实际浮动费用的天数，用行业默认值4%估算
+  var dashData = getDashboardData();
+  var todayRevenue = dashData.dinein.reduce(function(s,e){return s+e.amount;}, 0) + 
+                     dashData.delivery.reduce(function(s,e){return s+e.amount;}, 0) + 
+                     dashData.private_domain.reduce(function(s,e){return s+e.amount;}, 0);
+  
+  var daysWithoutActual = 0;
+  if (todayRevenue > 0 && daysWithActual === 0) {
+    // 今天有营收但没录入浮动费用，估算
+    var estimate = todayRevenue * 0.04; // 行业默认4%
+    total += estimate;
+    daysWithEstimate = 1;
+  }
+  
+  return { amount: total, daysWithActual: daysWithActual, daysWithEstimate: daysWithEstimate, hasEstimate: daysWithEstimate > 0 && daysWithActual === 0 };
+}
+
+// 浮动费用录入弹窗
+var costFormState = { type: 'electric', mode: 'period' };
+function showCostEntryModal() {
+  costFormState = { type: 'electric', mode: 'period' };
+  var today = new Date().toISOString().slice(0,10);
+  var monthAgo = new Date(Date.now() - 30*24*60*60*1000).toISOString().slice(0,10);
+  
+  var overlay = document.createElement('div');
+  overlay.className = 'dash-modal-overlay';
+  overlay.id = 'costModal';
+  overlay.innerHTML = '<div class="dash-modal" style="width:380px"><div class="cost-modal-content">' +
+    '<h3>录入费用</h3>' +
+    '<div class="cost-modal-section"><label>费用类型</label><div class="type-btns">' +
+      '<div class="type-btn active" data-type="electric" onclick="selectCostType(this)">⚡ 电费</div>' +
+      '<div class="type-btn" data-type="water" onclick="selectCostType(this)">💧 水费</div>' +
+      '<div class="type-btn" data-type="gas" onclick="selectCostType(this)">🔥 燃气费</div>' +
+      '<div class="type-btn" data-type="other" onclick="selectCostType(this)">📦 其他</div>' +
+    '</div></div>' +
+    '<div class="cost-modal-section"><label>录入方式</label><div class="type-btns">' +
+      '<div class="type-btn active" data-mode="period" onclick="selectCostMode(this)">按账单周期</div>' +
+      '<div class="type-btn" data-mode="prepaid" onclick="selectCostMode(this)">预付费充值</div>' +
+    '</div></div>' +
+    '<div id="costFormFields"></div>' +
+    '<div class="cost-modal-estimate" id="costEstimateBox" style="display:none"></div>' +
+    '<div class="dash-modal-btns" style="margin-top:16px"><button onclick="closeCostModal()" style="background:#334155;color:#94a3b8">取消</button><button onclick="submitCostEntry()" style="background:#3b82f6;color:#fff">确认录入</button></div>' +
+  '</div></div>';
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) closeCostModal(); });
+  document.body.appendChild(overlay);
+  renderCostFormFields();
+}
+function closeCostModal() {
+  var m = document.getElementById('costModal'); if (m) m.remove();
+}
+function selectCostType(el) {
+  el.parentElement.querySelectorAll('.type-btn').forEach(function(b) { b.classList.remove('active'); });
+  el.classList.add('active');
+  costFormState.type = el.dataset.type;
+}
+function selectCostMode(el) {
+  el.parentElement.querySelectorAll('.type-btn').forEach(function(b) { b.classList.remove('active'); });
+  el.classList.add('active');
+  costFormState.mode = el.dataset.mode;
+  renderCostFormFields();
+}
+function renderCostFormFields() {
+  var fields = document.getElementById('costFormFields');
+  var today = new Date().toISOString().slice(0,10);
+  var monthAgo = new Date(Date.now() - 30*24*60*60*1000).toISOString().slice(0,10);
+  
+  if (costFormState.mode === 'period') {
+    fields.innerHTML = '<div class="cost-modal-section"><label>账单金额（元）</label><input type="number" id="costAmount" placeholder="0.00" step="0.01" oninput="updateCostEstimate()"></div>' +
+      '<div class="cost-modal-section"><label>账单周期</label><div class="date-range"><input type="date" id="costStartDate" value="' + monthAgo + '"><span>至</span><input type="date" id="costEndDate" value="' + today + '"></div></div>';
+  } else {
+    fields.innerHTML = '<div class="cost-modal-section"><label>充值金额（元）</label><input type="number" id="costAmount" placeholder="0.00" step="0.01" oninput="updateCostEstimate()"></div>' +
+      '<div class="cost-modal-section"><label>充值日期</label><input type="date" id="costRechargeDate" value="' + today + '"></div>' +
+      '<div class="cost-modal-section"><label>预计使用天数</label><input type="number" id="costUseDays" value="30" min="1" max="365" oninput="updateCostEstimate()"></div>';
+  }
+}
+function updateCostEstimate() {
+  var amount = parseFloat(document.getElementById('costAmount').value) || 0;
+  var box = document.getElementById('costEstimateBox');
+  
+  if (amount <= 0) { box.style.display = 'none'; return; }
+  
+  var dailyAvg = 0;
+  var days = 1;
+  
+  if (costFormState.mode === 'period') {
+    var start = new Date(document.getElementById('costStartDate').value);
+    var end = new Date(document.getElementById('costEndDate').value);
+    days = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1);
+    dailyAvg = amount / days;
+  } else {
+    days = parseInt(document.getElementById('costUseDays').value) || 30;
+    dailyAvg = amount / days;
+  }
+  
+  box.style.display = 'block';
+  box.innerHTML = '<div class="estimate-row"><span class="label">每日分摊</span><span class="value">¥' + dailyAvg.toFixed(2) + '</span></div>' +
+    '<div class="estimate-row"><span class="label">分摊天数</span><span class="value">' + days + ' 天</span></div>';
+}
+function submitCostEntry() {
+  var amount = parseFloat(document.getElementById('costAmount').value);
+  if (!amount || amount <= 0) { showToast('请输入金额'); return; }
+  
+  var cost = { type: costFormState.type, mode: costFormState.mode, amount: amount };
+  
+  if (costFormState.mode === 'period') {
+    cost.startDate = document.getElementById('costStartDate').value;
+    cost.endDate = document.getElementById('costEndDate').value;
+    if (!cost.startDate || !cost.endDate) { showToast('请选择账单周期'); return; }
+    if (cost.startDate > cost.endDate) { showToast('起始日期不能晚于结束日期'); return; }
+  } else {
+    cost.rechargeDate = document.getElementById('costRechargeDate').value;
+    cost.useDays = parseInt(document.getElementById('costUseDays').value) || 30;
+    if (!cost.rechargeDate) { showToast('请选择充值日期'); return; }
+  }
+  
+  addFloatingCost(cost);
+  closeCostModal();
+  showToast('费用已录入');
+}
+
+// 渲染浮动费用区域
+function renderFloatingCosts() {
+  var costs = getFloatingCosts();
+  var today = new Date().toISOString().slice(0,10);
+  var dailyFloating = getDailyFloatingCost(new Date());
+  
+  // 按时间倒序排列
+  costs.sort(function(a, b) { return new Date(b.createdAt) - new Date(a.createdAt); });
+  
+  var typeIcons = { electric: '⚡', water: '💧', gas: '🔥', other: '📦' };
+  var typeNames = { electric: '电费', water: '水费', gas: '燃气费', other: '其他' };
+  
+  var html = '<div class="dash-floating-costs">';
+  html += '<div class="dash-floating-costs-title" onclick="toggleFloatingCosts()">💡 水电气等费用 ▾</div>';
+  html += '<div id="floatingCostsBody">';
+  
+  // 当前每日分摊
+  if (dailyFloating.amount > 0) {
+    html += '<div style="padding:8px 12px;background:#0f172a;border-radius:8px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">';
+    html += '<span style="font-size:13px;color:#94a3b8">今日分摊</span>';
+    html += '<span style="font-size:16px;font-weight:600;color:#f97316">¥' + dailyFloating.amount.toFixed(2) + '</span>';
+    html += '</div>';
+  }
+  
+  // 费用列表
+  if (costs.length === 0) {
+    html += '<div style="text-align:center;padding:16px;color:#64748b;font-size:13px">暂无费用记录</div>';
+  } else {
+    costs.slice(0, 5).forEach(function(cost) {
+      var icon = typeIcons[cost.type] || '📦';
+      var name = typeNames[cost.type] || '其他';
+      var period = '';
+      if (cost.mode === 'period') {
+        period = cost.startDate + ' 至 ' + cost.endDate;
+      } else {
+        var endDate = new Date(cost.rechargeDate);
+        endDate.setDate(endDate.getDate() + (cost.useDays || 30) - 1);
+        period = cost.rechargeDate + ' 起 ' + (cost.useDays || 30) + '天';
+      }
+      html += '<div class="dash-cost-item">';
+      html += '<div class="item-info"><span class="item-icon">' + icon + '</span><div><div class="item-name">' + name + '</div><div class="item-period">' + period + '</div></div></div>';
+      html += '<div style="display:flex;align-items:center;gap:12px"><span class="item-amount">¥' + cost.amount.toFixed(0) + '</span>';
+      html += '<div class="item-actions"><button class="delete-btn" onclick="deleteFloatingCost(\'' + cost.id + '\')">删除</button></div></div>';
+      html += '</div>';
+    });
+    if (costs.length > 5) {
+      html += '<div style="text-align:center;padding:8px;color:#64748b;font-size:12px">还有 ' + (costs.length - 5) + ' 条记录...</div>';
+    }
+  }
+  
+  html += '<div class="dash-add-cost-btn" onclick="showCostEntryModal()">+ 录入费用</div>';
+  
+  // 预估提示
+  var todayData = getDashboardData();
+  var todayRevenue = todayData.dinein.reduce(function(s,e){return s+e.amount;}, 0) + 
+                     todayData.delivery.reduce(function(s,e){return s+e.amount;}, 0) + 
+                     todayData.private_domain.reduce(function(s,e){return s+e.amount;}, 0);
+  if (todayRevenue > 0 && !dailyFloating.hasActual) {
+    html += '<div class="dash-cost-estimate">⚠️ 未录入水电气费用，按营业额4%估算（¥' + (todayRevenue * 0.04).toFixed(0) + '）</div>';
+  }
+  
+  html += '</div></div>';
+  document.getElementById('floatingCostsContainer').innerHTML = html;
+}
+function toggleFloatingCosts() {
+  var body = document.getElementById('floatingCostsBody');
+  body.style.display = body.style.display === 'none' ? 'block' : 'none';
 }
 
 // ===== COST =====
