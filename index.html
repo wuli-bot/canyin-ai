@@ -1060,6 +1060,33 @@ function copyText(text, btn) {
   });
 }
 
+function parseBotResponse(content) {
+  // 尝试解析JSON格式的返回
+  if (content && typeof content === 'string') {
+    const trimmed = content.trim();
+    if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+      try {
+        const json = JSON.parse(trimmed);
+        // 如果是error格式，提取error内容
+        if (json.error) {
+          return '**⚠️ 提示**：' + json.error;
+        }
+        // 如果是其他JSON格式，尝试提取content或text字段
+        if (json.content) return json.content;
+        if (json.text) return json.text;
+        if (json.answer) return json.answer;
+        // 如果是完整的开店流程数据格式
+        if (json.dishName || json.platforms) {
+          return JSON.stringify(json, null, 2);
+        }
+      } catch (e) {
+        // 不是有效JSON，当普通文本处理
+      }
+    }
+  }
+  return content || '';
+}
+
 function formatMarkdown(md) {
   return md
     .replace(/^### (.+)$/gm, '<h4 style="margin:16px 0 8px;font-size:16px;font-weight:600;color:#f97316">$1</h4>')
@@ -1355,7 +1382,7 @@ async function calcCost() {
     localStorage.setItem('canyin_costs', JSON.stringify(costs));
   } else {
     // 非JSON格式，直接显示
-    div.innerHTML = '<div class="card"><div class="card-title">💰 核算结果</div><div class="reply-text" style="line-height:1.8">' + formatMarkdown(answer) + '</div></div>';
+    div.innerHTML = '<div class="card"><div class="card-title">💰 核算结果</div><div class="reply-text" style="line-height:1.8">' + formatMarkdown(parseBotResponse(answer)) + '</div></div>';
   }
 }
 
@@ -1413,7 +1440,7 @@ async function handleReview() {
     div.innerHTML = html;
   } else {
     // 非JSON格式
-    div.innerHTML = '<div class="card"><div class="card-title">💬 回复建议</div><div class="reply-text" style="line-height:1.8">' + formatMarkdown(answer) + '</div></div>';
+    div.innerHTML = '<div class="card"><div class="card-title">💬 回复建议</div><div class="reply-text" style="line-height:1.8">' + formatMarkdown(parseBotResponse(answer)) + '</div></div>';
   }
   
   // Save
@@ -1482,7 +1509,7 @@ async function genPrivate() {
     div.innerHTML = html;
   } else {
     // 非JSON格式
-    div.innerHTML = '<div class="card"><div class="card-title">📱 ' + selectedScene + ' 话术</div><div class="reply-text" style="line-height:1.8">' + formatMarkdown(answer) + '</div></div>';
+    div.innerHTML = '<div class="card"><div class="card-title">📱 ' + selectedScene + ' 话术</div><div class="reply-text" style="line-height:1.8">' + formatMarkdown(parseBotResponse(answer)) + '</div></div>';
   }
 }
 
@@ -1526,7 +1553,7 @@ async function genWelcome() {
     div.innerHTML = html;
   } else {
     // 非JSON格式
-    div.innerHTML = '<div class="card"><div class="card-title">🎙️ 迎宾话术</div><div class="reply-text" style="line-height:1.8">' + formatMarkdown(answer) + '</div></div>';
+    div.innerHTML = '<div class="card"><div class="card-title">🎙️ 迎宾话术</div><div class="reply-text" style="line-height:1.8">' + formatMarkdown(parseBotResponse(answer)) + '</div></div>';
   }
 }
 
@@ -1807,7 +1834,7 @@ async function analyzeSite() {
   btn.disabled = false;
   
   if (answer) {
-    div.innerHTML = '<div class="card"><div class="card-title">📍 选址分析报告</div><div class="reply-text" style="line-height:1.8">' + formatMarkdown(answer) + '</div></div>';
+    div.innerHTML = '<div class="card"><div class="card-title">📍 选址分析报告</div><div class="reply-text" style="line-height:1.8">' + formatMarkdown(parseBotResponse(answer)) + '</div></div>';
   } else {
     div.innerHTML = '<div class="card"><div class="reply-text error">分析失败，请重试</div></div>';
   }
@@ -1850,7 +1877,7 @@ async function generateBrand() {
   btn.disabled = false;
   
   if (answer) {
-    div.innerHTML = '<div class="card"><div class="card-title">🎨 招牌设计方案</div><div class="reply-text" style="line-height:1.8">' + formatMarkdown(answer) + '</div></div>';
+    div.innerHTML = '<div class="card"><div class="card-title">🎨 招牌设计方案</div><div class="reply-text" style="line-height:1.8">' + formatMarkdown(parseBotResponse(answer)) + '</div></div>';
   } else {
     div.innerHTML = '<div class="card"><div class="reply-text error">设计失败，请重试</div></div>';
   }
@@ -1961,7 +1988,7 @@ async function generateOpening() {
   btn.disabled = false;
   
   if (answer) {
-    div.innerHTML = '<div class="card"><div class="card-title">📋 开店流程清单</div><div class="reply-text" style="line-height:1.8">' + formatMarkdown(answer) + '</div></div>';
+    div.innerHTML = '<div class="card"><div class="card-title">📋 开店流程清单</div><div class="reply-text" style="line-height:1.8">' + formatMarkdown(parseBotResponse(answer)) + '</div></div>';
   } else {
     div.innerHTML = '<div class="card"><div class="reply-text error">生成失败，请重试</div></div>';
   }
@@ -2033,7 +2060,7 @@ async function generateEquipment() {
   btn.disabled = false;
   
   if (answer) {
-    div.innerHTML = '<div class="card"><div class="card-title">🔧 AI设备选型方案</div><div class="reply-text" style="line-height:1.8">' + formatMarkdown(answer) + '</div></div>';
+    div.innerHTML = '<div class="card"><div class="card-title">🔧 AI设备选型方案</div><div class="reply-text" style="line-height:1.8">' + formatMarkdown(parseBotResponse(answer)) + '</div></div>';
   } else {
     div.innerHTML = '<div class="card"><div class="reply-text error">选型失败，请重试</div></div>';
   }
@@ -2076,7 +2103,7 @@ async function generateMenu() {
   btn.disabled = false;
   
   if (answer) {
-    div.innerHTML = '<div class="card"><div class="card-title">📝 菜单优化方案</div><div class="reply-text" style="line-height:1.8">' + formatMarkdown(answer) + '</div></div>';
+    div.innerHTML = '<div class="card"><div class="card-title">📝 菜单优化方案</div><div class="reply-text" style="line-height:1.8">' + formatMarkdown(parseBotResponse(answer)) + '</div></div>';
   } else {
     div.innerHTML = '<div class="card"><div class="reply-text error">生成失败，请重试</div></div>';
   }
@@ -2179,7 +2206,7 @@ async function generatePricing() {
       div.innerHTML = html;
     } else {
       // Markdown格式
-      div.innerHTML = '<div class="card"><div class="card-title">💲 定价方案</div><div class="reply-text" style="line-height:1.8">' + formatMarkdown(answer) + '</div></div>';
+      div.innerHTML = '<div class="card"><div class="card-title">💲 定价方案</div><div class="reply-text" style="line-height:1.8">' + formatMarkdown(parseBotResponse(answer)) + '</div></div>';
     }
   } else {
     div.innerHTML = '<div class="card"><div class="reply-text error">生成失败，请重试</div></div>';
