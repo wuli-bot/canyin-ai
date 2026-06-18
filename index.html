@@ -801,7 +801,8 @@ const BOT_IDS = {
   'voice-order': '7652165522989678642',
   order: '7652169374912659490',
   'voice-store': '7652253691269103651',
-  'voice-control': '7652253691269103651'
+  'voice-control': '7652253691269103651',
+  opening: '7652559944881192970'
 };
 
 // ===== COZE API 直连 =====
@@ -1982,7 +1983,7 @@ async function generateOpening() {
 
 请根据${category || '餐饮店'}给出针对性的建议。每个步骤都要具体到「打开什么APP」「点什么按钮」「上传什么材料」这种程度。`;
   
-  const answer = await callBot(BOT_IDS.cost, prompt);
+  const answer = await callBot(BOT_IDS.opening, prompt);
   
   btn.innerHTML = '📋 一键生成开店清单';
   btn.disabled = false;
