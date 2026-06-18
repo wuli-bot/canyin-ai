@@ -38,6 +38,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .dash-card .dash-add:hover { background: #3b82f6; color: #fff; border-color: #3b82f6; }
 .dash-total { background: linear-gradient(135deg, #1e293b, #0f172a); border: 1px solid #f97316; }
 .dash-total .dash-value { color: #f97316; }
+.dash-profit { background: linear-gradient(135deg, #0f2a1a, #0f172a); border: 2px solid #22c55e !important; }
+.dash-profit .dash-value { font-size: 28px; }
+.dash-profit-hint { font-size: 11px; color: #64748b; margin-top: 6px; line-height: 1.4; }
+.dash-profit-setup { font-size: 12px; color: #f59e0b; margin-top: 8px; cursor: pointer; text-decoration: underline; }
+.dash-profit-setup:hover { color: #fbbf24; }
 .dash-monthly { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 16px; margin: 0 8px 16px; }
 .dash-monthly-title { font-size: 14px; font-weight: 600; color: #94a3b8; margin-bottom: 12px; }
 .dash-monthly-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
@@ -1436,7 +1441,14 @@ function confirmDashAdd(type) {
 function renderPortal() {
   var t = getTodayTotals();
   
-  // 6 dashboard cards
+  // 先计算固定支出（净利润卡片需要）
+  var fc = getFixedCosts();
+  var monthlyFixedTotal = (fc.rent || 0) + (fc.labor || 0) + (fc.utilities || 0) + (fc.other || 0);
+  var dailyFixed = monthlyFixedTotal / 30;
+  var todayNetProfit = t.total - t.purchases - dailyFixed;
+  var hasFixedCosts = monthlyFixedTotal > 0;
+  
+  // 7 dashboard cards
   document.getElementById('dashboardContainer').innerHTML = '<div class="dashboard-grid">' +
     '<div class="dash-card" onclick="showQuickAdd(\'purchases\',\'采购\')">' +
       '<div class="dash-icon">🛒</div><div class="dash-label">今日采购</div>' +
@@ -1457,6 +1469,15 @@ function renderPortal() {
     '<div class="dash-card dash-total">' +
       '<div class="dash-icon">💰</div><div class="dash-label">今日总营收</div>' +
       '<div class="dash-value">¥' + t.total.toFixed(0) + '</div></div>' +
+    '<div class="dash-card dash-profit">' +
+      '<div class="dash-icon">💎</div><div class="dash-label">今日净利润</div>' +
+      (hasFixedCosts ? 
+        '<div class="dash-value" style="color:' + (todayNetProfit >= 0 ? '#22c55e' : '#ef4444') + '">¥' + todayNetProfit.toFixed(0) + '</div>' +
+        '<div class="dash-profit-hint">采购¥' + t.purchases.toFixed(0) + ' · 固定¥' + dailyFixed.toFixed(0) + '</div>'
+        : 
+        '<div class="dash-value" style="color:#94a3b8;font-size:16px">--</div>' +
+        '<div class="dash-profit-setup" onclick="event.stopPropagation();toggleFixedCosts();document.getElementById(\'fixedCostsContainer\').scrollIntoView({behavior:\'smooth\'})">请设置固定支出以查看净利润</div>'
+      ) + '</div>' +
     '<div class="dash-card" style="border-color:' + (t.reviews > 0 ? '#ef4444' : '#334155') + '">' +
       '<div class="dash-icon">⭐</div><div class="dash-label">今日差评</div>' +
       '<div class="dash-value" style="color:#ef4444">' + t.reviews + '</div>' +
@@ -1465,10 +1486,7 @@ function renderPortal() {
 
   // Monthly summary
   var m = getMonthlyTotals();
-  var fc = getFixedCosts();
-  var monthlyFixedTotal = (fc.rent || 0) + (fc.labor || 0) + (fc.utilities || 0) + (fc.other || 0);
-  var dailyFixed = monthlyFixedTotal / 30;
-  var netProfit = m.total - m.purchases - dailyFixed * (m.days || 1);
+  var monthlyNetProfit = m.total - m.purchases - dailyFixed * (m.days || 1);
   
   document.getElementById('monthlySummaryContainer').innerHTML = '<div class="dash-monthly">' +
     '<div class="dash-monthly-title">📅 本月累计（' + (m.days || 0) + '天）</div>' +
@@ -1476,7 +1494,7 @@ function renderPortal() {
       '<div class="dash-monthly-item"><div class="label">总营收</div><div class="value" style="color:#f97316">¥' + m.total.toFixed(0) + '</div></div>' +
       '<div class="dash-monthly-item"><div class="label">总采购</div><div class="value" style="color:#3b82f6">¥' + m.purchases.toFixed(0) + '</div></div>' +
       '<div class="dash-monthly-item"><div class="label">固定支出/日</div><div class="value" style="color:#ef4444">¥' + dailyFixed.toFixed(0) + '</div></div>' +
-      '<div class="dash-monthly-item"><div class="label">净利润(估)</div><div class="value" style="color:' + (netProfit >= 0 ? '#22c55e' : '#ef4444') + '">¥' + netProfit.toFixed(0) + '</div></div>' +
+      '<div class="dash-monthly-item"><div class="label">净利润(估)</div><div class="value" style="color:' + (monthlyNetProfit >= 0 ? '#22c55e' : '#ef4444') + '">¥' + monthlyNetProfit.toFixed(0) + '</div></div>' +
     '</div></div>';
 
   // Fixed costs settings
