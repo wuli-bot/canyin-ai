@@ -1,0 +1,1902 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>餐饮AI店长 · 全链路智能运营系统</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #f1f5f9; }
+
+/* Layout */
+.main { max-width: 1200px; margin: 0 auto; padding: 16px; }
+.content { padding: 0; }
+
+/* Portal grid */
+.portal-header { text-align: center; padding: 32px 16px 24px; }
+.portal-header h1 { font-size: 28px; font-weight: 700; }
+.portal-header .subtitle { color: #94a3b8; font-size: 15px; margin-top: 8px; }
+.portal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; padding: 0 8px; }
+.portal-card { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 24px; cursor: pointer; transition: all 0.2s; text-align: center; }
+.portal-card:hover { border-color: #3b82f6; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(59,130,246,0.15); }
+.portal-card .card-icon { font-size: 36px; margin-bottom: 12px; }
+.portal-card .card-name { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+.portal-card .card-desc { font-size: 13px; color: #94a3b8; margin-bottom: 10px; line-height: 1.4; }
+.portal-card .card-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+
+/* Page topbar */
+.page-topbar { display: flex; align-items: center; gap: 12px; padding: 16px 0; border-bottom: 1px solid #334155; margin-bottom: 16px; }
+.back-btn { padding: 8px 16px; background: #334155; border: 1px solid #475569; border-radius: 8px; color: #f1f5f9; font-size: 14px; cursor: pointer; transition: all 0.2s; flex-shrink: 0; }
+.back-btn:hover { background: #3b82f6; border-color: #3b82f6; }
+.page-topbar-title { font-size: 18px; font-weight: 700; }
+.page-subtitle { text-align: center; color: #94a3b8; font-size: 14px; padding-bottom: 16px; }
+
+/* Page modules */
+.module-page { display: none; }
+.module-page.active { display: block; }
+
+/* Shared components */
+.card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+.card-title { font-size: 14px; color: #94a3b8; margin-bottom: 12px; font-weight: 600; }
+.input, textarea.input { width: 100%; padding: 12px 16px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #f1f5f9; font-size: 15px; outline: none; transition: border-color 0.2s; font-family: inherit; }
+.input:focus { border-color: #3b82f6; }
+.input::placeholder { color: #64748b; }
+textarea.input { min-height: 100px; resize: vertical; }
+.btn { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+.btn-primary { background: #3b82f6; color: #fff; }
+.btn-primary:hover { background: #2563eb; }
+.btn-primary:disabled { background: #1e40af; opacity: 0.6; cursor: not-allowed; }
+.btn-success { background: #22c55e; color: #fff; }
+.btn-warning { background: #f59e0b; color: #000; }
+.btn-danger { background: #ef4444; color: #fff; }
+.btn-ghost { background: transparent; border: 1px solid #334155; color: #94a3b8; }
+.btn-ghost:hover { background: #334155; color: #f1f5f9; }
+.voice-btn { display: inline-flex !important; align-items: center; gap: 6px; padding: 10px 18px; background: #334155; border: 1px solid #475569; border-radius: 8px; color: #f1f5f9; font-size: 14px; cursor: pointer; transition: all 0.2s; user-select: none; -webkit-user-select: none; visibility: visible !important; opacity: 1 !important; }
+.voice-btn:hover { background: #3b82f6; border-color: #3b82f6; }
+.voice-btn.recording { background: #ef4444; border-color: #ef4444; animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+.tag { display: inline-block; padding: 6px 12px; background: #334155; border-radius: 6px; font-size: 13px; color: #94a3b8; cursor: pointer; transition: all 0.2s; margin: 4px; }
+.tag:hover { background: #3b82f6; color: #fff; }
+.result-box { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 16px; margin-top: 16px; }
+.result-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #1e293b; }
+.result-row:last-child { border-bottom: none; }
+.result-label { color: #94a3b8; }
+.result-value { font-weight: 600; }
+.loading-spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #334155; border-top-color: #3b82f6; border-radius: 50%; animation: spin 0.6s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.hidden { display: none; }
+.toast { position: fixed; bottom: 24px; right: 24px; padding: 12px 20px; background: #22c55e; color: #fff; border-radius: 8px; font-size: 14px; opacity: 0; transform: translateY(20px); transition: all 0.3s; pointer-events: none; z-index: 999; }
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.error { background: #ef4444; }
+.btn-row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.reply-card { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+.reply-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.reply-label { font-size: 13px; color: #94a3b8; font-weight: 600; }
+.reply-text { line-height: 1.7; font-size: 14px; }
+.copy-btn { padding: 4px 12px; background: #334155; border: none; border-radius: 4px; color: #94a3b8; cursor: pointer; font-size: 12px; }
+.copy-btn:hover { background: #3b82f6; color: #fff; }
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+.badge-live { background: #064e3b; color: #34d399; }
+.badge-new { background: #1e3a5f; color: #60a5fa; }
+.meta { text-align: center; font-size: 11px; color: #475569; margin-top: 20px; padding: 20px 0; }
+.page-header { text-align: center; padding: 24px 20px 20px; }
+.page-header h1 { font-size: 24px; font-weight: 700; }
+.page-header .subtitle { color: #94a3b8; font-size: 14px; margin-top: 8px; }
+
+/* Mobile */
+@media(max-width: 768px) {
+  .main { margin-left: 0; }
+  .page-header h1 { font-size: 20px; }
+}
+
+
+/* Touch Plan Styles */
+.touch-plan { display: flex; flex-direction: column; gap: 8px; }
+.touch-item { display: flex; align-items: center; gap: 12px; padding: 12px; background: #0f172a; border-radius: 8px; }
+.touch-day { font-weight: 700; color: #f97316; min-width: 50px; }
+.touch-time { color: #94a3b8; font-size: 14px; min-width: 100px; }
+.touch-content { flex: 1; color: #e2e8f0; }
+</style>
+</head>
+<body>
+
+<!-- Main -->
+<div class="main">
+<div class="content">
+
+<!-- 1. Portal -->
+<div class="module-page active" id="page-portal">
+  <div class="portal-header">
+    <div style="font-size:48px;margin-bottom:12px">🍳</div>
+    <h1>餐饮AI店长</h1>
+    <div class="subtitle">你的12位AI数字员工，7×24小时帮你盯店</div>
+    <div style="margin-top:16px">
+      <span class="badge badge-live">12 个模块</span>
+      <span class="badge badge-new">v2.1 卡片版</span>
+    </div>
+  </div>
+  <div class="grid-4" id="portalStats" style="margin-bottom:24px;padding:0 8px"></div>
+  <div class="portal-grid" id="portalModules"></div>
+  <div style="text-align:center;margin-bottom:16px">
+    <button onclick="testAPIConnection()" style="padding:6px 16px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#94a3b8;font-size:12px;cursor:pointer">🔍 连接诊断</button>
+    <div id="diagStatus" style="margin-top:8px;text-align:left;background:#1e293b;border:1px solid #334155;border-radius:8px;padding:8px 12px;display:none"></div>
+  </div>
+  <div style="text-align:center;padding:20px 0;font-size:12px;color:#64748b">
+    <span class="proxy-dot proxy-offline" id="proxyDot"></span>
+    <span id="proxyText">检测中...</span>
+  </div>
+  <div class="meta">餐饮AI店长 · 全链路智能运营系统</div>
+</div>
+
+<!-- 2. Cost -->
+<div class="module-page" id="page-cost">
+  <div class="page-topbar"><button class="back-btn" onclick="navigateTo('portal')">← 返回</button><div class="page-topbar-title">💰 成本核算</div></div>
+  <div class="page-subtitle">输入食材 → AI计算成本、毛利率、建议售价</div>
+  <div class="card">
+    <div class="card-title">输入食材信息</div>
+    <textarea class="input" id="costInput" placeholder="例如：蛋炒饭，米饭200g 1.2元，鸡蛋2个 2.4元，食用油10ml 0.3元"></textarea>
+    <div style="margin-top:8px">
+      <button class="voice-btn" id="costVoiceBtn" onmousedown="startVoice('costInput','costVoiceBtn')" onmouseup="stopVoice()" ontouchstart="event.preventDefault();startVoice('costInput','costVoiceBtn')" ontouchend="stopVoice()">🎤 按住说话</button>
+    </div>
+    <div style="margin-top:12px">
+      <span class="tag" onclick="document.getElementById('costInput').value='蛋炒饭：米饭200g 1.2元，鸡蛋2个 2.4元，油10ml 0.3元，调料 0.5元'">蛋炒饭</span>
+      <span class="tag" onclick="document.getElementById('costInput').value='辣椒炒肉：猪肉150g 8元，辣椒200g 3元，米饭200g 1.2元，油15ml 0.5元，调料 1元'">辣椒炒肉</span>
+      <span class="tag" onclick="document.getElementById('costInput').value='牛肉炒饭：牛肉100g 10元，米饭200g 1.2元，鸡蛋1个 1.2元，油10ml 0.3元，调料 0.8元'">牛肉炒饭</span>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="costBtn" onclick="calcCost()">🧮 计算成本</button>
+    </div>
+  </div>
+  <div id="costResult" class="hidden"></div>
+  <div class="meta">餐饮AI店长 · 成本核算</div>
+</div>
+
+<!-- 3. Review -->
+<div class="module-page" id="page-review">
+  <div class="page-topbar"><button class="back-btn" onclick="navigateTo('portal')">← 返回</button><div class="page-topbar-title">💬 差评处理</div></div>
+  <div class="page-subtitle">粘贴差评 → 生成3版专业回复 + 处理建议</div>
+  <div class="card">
+    <div class="card-title">输入顾客差评</div>
+    <textarea class="input" id="reviewInput" placeholder="粘贴顾客的差评内容..."></textarea>
+    <div style="margin-top:8px">
+      <button class="voice-btn" id="reviewVoiceBtn" onmousedown="startVoice('reviewInput','reviewVoiceBtn')" onmouseup="stopVoice()" ontouchstart="event.preventDefault();startVoice('reviewInput','reviewVoiceBtn')" ontouchend="stopVoice()">🎤 按住说话</button>
+    </div>
+    <div style="margin-top:12px">
+      <span class="tag" onclick="document.getElementById('reviewInput').value='太咸了，根本没法吃，失望'">太咸了</span>
+      <span class="tag" onclick="document.getElementById('reviewInput').value='饭都凉了才送过来，什么质量'">饭凉了</span>
+      <span class="tag" onclick="document.getElementById('reviewInput').value='服务态度很差，问什么都不耐烦'">服务态度差</span>
+      <span class="tag" onclick="document.getElementById('reviewInput').value='分量也太少了，这点东西这个价不值'">分量太少</span>
+      <span class="tag" onclick="document.getElementById('reviewInput').value='等了一个小时才送到，饿死了'">等待太久</span>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="reviewBtn" onclick="handleReview()">📝 生成回复</button>
+    </div>
+  </div>
+  <div id="reviewResult" class="hidden"></div>
+  <div class="meta">餐饮AI店长 · 差评处理</div>
+</div>
+
+<!-- 4. Private -->
+<div class="module-page" id="page-private">
+  <div class="page-topbar"><button class="back-btn" onclick="navigateTo('portal')">← 返回</button><div class="page-topbar-title">📱 私域引流</div></div>
+  <div class="page-subtitle">8大场景：包裹卡、欢迎语、社群运营</div>
+  <div class="card">
+    <div class="card-title">选择场景</div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px" id="privateScenes">
+      <span class="tag active" data-scene="包裹卡" onclick="selectScene(this)">📦 包裹卡</span>
+      <span class="tag" data-scene="欢迎语" onclick="selectScene(this)">👋 欢迎语</span>
+      <span class="tag" data-scene="社群运营" onclick="selectScene(this)">💬 社群运营</span>
+      <span class="tag" data-scene="桌贴引流" onclick="selectScene(this)">🪑 桌贴引流</span>
+      <span class="tag" data-scene="外卖袋贴" onclick="selectScene(this)">🛍️ 外卖袋贴</span>
+      <span class="tag" data-scene="朋友圈文案" onclick="selectScene(this)">📸 朋友圈</span>
+      <span class="tag" data-scene="复购提醒" onclick="selectScene(this)">🔔 复购提醒</span>
+      <span class="tag" data-scene="老带新裂变" onclick="selectScene(this)">🎁 裂变</span>
+    </div>
+    <textarea class="input" id="privateInput" placeholder="补充信息（可选）：如店铺名、优惠力度等"></textarea>
+    <div style="margin-top:8px">
+      <button class="voice-btn" id="privateVoiceBtn" onmousedown="startVoice('privateInput','privateVoiceBtn')" onmouseup="stopVoice()" ontouchstart="event.preventDefault();startVoice('privateInput','privateVoiceBtn')" ontouchend="stopVoice()">🎤 按住说话</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="privateBtn" onclick="genPrivate()">✨ 生成话术</button>
+    </div>
+  </div>
+  <div id="privateResult" class="hidden"></div>
+  <div class="meta">餐饮AI店长 · 私域引流</div>
+</div>
+
+<!-- 5. Welcome -->
+<div class="module-page" id="page-welcome">
+  <div class="page-topbar"><button class="back-btn" onclick="navigateTo('portal')">← 返回</button><div class="page-topbar-title">📷 迎宾系统v2.1</div></div>
+  <div class="page-subtitle">人脸识别 · 新客/老客 · 个性化欢迎话术</div>
+  <div class="card">
+    <div class="card-title">输入顾客特征/场景</div>
+    <textarea class="input" id="welcomeInput" placeholder="例如：第一次来的年轻女顾客 / 回头客张哥带朋友来了"></textarea>
+    <div style="margin-top:8px">
+      <button class="voice-btn" id="welcomeVoiceBtn" onmousedown="startVoice('welcomeInput','welcomeVoiceBtn')" onmouseup="stopVoice()" ontouchstart="event.preventDefault();startVoice('welcomeInput','welcomeVoiceBtn')" ontouchend="stopVoice()">🎤 按住说话</button>
+    </div>
+    <div style="margin-top:12px">
+      <span class="tag" onclick="document.getElementById('welcomeInput').value='第一次来的年轻女顾客'">新客-女</span>
+      <span class="tag" onclick="document.getElementById('welcomeInput').value='回头客张哥带了两个朋友'">老客带人</span>
+      <span class="tag" onclick="document.getElementById('welcomeInput').value='带小孩的一家三口'">家庭客</span>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="welcomeBtn" onclick="genWelcome()">🎙️ 生成话术</button>
+    </div>
+  </div>
+  <div id="welcomeResult" class="hidden"></div>
+  <div class="meta">餐饮AI店长 · 迎宾系统v2.1</div>
+</div>
+
+<!-- 6. Voice Order -->
+<div class="module-page" id="page-voice-order">
+  <div class="page-topbar"><button class="back-btn" onclick="navigateTo('portal')">← 返回</button><div class="page-topbar-title">🍳 语音点餐</div></div>
+  <div class="page-subtitle">语音/文字输入 → AI解析为结构化订单</div>
+  <div class="card">
+    <div class="card-title">输入点餐内容</div>
+    <input class="input" id="voiceOrderInput" placeholder="例如：一份蛋炒饭，重辣，加个卤蛋">
+    <div style="margin-top:8px">
+      <button class="voice-btn" id="voiceOrderVoiceBtn" onmousedown="startVoice('voiceOrderInput','voiceOrderVoiceBtn')" onmouseup="stopVoice()" ontouchstart="event.preventDefault();startVoice('voiceOrderInput','voiceOrderVoiceBtn')" ontouchend="stopVoice()">🎤 按住说话</button>
+    </div>
+    <div style="margin-top:12px">
+      <span class="tag" onclick="document.getElementById('voiceOrderInput').value='一份蛋炒饭，微辣'">蛋炒饭 微辣</span>
+      <span class="tag" onclick="document.getElementById('voiceOrderInput').value='牛肉炒粉加蛋，不要葱'">牛肉炒粉加蛋</span>
+      <span class="tag" onclick="document.getElementById('voiceOrderInput').value='辣椒炒肉饭，中辣，多放肉'">辣椒炒肉 中辣</span>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="voiceOrderBtn" onclick="sendVoiceOrder()">📤 解析订单</button>
+    </div>
+  </div>
+  <div id="voiceOrderResult" class="hidden"></div>
+  <div class="meta">餐饮AI店长 · 语音点餐</div>
+</div>
+
+<!-- 7. Order -->
+<div class="module-page" id="page-order">
+  <div class="page-topbar"><button class="back-btn" onclick="navigateTo('portal')">← 返回</button><div class="page-topbar-title">📋 订单处理</div></div>
+  <div class="page-subtitle">多平台订单统一格式化、分发</div>
+  <div class="card">
+    <div class="card-title">输入订单内容</div>
+    <textarea class="input" id="orderInput" placeholder="粘贴或输入订单内容..."></textarea>
+    <div style="margin-top:8px">
+      <button class="voice-btn" id="orderVoiceBtn" onmousedown="startVoice('orderInput','orderVoiceBtn')" onmouseup="stopVoice()" ontouchstart="event.preventDefault();startVoice('orderInput','orderVoiceBtn')" ontouchend="stopVoice()">🎤 按住说话</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="orderBtn" onclick="handleOrder()">📋 格式化订单</button>
+    </div>
+  </div>
+  <div id="orderResult" class="hidden"></div>
+  <div class="meta">餐饮AI店长 · 订单处理</div>
+</div>
+
+<!-- 8. Voice Store -->
+<div class="module-page" id="page-voice-store">
+  <div class="page-topbar"><button class="back-btn" onclick="navigateTo('portal')">← 返回</button><div class="page-topbar-title">🎤 语音入库</div></div>
+  <div class="page-subtitle">语音录入食材 → AI解析 → 确认后写入库存</div>
+  <div class="card">
+    <div class="card-title">语音输入或打字输入</div>
+    <input class="input" id="voiceStoreInput" placeholder="说点什么... 例如：进了5斤猪肉，10块一斤">
+    <div style="margin-top:8px">
+      <button class="voice-btn" id="voiceStoreVoiceBtn" onmousedown="startVoice('voiceStoreInput','voiceStoreVoiceBtn')" onmouseup="stopVoice()" ontouchstart="event.preventDefault();startVoice('voiceStoreInput','voiceStoreVoiceBtn')" ontouchend="stopVoice()">🎤 按住说话</button>
+    </div>
+    <div style="margin-top:12px">
+      <span class="tag" onclick="document.getElementById('voiceStoreInput').value='进了5斤猪肉，10块一斤'">进5斤猪肉</span>
+      <span class="tag" onclick="document.getElementById('voiceStoreInput').value='拿勒30个鸡蛋'">拿勒30个鸡蛋</span>
+      <span class="tag" onclick="document.getElementById('voiceStoreInput').value='酱油8块一瓶，进了3瓶'">酱油3瓶</span>
+      <span class="tag" onclick="document.getElementById('voiceStoreInput').value='大米50斤一袋，进了2袋'">大米2袋</span>
+      <span class="tag" onclick="document.getElementById('voiceStoreInput').value='肉还剩多少'">查询库存</span>
+      <span class="tag" onclick="document.getElementById('voiceStoreInput').value='算下蛋炒饭的成本'">算成本</span>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="voiceStoreBtn" onclick="sendVoiceStore()">📤 发送</button>
+    </div>
+  </div>
+  <div id="voiceChat" class="hidden" style="max-height:400px;overflow-y:auto;background:#1e293b;border:1px solid #334155;border-radius:8px;padding:16px;margin-bottom:16px"></div>
+  <div id="voiceConfirm" class="hidden">
+    <div class="card">
+      <div id="voiceConfirmText" style="margin-bottom:12px"></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-success" onclick="confirmVoice('yes')">✓ 确认</button>
+        <button class="btn btn-warning" onclick="confirmVoice('change')">✎ 修改</button>
+        <button class="btn btn-danger" onclick="confirmVoice('cancel')">✗ 取消</button>
+      </div>
+    </div>
+  </div>
+  <div class="meta">餐饮AI店长 · 语音入库</div>
+</div>
+
+<!-- 9. Voice Control -->
+<div class="module-page" id="page-voice-control">
+  <div class="page-topbar"><button class="back-btn" onclick="navigateTo('portal')">← 返回</button><div class="page-topbar-title">🧠 语音总控</div></div>
+  <div class="page-subtitle">7大意图识别 · 语音控制全系统</div>
+  <div class="card">
+    <div class="card-title">🎤 语音指令</div>
+    <input class="input" id="controlInput" placeholder="试试说：'进了5斤鸡蛋' / '处理差评：太咸了' / '蛋炒饭成本多少'">
+    <div style="margin-top:8px">
+      <button class="voice-btn" id="controlVoiceBtn" onmousedown="startVoice('controlInput','controlVoiceBtn')" onmouseup="stopVoice()" ontouchstart="event.preventDefault();startVoice('controlInput','controlVoiceBtn')" ontouchend="stopVoice()">🎤 按住说话</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="controlBtn" onclick="sendControl()">🚀 发送指令</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">💡 快捷指令</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px">
+      <div class="tag" onclick="testIntent('进了5斤猪肉，10块一斤')">📦 入库</div>
+      <div class="tag" onclick="testIntent('猪肉还有多少')">📊 库存查询</div>
+      <div class="tag" onclick="testIntent('蛋炒饭成本多少')">💰 成本</div>
+      <div class="tag" onclick="testIntent('定价策略怎么设')">💲 定价</div>
+      <div class="tag" onclick="testIntent('处理差评：太咸了')">💬 差评</div>
+      <div class="tag" onclick="testIntent('设计新菜单')">📋 菜单</div>
+    </div>
+  </div>
+  <div id="controlChat" class="hidden" style="max-height:500px;overflow-y:auto;background:#1e293b;border:1px solid #334155;border-radius:8px;padding:16px;margin-bottom:16px"></div>
+  <div class="meta">餐饮AI店长 · 语音总控</div>
+</div>
+
+<!-- 10. Inventory -->
+<div class="module-page" id="page-inventory">
+  <div class="page-topbar"><button class="back-btn" onclick="navigateTo('portal')">← 返回</button><div class="page-topbar-title">📦 库存管理</div></div>
+  <div class="page-subtitle">实时库存 · 低库存预警 · 数据来源：语音入库</div>
+  <div class="grid-4" id="statsCards">
+    <div class="card"><div class="card-title">食材种类</div><div style="font-size:28px;font-weight:700" id="statTotal">0</div></div>
+    <div class="card"><div class="card-title">低库存预警</div><div style="font-size:28px;font-weight:700;color:#ef4444" id="statLow">0</div></div>
+    <div class="card"><div class="card-title">今日入库</div><div style="font-size:28px;font-weight:700;color:#22c55e" id="statToday">0</div></div>
+    <div class="card"><div class="card-title">总入库次数</div><div style="font-size:28px;font-weight:700" id="statEntries">0</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">当前库存</div>
+    <div id="inventoryList"><div style="color:#94a3b8;padding:20px 0;text-align:center">暂无库存数据，请先通过语音入库录入</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">手动添加库存</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <input class="input" id="addInvName" placeholder="食材名" style="flex:1;min-width:100px">
+      <input class="input" id="addInvQty" placeholder="数量" style="width:80px">
+      <input class="input" id="addInvUnit" placeholder="单位" style="width:80px">
+      <button class="btn btn-primary" onclick="addInventoryItem()">➕ 添加</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">近期入库记录</div>
+    <div id="entryList"><div style="color:#94a3b8;padding:20px 0;text-align:center">暂无入库记录</div></div>
+  </div>
+  <div class="btn-row" style="justify-content:center;margin-top:16px">
+    <button class="btn btn-primary" onclick="loadInventory()">🔄 刷新数据</button>
+    <button class="btn btn-danger" onclick="clearInventory()">🗑️ 清空库存</button>
+  </div>
+  <div class="meta">餐饮AI店长 · 库存管理</div>
+</div>
+
+<!-- 11. Report -->
+<div class="module-page" id="page-report">
+  <div class="page-topbar"><button class="back-btn" onclick="navigateTo('portal')">← 返回</button><div class="page-topbar-title">📊 财务报表</div></div>
+  <div class="page-subtitle">营收、成本、利润概览</div>
+  <div class="grid-3">
+    <div class="card"><div class="card-title">今日营收(估)</div><div style="font-size:28px;font-weight:700;color:#22c55e" id="revToday">¥0</div></div>
+    <div class="card"><div class="card-title">今日成本(估)</div><div style="font-size:28px;font-weight:700;color:#f59e0b" id="costToday">¥0</div></div>
+    <div class="card"><div class="card-title">今日利润(估)</div><div style="font-size:28px;font-weight:700;color:#3b82f6" id="profitToday">¥0</div></div>
+  </div>
+  <div class="card"><div class="card-title">本周趋势</div><div id="weekTrend"></div></div>
+  <div class="grid-2">
+    <div class="card"><div class="card-title">库存状态</div><div id="reportInv"></div></div>
+    <div class="card"><div class="card-title">入库统计</div><div id="reportEntries"></div></div>
+  </div>
+  <div class="btn-row" style="justify-content:center;margin-top:16px">
+    <button class="btn btn-primary" onclick="loadReport()">🔄 刷新数据</button>
+  </div>
+  <div class="meta">餐饮AI店长 · 财务报表</div>
+</div>
+
+<!-- 12. Menu -->
+<div class="module-page" id="page-menu">
+  <div class="page-topbar"><button class="back-btn" onclick="navigateTo('portal')">← 返回</button><div class="page-topbar-title">📋 菜单设计</div></div>
+  <div class="page-subtitle">菜品结构设计 · 引流款+利润款+加料+套餐</div>
+  <div class="card">
+    <div class="card-title">输入店铺信息或需求</div>
+    <textarea class="input" id="menuInput" placeholder="例如：20㎡炒饭店，主营蛋炒饭、辣椒炒肉、牛肉炒饭，想优化菜单结构"></textarea>
+    <div style="margin-top:8px">
+      <button class="voice-btn" id="menuVoiceBtn" onmousedown="startVoice('menuInput','menuVoiceBtn')" onmouseup="stopVoice()" ontouchstart="event.preventDefault();startVoice('menuInput','menuVoiceBtn')" ontouchend="stopVoice()">🎤 按住说话</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="menuBtn" onclick="generateMenu()">📝 生成方案</button>
+    </div>
+  </div>
+  <div id="menuResult" class="hidden"></div>
+  <div class="meta">餐饮AI店长 · 菜单设计</div>
+</div>
+
+<!-- 13. Pricing -->
+<div class="module-page" id="page-pricing">
+  <div class="page-topbar"><button class="back-btn" onclick="navigateTo('portal')">← 返回</button><div class="page-topbar-title">💲 定价策略</div></div>
+  <div class="page-subtitle">满减设计 + 各平台定价方案</div>
+  <div class="card">
+    <div class="card-title">输入菜品成本信息</div>
+    <textarea class="input" id="pricingInput" placeholder="例如：蛋炒饭成本4.4元，辣椒炒肉成本6.5元，牛肉炒饭成本8元"></textarea>
+    <div style="margin-top:8px">
+      <button class="voice-btn" id="pricingVoiceBtn" onmousedown="startVoice('pricingInput','pricingVoiceBtn')" onmouseup="stopVoice()" ontouchstart="event.preventDefault();startVoice('pricingInput','pricingVoiceBtn')" ontouchend="stopVoice()">🎤 按住说话</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="pricingBtn" onclick="generatePricing()">💲 生成定价方案</button>
+    </div>
+  </div>
+  <div id="pricingResult" class="hidden"></div>
+  <div class="meta">餐饮AI店长 · 定价策略</div>
+</div>
+
+<!-- 14. Install -->
+<div class="module-page" id="page-install">
+  <div class="page-topbar"><button class="back-btn" onclick="navigateTo('portal')">← 返回</button><div class="page-topbar-title">🔧 设备安装指南</div></div>
+  <div class="page-subtitle">望月湖新店 · AI设备工程安装表 v1.0</div>
+  <div class="card">
+    <div class="card-title">📋 设备采购清单</div>
+    <div style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+    <thead><tr style="border-bottom:2px solid #334155;text-align:left"><th style="padding:8px;color:#94a3b8">#</th><th style="padding:8px;color:#94a3b8">设备</th><th style="padding:8px;color:#94a3b8">型号</th><th style="padding:8px;color:#94a3b8">用途</th><th style="padding:8px;color:#94a3b8">参考价</th></tr></thead>
+    <tbody>
+      <tr style="border-bottom:1px solid #334155"><td style="padding:8px">1</td><td style="padding:8px">边缘网关</td><td style="padding:8px">树莓派4B 4GB</td><td style="padding:8px;color:#94a3b8">AI大脑</td><td style="padding:8px">¥500</td></tr>
+      <tr style="border-bottom:1px solid #334155"><td style="padding:8px">2</td><td style="padding:8px">MicroSD卡</td><td style="padding:8px">32GB Class10</td><td style="padding:8px;color:#94a3b8">系统盘</td><td style="padding:8px">¥40</td></tr>
+      <tr style="border-bottom:1px solid #334155"><td style="padding:8px">3</td><td style="padding:8px">海康摄像头(门口)</td><td style="padding:8px">DS-2CD3T47 4mm</td><td style="padding:8px;color:#94a3b8">人脸识别</td><td style="padding:8px">¥500</td></tr>
+      <tr style="border-bottom:1px solid #334155"><td style="padding:8px">4</td><td style="padding:8px">海康摄像头(出餐)</td><td style="padding:8px">DS-2CD3T47 6mm</td><td style="padding:8px;color:#94a3b8">出餐核验</td><td style="padding:8px">¥500</td></tr>
+      <tr style="border-bottom:1px solid #334155"><td style="padding:8px">5</td><td style="padding:8px">飞鹅打印机</td><td style="padding:8px">FP-V3-WHC</td><td style="padding:8px;color:#94a3b8">后厨出票</td><td style="padding:8px">¥365</td></tr>
+      <tr style="border-bottom:1px solid #334155"><td style="padding:8px">6</td><td style="padding:8px">大华电子秤</td><td style="padding:8px">ACS-15Ab RS232</td><td style="padding:8px;color:#94a3b8">入库称重</td><td style="padding:8px">¥400</td></tr>
+      <tr style="border-bottom:1px solid #334155"><td style="padding:8px">7</td><td style="padding:8px">科密扫码枪</td><td style="padding:8px">TE530D 无线</td><td style="padding:8px;color:#94a3b8">扫码入库</td><td style="padding:8px">¥200</td></tr>
+      <tr style="border-bottom:1px solid #334155"><td style="padding:8px">8</td><td style="padding:8px">小爱音箱×2</td><td style="padding:8px">Pro + Play</td><td style="padding:8px;color:#94a3b8">语音播报</td><td style="padding:8px">¥370</td></tr>
+      <tr style="border-bottom:1px solid #334155"><td style="padding:8px">9</td><td style="padding:8px">出餐状态屏</td><td style="padding:8px">32寸电视/平板</td><td style="padding:8px;color:#94a3b8">订单状态</td><td style="padding:8px">¥800</td></tr>
+      <tr style="border-bottom:1px solid #334155"><td style="padding:8px">10</td><td style="padding:8px">路由器</td><td style="padding:8px">小米AX3000T</td><td style="padding:8px;color:#94a3b8">网络设备</td><td style="padding:8px">¥150</td></tr>
+    </tbody>
+    </table>
+    </div>
+    <div style="margin-top:12px;padding:10px 14px;background:#0f172a;border-radius:8px;font-size:14px;text-align:center">AI硬件合计：约 <b style="color:#3b82f6">¥4,000</b>（含备用件）</div>
+  </div>
+  <div class="card">
+    <div class="card-title">🌐 设备IP分配表</div>
+    <div style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+    <thead><tr style="border-bottom:2px solid #334155;text-align:left"><th style="padding:8px;color:#94a3b8">设备</th><th style="padding:8px;color:#94a3b8">IP地址</th><th style="padding:8px;color:#94a3b8">分配方式</th></tr></thead>
+    <tbody>
+      <tr style="border-bottom:1px solid #334155"><td style="padding:8px">路由器</td><td style="padding:8px;font-weight:600;color:#3b82f6">192.168.1.1</td><td style="padding:8px;color:#94a3b8">固定</td></tr>
+      <tr style="border-bottom:1px solid #334155"><td style="padding:8px">门口摄像头</td><td style="padding:8px;font-weight:600;color:#3b82f6">192.168.1.10</td><td style="padding:8px;color:#94a3b8">手动固定</td></tr>
+      <tr style="border-bottom:1px solid #334155"><td style="padding:8px">出餐口摄像头</td><td style="padding:8px;font-weight:600;color:#3b82f6">192.168.1.11</td><td style="padding:8px;color:#94a3b8">手动固定</td></tr>
+      <tr style="border-bottom:1px solid #334155"><td style="padding:8px">飞鹅打印机</td><td style="padding:8px;font-weight:600;color:#3b82f6">192.168.1.20</td><td style="padding:8px;color:#94a3b8">MAC绑定</td></tr>
+      <tr style="border-bottom:1px solid #334155"><td style="padding:8px">运营电脑</td><td style="padding:8px;font-weight:600;color:#3b82f6">192.168.1.30</td><td style="padding:8px;color:#94a3b8">手动固定</td></tr>
+      <tr style="border-bottom:1px solid #334155"><td style="padding:8px">树莓派</td><td style="padding:8px;font-weight:600;color:#3b82f6">192.168.1.40</td><td style="padding:8px;color:#94a3b8">手动固定</td></tr>
+      <tr style="border-bottom:1px solid #334155"><td style="padding:8px">顾客设备</td><td style="padding:8px;font-weight:600;color:#94a3b8">192.168.1.100-200</td><td style="padding:8px;color:#94a3b8">DHCP自动</td></tr>
+    </tbody>
+    </table>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">📶 WiFi双SSID配置</div>
+    <div class="grid-2">
+      <div style="background:#0f172a;padding:14px;border-radius:8px"><div style="font-weight:600;color:#3b82f6;margin-bottom:6px">Wasa_Ops (运营网)</div><div style="font-size:13px;color:#94a3b8">频段：5GHz优先<br>设备：树莓派、摄像头、打印机、老板手机<br>不限速</div></div>
+      <div style="background:#0f172a;padding:14px;border-radius:8px"><div style="font-weight:600;color:#f59e0b;margin-bottom:6px">Wasa_Guest (顾客网)</div><div style="font-size:13px;color:#94a3b8">频段：2.4GHz<br>设备：堂食顾客<br>限速2Mbps + 设备隔离</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">📌 安装顺序（按顺序执行，不跳步）</div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;align-items:center;gap:12px;padding:12px;background:#0f172a;border-radius:8px"><span style="width:28px;height:28px;background:#3b82f6;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">1</span><div><div style="font-weight:600">路由器</div><div style="font-size:12px;color:#94a3b8">网络基础，双WiFi设置</div></div></div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px;background:#0f172a;border-radius:8px"><span style="width:28px;height:28px;background:#3b82f6;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">2</span><div><div style="font-weight:600">树莓派4B</div><div style="font-size:12px;color:#94a3b8">AI边缘网关，最核心设备</div></div></div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px;background:#0f172a;border-radius:8px"><span style="width:28px;height:28px;background:#3b82f6;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">3</span><div><div style="font-weight:600">飞鹅打印机</div><div style="font-size:12px;color:#94a3b8">后厨出餐口，壁挂安装</div></div></div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px;background:#0f172a;border-radius:8px"><span style="width:28px;height:28px;background:#3b82f6;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">4</span><div><div style="font-weight:600">电子秤 + 扫码枪</div><div style="font-size:12px;color:#94a3b8">RS232串口连接树莓派</div></div></div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px;background:#0f172a;border-radius:8px"><span style="width:28px;height:28px;background:#3b82f6;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">5</span><div><div style="font-weight:600">海康摄像头 ×2</div><div style="font-size:12px;color:#94a3b8">⚠️ 必须修改默认密码！</div></div></div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px;background:#0f172a;border-radius:8px"><span style="width:28px;height:28px;background:#3b82f6;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">6</span><div><div style="font-weight:600">小爱音箱 + 出餐屏</div><div style="font-size:12px;color:#94a3b8">前厅+后厨各一个</div></div></div>
+      <div style="display:flex;align-items:center;gap:12px;padding:12px;background:#0f172a;border-radius:8px"><span style="width:28px;height:28px;background:#3b82f6;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">7</span><div><div style="font-weight:600">MAC绑定 + 全设备IP确认</div><div style="font-size:12px;color:#94a3b8">路由器后台逐一绑定</div></div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">🔗 系统联调测试</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="padding:12px;background:#0f172a;border-radius:8px"><b style="color:#22c55e">测试1</b> 迎宾流程：门口摄像头 → 人脸识别 → 小爱播报</div>
+      <div style="padding:12px;background:#0f172a;border-radius:8px"><b style="color:#22c55e">测试2</b> 点餐出票：点餐 → 订单格式化 → 飞鹅出票</div>
+      <div style="padding:12px;background:#0f172a;border-radius:8px"><b style="color:#22c55e">测试3</b> 出餐播报：完成 → 小爱播报 + 屏幕更新</div>
+      <div style="padding:12px;background:#0f172a;border-radius:8px"><b style="color:#22c55e">测试4</b> 称重入库：上秤 → 串口读取 → 成本更新</div>
+      <div style="padding:12px;background:#0f172a;border-radius:8px"><b style="color:#f59e0b">测试5</b> 异常场景：WiFi断网 → 飞鹅4G备网切换</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">🚨 应急预案</div>
+    <div style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+    <thead><tr style="border-bottom:2px solid #334155;text-align:left"><th style="padding:8px;color:#94a3b8">异常情况</th><th style="padding:8px;color:#94a3b8">应急措施</th></tr></thead>
+    <tbody>
+      <tr style="border-bottom:1px solid #334155"><td style="padding:8px">🔴 树莓派死机</td><td style="padding:8px;color:#94a3b8">拔电源重启，SSH检查日志</td></tr>
+      <tr style="border-bottom:1px solid #334155"><td style="padding:8px">🔴 打印机卡纸/缺纸</td><td style="padding:8px;color:#94a3b8">处理卡纸/换纸，重新打印</td></tr>
+      <tr style="border-bottom:1px solid #334155"><td style="padding:8px">🟡 WiFi断网</td><td style="padding:8px;color:#94a3b8">飞鹅自动切4G，其他设备等恢复</td></tr>
+      <tr style="border-bottom:1px solid #334155"><td style="padding:8px">🟡 摄像头断流</td><td style="padding:8px;color:#94a3b8">检查电源，重启摄像头</td></tr>
+      <tr style="border-bottom:1px solid #334155"><td style="padding:8px">🔴 全网瘫痪</td><td style="padding:8px;color:#94a3b8">重启路由器（等待1分钟）</td></tr>
+    </tbody>
+    </table>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">⌨️ 常用调试命令</div>
+    <div style="background:#0f172a;border-radius:8px;padding:14px;font-family:monospace;font-size:13px;line-height:1.8;overflow-x:auto">
+      <div style="color:#94a3b8"># SSH连接树莓派</div><div>ssh pi@192.168.1.40</div>
+      <div style="color:#94a3b8;margin-top:8px"># 电子秤串口测试</div><div>screen /dev/ttyUSB0 9600</div>
+      <div style="color:#94a3b8;margin-top:8px"># VLC验证摄像头</div><div>rtsp://user:pass@192.168.1.10:554/Streaming/Channels/101</div>
+      <div style="color:#94a3b8;margin-top:8px"># ping各设备</div><div>ping 192.168.1.10 && ping 192.168.1.11 && ping 192.168.1.20</div>
+    </div>
+  </div>
+  <div class="meta">餐饮AI店长 · 设备安装指南 · 望月湖新店</div>
+</div>
+
+
+</div><!-- /content -->
+</div><!-- /main -->
+
+<div class="toast" id="toast"></div>
+<!-- 12. Repurchase -->
+<div class="module-page" id="page-repurchase">
+  <div class="page-topbar"><button class="back-btn" onclick="navigateTo('portal')">← 返回</button><div class="page-topbar-title">🔄 复购引擎</div></div>
+  <div class="page-subtitle">会员体系 · 7次自动触达 · 裂变方案</div>
+  
+  <!-- 统计卡片 -->
+  <div class="grid-4">
+    <div class="card"><div class="card-title">会员总数</div><div style="font-size:28px;font-weight:700" id="repTotalMembers">0</div></div>
+    <div class="card"><div class="card-title">今日新增</div><div style="font-size:28px;font-weight:700;color:#22c55e" id="repTodayNew">0</div></div>
+    <div class="card"><div class="card-title">待触达</div><div style="font-size:28px;font-weight:700;color:#f59e0b" id="repPendingTouch">0</div></div>
+    <div class="card"><div class="card-title">裂变邀请</div><div style="font-size:28px;font-weight:700;color:#3b82f6" id="repInvitations">0</div></div>
+  </div>
+  
+  <!-- 添加会员 -->
+  <div class="card">
+    <div class="card-title">添加会员</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <input class="input" id="repMemberName" placeholder="姓名/昵称" style="flex:1;min-width:120px">
+      <input class="input" id="repMemberPhone" placeholder="手机号" style="width:140px">
+      <select class="input" id="repMemberLevel" style="width:100px">
+        <option value="silver">银卡</option>
+        <option value="gold">金卡</option>
+        <option value="diamond">钻石卡</option>
+      </select>
+      <button class="btn btn-primary" onclick="addRepMember()">➕ 添加</button>
+    </div>
+  </div>
+  
+  <!-- 会员列表 -->
+  <div class="card">
+    <div class="card-title">会员列表</div>
+    <div id="repMemberList"><div style="color:#94a3b8;padding:20px 0;text-align:center">暂无会员，请先添加</div></div>
+  </div>
+  
+  <!-- 触达规则 -->
+  <div class="card">
+    <div class="card-title">7次触达计划</div>
+    <div class="touch-plan">
+      <div class="touch-item">
+        <div class="touch-day">第1次</div>
+        <div class="touch-time">消费后24小时</div>
+        <div class="touch-content">感谢短信 + 下次消费优惠券</div>
+      </div>
+      <div class="touch-item">
+        <div class="touch-day">第2次</div>
+        <div class="touch-time">第3天</div>
+        <div class="touch-content">新品推荐 + 专属折扣</div>
+      </div>
+      <div class="touch-item">
+        <div class="touch-day">第3次</div>
+        <div class="touch-time">第7天</div>
+        <div class="touch-content">会员日邀请 + 积分提醒</div>
+      </div>
+      <div class="touch-item">
+        <div class="touch-day">第4次</div>
+        <div class="touch-time">第14天</div>
+        <div class="touch-content">生日月祝福（如有）+ 专属礼遇</div>
+      </div>
+      <div class="touch-item">
+        <div class="touch-day">第5次</div>
+        <div class="touch-time">第21天</div>
+        <div class="touch-content">老客专属活动 + 裂变邀请</div>
+      </div>
+      <div class="touch-item">
+        <div class="touch-day">第6次</div>
+        <div class="touch-time">第30天</div>
+        <div class="touch-content">月度总结 + 下月预告</div>
+      </div>
+      <div class="touch-item">
+        <div class="touch-day">第7次</div>
+        <div class="touch-time">第60天</div>
+        <div class="touch-content">长期未消费唤醒 + 超值优惠</div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 裂变方案 -->
+  <div class="card">
+    <div class="card-title">裂变邀请方案</div>
+    <div style="margin-bottom:12px">
+      <div style="font-weight:600;margin-bottom:8px">邀请奖励规则</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:150px">
+          <div style="color:#64748b;font-size:14px">邀请人获得</div>
+          <div style="font-size:20px;font-weight:700;color:#22c55e">满30减10券</div>
+        </div>
+        <div style="flex:1;min-width:150px">
+          <div style="color:#64748b;font-size:14px">被邀请人获得</div>
+          <div style="font-size:20px;font-weight:700;color:#3b82f6">首单9折券</div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div style="font-weight:600;margin-bottom:8px">生成邀请链接</div>
+      <div style="display:flex;gap:8px">
+        <input class="input" id="repInviteCode" readonly placeholder="点击生成邀请码" style="flex:1">
+        <button class="btn btn-primary" onclick="generateInviteCode()">🎲 生成</button>
+        <button class="btn" onclick="copyInviteCode()">📋 复制</button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="btn-row" style="justify-content:center;margin-top:16px">
+    <button class="btn btn-primary" onclick="loadRepurchase()">🔄 刷新数据</button>
+    <button class="btn btn-danger" onclick="clearRepurchase()">🗑️ 清空数据</button>
+  </div>
+  
+  <div class="meta">餐饮AI店长 · 复购引擎</div>
+</div>
+
+
+<script>
+
+// ===== NAV CONFIG =====
+const MODULES = [
+  // 12个全链路模块（按业务流程排序）
+  { id: 'site', emoji: '📍', name: '选址分析', desc: '商圈画像·竞品密度·客群分析', url: 'https://wuli-bot.github.io/canyin-ai/site.html' },
+  { id: 'opening', emoji: '📋', name: '开店流程', desc: '证照办理·平台入驻全流程', url: 'https://wuli-bot.github.io/canyin-ai/opening.html' },
+  { id: 'brand', emoji: '🎨', name: '招牌设计', desc: '品牌命名·Logo方向·门头排版', url: 'https://wuli-bot.github.io/canyin-ai/brand.html' },
+  { id: 'equipment', emoji: '🔧', name: '设备选型', desc: '采购清单·型号参数·预算表', url: 'https://wuli-bot.github.io/canyin-ai/equipment.html' },
+  { id: 'menu', emoji: '📝', name: '菜单设计', desc: '引流款·利润款·套餐搭配' },
+  { id: 'cost', emoji: '💰', name: '成本核算', desc: '食材成本·毛利率·平台定价' },
+  { id: 'pricing', emoji: '💲', name: '定价策略', desc: '满减设计·平台差异化定价' },
+  { id: 'inventory', emoji: '📦', name: '库存管理', desc: '采购补货·安全库存·损耗控制' },
+  { id: 'review', emoji: '💬', name: '差评处理', desc: '差评回复·恶意差评识别' },
+  { id: 'report', emoji: '📊', name: '财务报表', desc: '日报周报·利润趋势·漏洞诊断' },
+  { id: 'private', emoji: '📱', name: '私域引流', desc: '包裹卡·堂食扫码·社群运营' },
+  { id: 'repurchase', emoji: '🔄', name: '复购引擎', desc: '会员体系·7次触达·裂变方案' },
+  // 隐藏的功能模块（融入其他环节，不独立展示）
+  { id: 'welcome', emoji: '📷', name: '迎宾系统', desc: '人脸识别·个性话术' },
+  { id: 'voice-order', emoji: '🍳', name: '语音点餐', desc: '语音→结构化订单' },
+  { id: 'order', emoji: '📋', name: '订单处理', desc: '多平台统一格式化' },
+  { id: 'portal', emoji: '🏠', name: '门户首页', desc: '' },
+  { id: 'voice-store', emoji: '🎤', name: '语音入库', desc: '语音录入·确认写入' },
+  { id: 'voice-control', emoji: '🧠', name: '语音总控', desc: '7大意图·语音控制' }
+];
+
+// ===== BOT IDS =====
+const BOT_IDS = {
+  cost: '7651922196432338995',
+  review: '7651944084466794550',
+  private: '7651952126398054435',
+  welcome: '7651953305891405870',
+  'voice-order': '7652165522989678642',
+  order: '7652169374912659490',
+  'voice-store': '7652253691269103651',
+  'voice-control': '7652253691269103651'
+};
+
+// ===== COZE API 直连 =====
+const COZE_API = 'https://api.coze.cn';
+const API_TOKEN = 'sat_LvCuUkueRmeZlNEJFdSBf1qXCu61fPi32jkbpTWKpktSUkTVY6oH16QKqYLQNIfY';
+const USER_ID = 'spa_user_' + Date.now();
+
+// API状态
+let apiReady = false;
+let useFallbackProxy = false;
+const PROXY_URLS = ['http://localhost:5000', 'http://localhost:8765'];
+let proxyBase = '';
+
+// ===== GLOBAL ERROR HANDLER =====
+window.__spaErrors = [];
+window.onerror = function(msg, src, line, col, err) {
+  const info = { msg: String(msg), src: String(src), line: line, col: col, stack: err ? err.stack : '' };
+  window.__spaErrors.push(info);
+  console.error('[SPA Error]', info);
+  // Show visible error banner
+  let banner = document.getElementById('spaErrorBanner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'spaErrorBanner';
+    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#dc2626;color:#fff;padding:8px 16px;font-size:13px;z-index:99999;cursor:pointer;max-height:40vh;overflow:auto;';
+    document.body.appendChild(banner);
+  }
+  banner.innerHTML = '⚠️ JS Error: ' + msg + ' (line ' + line + ') <span style="opacity:0.7">点击关闭</span>';
+  banner.onclick = function() { banner.style.display = 'none'; };
+  banner.style.display = 'block';
+  return true;
+};
+window.onunhandledrejection = function(event) {
+  const info = { reason: String(event.reason), stack: event.reason && event.reason.stack ? event.reason.stack : '' };
+  window.__spaErrors.push(info);
+  console.error('[SPA Unhandled Rejection]', info);
+  let banner = document.getElementById('spaErrorBanner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'spaErrorBanner';
+    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#dc2626;color:#fff;padding:8px 16px;font-size:13px;z-index:99999;cursor:pointer;';
+    document.body.appendChild(banner);
+  }
+  banner.innerHTML = '⚠️ Promise Error: ' + (event.reason ? event.reason.message || event.reason : 'unknown') + ' <span style="opacity:0.7">点击关闭</span>';
+  banner.onclick = function() { banner.style.display = 'none'; };
+  banner.style.display = 'block';
+};
+
+async function initAPI() {
+  console.log('[SPA] initAPI starting...');
+  const dot = document.getElementById('proxyDot'), text = document.getElementById('proxyText');
+  // 检测代理服务器（带超时，不阻塞主流程）
+  const proxyChecks = PROXY_URLS.map(url =>
+    fetch(url + '/health', { method: 'GET', mode: 'cors', signal: AbortSignal.timeout(2000) })
+      .then(r => { if (r.ok) { proxyBase = url; useFallbackProxy = true; } })
+      .catch(() => {})
+  );
+  // 立即标记API就绪（直连模式）
+  apiReady = true;
+  console.log('[SPA] apiReady=true, COZE_API=' + COZE_API);
+  if (dot && text) {
+    dot.className = 'proxy-dot proxy-online';
+    text.textContent = '直连API ✓';
+  }
+  // 后台继续检测代理（不阻塞）
+  Promise.all(proxyChecks).then(() => {
+    if (useFallbackProxy && dot && text) {
+      text.textContent = '代理模式';
+    }
+  });
+}
+
+// ===== DIAGNOSTIC =====
+async function testAPIConnection() {
+  const statusEl = document.getElementById('diagStatus');
+  if (!statusEl) return;
+  statusEl.style.display = 'block';
+  statusEl.innerHTML = '<span style="color:#f59e0b">测试中...</span>';
+  
+  const results = [];
+  
+  // Test 1: apiReady
+  results.push('apiReady: ' + apiReady);
+  
+  // Test 2: fetch API
+  try {
+    const r = await fetch(COZE_API + '/v3/chat', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + API_TOKEN, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        bot_id: BOT_IDS.cost,
+        user_id: 'diag_test',
+        stream: false,
+        additional_messages: [{ role: 'user', content: '你好', content_type: 'text' }]
+      })
+    });
+    const data = await r.json();
+    results.push('API Status: ' + r.status + ' ' + (data.code === 0 ? '✅' : '❌ ' + data.msg));
+    if (data.data) results.push('Chat ID: ' + data.data.id);
+  } catch(e) {
+    results.push('API Error: ' + e.message);
+  }
+  
+  // Test 3: SpeechRecognition
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  results.push('语音识别: ' + (SR ? '✅ 支持' : '❌ 不支持'));
+  results.push('协议: ' + location.protocol);
+  
+  // Test 4: functions exist
+  results.push('calcCost: ' + (typeof calcCost === 'function' ? '✅' : '❌'));
+  results.push('callBot: ' + (typeof callBot === 'function' ? '✅' : '❌'));
+  results.push('navigateTo: ' + (typeof navigateTo === 'function' ? '✅' : '❌'));
+  
+  // Test 5: JS errors
+  if (window.__spaErrors && window.__spaErrors.length > 0) {
+    results.push('错误数: ' + window.__spaErrors.length);
+    window.__spaErrors.forEach((e, i) => results.push('  错误' + (i+1) + ': ' + e.msg));
+  } else {
+    results.push('JS错误: 无 ✅');
+  }
+  
+  statusEl.innerHTML = results.map(r => '<div style="padding:2px 0;font-size:12px;font-family:monospace">' + r + '</div>').join('');
+}
+
+
+async function cozeRequest(method, path, data = null, params = null) {
+  let url = COZE_API + path;
+  if (params) {
+    const qs = Object.entries(params).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
+    url += '?' + qs;
+  }
+  const opts = {
+    method,
+    headers: {
+      'Authorization': `Bearer ${API_TOKEN}`,
+      'Content-Type': 'application/json'
+    }
+  };
+  if (data) opts.body = JSON.stringify(data);
+  const r = await fetch(url, opts);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return await r.json();
+}
+
+async function callBotDirect(botId, message, conversationId = null) {
+  console.log('[callBotDirect] Starting, botId:', botId, 'message length:', message.length);
+  // Step 1: 创建对话
+  const chatData = {
+    bot_id: botId,
+    user_id: USER_ID,
+    stream: false,
+    additional_messages: [{ role: 'user', content: message, content_type: 'text' }]
+  };
+  if (conversationId) chatData.conversation_id = conversationId;
+  
+  const result = await cozeRequest('POST', '/v3/chat', chatData);
+  if (!result.data) throw new Error(result.msg || '创建对话失败');
+  
+  const chatId = result.data.id;
+  const convId = result.data.conversation_id;
+  let status = result.data.status;
+  
+  // Step 2: 轮询等待完成（最多30秒）
+  for (let i = 0; i < 30; i++) {
+    if (status === 'completed' || status === 'failed') break;
+    await new Promise(r => setTimeout(r, 1000));
+    const poll = await cozeRequest('GET', '/v3/chat/retrieve', null, { conversation_id: convId, chat_id: chatId });
+    if (poll.data) status = poll.data.status;
+  }
+  
+  if (status === 'failed') throw new Error('Bot处理失败');
+  
+  // Step 3: 获取消息
+  const msgs = await cozeRequest('GET', '/v3/chat/message/list', null, { conversation_id: convId, chat_id: chatId });
+  if (!msgs.data) throw new Error('获取消息失败');
+  
+  for (const msg of msgs.data) {
+    if (msg.type === 'answer') {
+      console.log('[callBotDirect] Success, answer length:', msg.content ? msg.content.length : 0);
+      return { answer: msg.content, conversation_id: convId };
+    }
+  }
+  throw new Error('未找到回复');
+}
+
+async function callBotViaProxy(botId, message) {
+  const r = await fetch(proxyBase + '/api/chat', { 
+    method: 'POST', 
+    headers: { 'Content-Type': 'application/json' }, 
+    body: JSON.stringify({ bot_id: botId, message }) 
+  });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const data = await r.json();
+  return { answer: data.answer || data.text || '', conversation_id: null };
+}
+
+async function callBot(botId, message) {
+  if (!apiReady) {
+    console.error('[SPA] callBot: apiReady=false!');
+    showToast('API初始化中，请稍后再试', 'error');
+    return null;
+  }
+  try {
+    // 优先直连Coze API
+    console.log('[SPA] callBot direct, botId=' + botId + ', msg length=' + message.length);
+    const result = await callBotDirect(botId, message);
+    console.log('[SPA] callBot success, answer=' + (result.answer ? result.answer.length : 0) + ' chars');
+    return result.answer;
+  } catch(e) {
+    console.error('[SPA] callBot direct failed:', e.message, e.stack);
+    // 直连失败时尝试代理
+    if (useFallbackProxy) {
+      try {
+        const result = await callBotViaProxy(botId, message);
+        return result.answer;
+      } catch(e2) {
+        console.error('[SPA] callBot proxy failed:', e2.message);
+        showToast('请求失败: ' + e2.message, 'error');
+        return null;
+      }
+    } else {
+      showToast('请求失败: ' + e.message, 'error');
+      return null;
+    }
+  }
+}
+
+// ===== UTILITIES =====
+function extractJSON(text) {
+  if (!text) return null; let depth = 0, start = -1;
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === '{') { if (depth === 0) start = i; depth++; }
+    else if (text[i] === '}') { depth--; if (depth === 0 && start >= 0) { try { return JSON.parse(text.substring(start, i+1)); } catch(e) { return null; } } }
+  }
+  return null;
+}
+
+// ===== 通用格式化工具 =====
+function copyText(text, btn) {
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✓ 已复制';
+    btn.style.background = '#22c55e';
+    setTimeout(() => { btn.textContent = orig; btn.style.background = ''; }, 2000);
+  }).catch(() => {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    const orig = btn.textContent;
+    btn.textContent = '✓ 已复制';
+    setTimeout(() => { btn.textContent = orig; }, 2000);
+  });
+}
+
+function formatMarkdown(md) {
+  return md
+    .replace(/^### (.+)$/gm, '<h4 style="margin:16px 0 8px;font-size:16px;font-weight:600;color:#f97316">$1</h4>')
+    .replace(/^## (.+)$/gm, '<h3 style="margin:20px 0 10px;font-size:18px;font-weight:700;color:#f97316">$1</h3>')
+    .replace(/^(\d+)\. (.+)$/gm, '<div style="margin:8px 0;padding-left:24px;text-indent:-24px"><span style="color:#f97316;font-weight:600">$1.</span> $2</div>')
+    .replace(/^- (.+)$/gm, '<div style="margin:6px 0;padding-left:20px;text-indent:-12px">• $1</div>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong style="color:#f97316">$1</strong>')
+    .replace(/\n\n/g, '<div style="height:12px"></div>')
+    .replace(/\n/g, '<br>');
+}
+
+function showToast(msg, type) {
+  const t = document.getElementById('toast'); if (!t) return;
+  t.textContent = msg; t.className = 'toast show' + (type === 'error' ? ' error' : '');
+  setTimeout(() => t.className = 'toast', 2500);
+}
+
+
+// ===== VOICE =====
+let recognition = null;
+function startVoice(inputId, btnId) {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { showToast('⚠️ 浏览器不支持语音识别，请使用Chrome/Safari', 'error'); return; }
+  
+  // 检查是否HTTPS环境
+  if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+    showToast('⚠️ 语音功能需要HTTPS环境，请部署到服务器后使用', 'error');
+    return;
+  }
+  
+  if (recognition) { try { recognition.stop(); } catch(e) {} }
+  
+  recognition = new SR();
+  recognition.lang = 'zh-CN';
+  recognition.continuous = false;
+  recognition.interimResults = true;  // 显示中间结果
+  recognition.maxAlternatives = 1;
+  
+  const btn = document.getElementById(btnId);
+  const originalText = btn.textContent;
+  btn.classList.add('recording');
+  btn.textContent = '🎤 请说话...';
+  btn.style.background = '#ef4444';
+  
+  // 请求麦克风权限
+  recognition.onstart = () => {
+    console.log('语音识别已启动');
+    btn.textContent = '🎤 正在听...';
+  };
+  
+  recognition.onresult = (e) => {
+    let finalTranscript = '';
+    let interimTranscript = '';
+    
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const transcript = e.results[i][0].transcript;
+      if (e.results[i].isFinal) {
+        finalTranscript += transcript;
+      } else {
+        interimTranscript += transcript;
+      }
+    }
+    
+    const el = document.getElementById(inputId);
+    if (el) {
+      if (finalTranscript) {
+        el.value = finalTranscript;
+        btn.textContent = '✅ 识别完成';
+        btn.style.background = '#22c55e';
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.style.background = '';
+        }, 1000);
+      } else if (interimTranscript) {
+        // 显示中间结果
+        el.value = interimTranscript;
+        btn.textContent = '🎤 ' + interimTranscript.slice(-10);
+      }
+    }
+  };
+  
+  recognition.onerror = (e) => {
+    console.error('语音识别错误:', e.error);
+    btn.classList.remove('recording');
+    btn.style.background = '';
+    
+    let errorMsg = '⚠️ 语音识别失败';
+    if (e.error === 'not-allowed') {
+      errorMsg = '⚠️ 麦克风权限被拒绝，请在浏览器设置中允许';
+    } else if (e.error === 'no-speech') {
+      errorMsg = '⚠️ 没有检测到语音，请重试';
+    } else if (e.error === 'network') {
+      errorMsg = '⚠️ 网络连接错误';
+    } else if (e.error === 'aborted') {
+      errorMsg = originalText;
+    }
+    
+    btn.textContent = errorMsg;
+    if (e.error !== 'aborted') {
+      setTimeout(() => {
+        btn.textContent = originalText;
+      }, 2000);
+    }
+  };
+  
+  recognition.onend = () => {
+    console.log('语音识别结束');
+    btn.classList.remove('recording');
+    btn.style.background = '';
+    if (btn.textContent.includes('请说话') || btn.textContent.includes('正在听')) {
+      btn.textContent = originalText;
+    }
+  };
+  
+  try {
+    recognition.start();
+  } catch(e) {
+    console.error('启动语音识别失败:', e);
+    showToast('⚠️ 启动语音识别失败: ' + e.message, 'error');
+    btn.classList.remove('recording');
+    btn.textContent = originalText;
+  }
+}
+function stopVoice() { if (recognition) try { recognition.stop(); } catch(e) {} }
+
+// ===== ROUTING =====
+function navigateTo(id) {
+  document.querySelectorAll('.module-page').forEach(p => p.classList.remove('active'));
+  const page = document.getElementById('page-' + id);
+  if (page) page.classList.add('active');
+  window.location.hash = id;
+  // Load data for certain pages
+  if (id === 'inventory') loadInventory();
+  if (id === 'report') loadReport();
+  if (id === 'repurchase') loadRepurchase();
+  if (id === 'portal') renderPortal();
+  window.scrollTo(0, 0);
+}
+
+function buildNav() {
+  // No sidebar/mobile-tabs in card-grid layout
+}
+
+// ===== PORTAL =====
+function renderPortal() {
+  const inv = JSON.parse(localStorage.getItem('canyin_inventory') || '{}');
+  const entries = JSON.parse(localStorage.getItem('canyin_entries') || '[]');
+  const reviews = JSON.parse(localStorage.getItem('canyin_reviews') || '[]');
+  const today = new Date().toDateString();
+  const todayEntries = entries.filter(e => new Date(e.time).toDateString() === today);
+  const todayRev = todayEntries.length * 80;
+  const lowStock = Object.keys(inv).filter(n => inv[n].qty <= 5).length;
+
+  document.getElementById('portalStats').innerHTML =
+    '<div class="card" style="text-align:center"><div class="card-title">今日营收(估)</div><div style="font-size:24px;font-weight:700;color:#22c55e">¥' + todayRev + '</div></div>' +
+    '<div class="card" style="text-align:center"><div class="card-title">待处理差评</div><div style="font-size:24px;font-weight:700;color:#f59e0b">' + reviews.length + '</div></div>' +
+    '<div class="card" style="text-align:center"><div class="card-title">库存预警</div><div style="font-size:24px;font-weight:700;color:#ef4444">' + lowStock + '</div></div>' +
+    '<div class="card" style="text-align:center"><div class="card-title">今日入库</div><div style="font-size:24px;font-weight:700;color:#3b82f6">' + todayEntries.length + '</div></div>';
+
+  const HIDDEN_MODULES = ['portal', 'voice-store', 'voice-control', 'welcome', 'voice-order', 'order'];
+  const moduleCards = MODULES.filter(m => !HIDDEN_MODULES.includes(m.id));
+  document.getElementById('portalModules').innerHTML = moduleCards.map(m => {
+    const badges = { site:'✅ 已上线', opening:'✅ 已上线', brand:'✅ 已上线', equipment:'✅ 已上线', menu:'✅ 已上线', cost:'✅ 已上线', pricing:'✅ 已上线', inventory:'✅ 已上线', review:'✅ 已上线', report:'✅ 已上线', private:'✅ 已上线', repurchase:'✅ 已上线' };
+    const b = badges[m.id] || '✅ 已上线';
+    const badgeCls = b.includes('🆕') ? 'badge-new' : 'badge-live';
+    const clickAction = m.url ? "window.open('" + m.url + "', '_blank')" : "navigateTo('" + m.id + "')";
+    return '<div class="portal-card" onclick="' + clickAction + '">' +
+      '<div class="card-icon">' + m.emoji + '</div>' +
+      '<div class="card-name">' + m.name + '</div>' +
+      '<div class="card-desc">' + (m.desc || '') + '</div>' +
+      '<span class="card-badge ' + badgeCls + '">' + b + '</span></div>';
+  }).join('');
+}
+
+// ===== COST =====
+async function calcCost() {
+  const text = document.getElementById('costInput').value.trim(); if (!text) return;
+  const btn = document.getElementById('costBtn'); btn.innerHTML = '<span class="loading-spinner"></span> 计算中...'; btn.disabled = true;
+  const answer = await callBot(BOT_IDS.cost, text);
+  btn.innerHTML = '🧮 计算成本'; btn.disabled = false;
+  const div = document.getElementById('costResult'); div.classList.remove('hidden');
+  if (!answer) { div.innerHTML = '<div class="card"><div class="reply-text" style="color:#ef4444">网络请求失败，请检查网络连接</div></div>'; return; }
+  
+  const json = extractJSON(answer);
+  if (json && (json.total_cost || json.totalCost || json.食材明细 || json.ingredients)) {
+    let html = '<div class="card"><div class="card-title">📊 成本核算结果</div><div class="result-box">';
+    
+    // 食材明细 - 兼容不同字段名
+    const ingredients = json.食材明细 || json.ingredients || [];
+    if (Array.isArray(ingredients) && ingredients.length > 0) {
+      ingredients.forEach(f => {
+        const name = f.name || f.食材 || '';
+        const cost = f.cost || f.成本 || 0;
+        html += '<div class="result-row"><span class="result-label">' + name + '</span><span class="result-value">¥' + cost.toFixed(2) + '</span></div>';
+      });
+    }
+    
+    // 总成本
+    const totalCost = json.total_cost || json.totalCost || 0;
+    html += '<div class="result-row" style="border-top:2px solid #334155;padding-top:12px;margin-top:12px"><span class="result-label" style="font-weight:700">总成本</span><span class="result-value" style="color:#f59e0b;font-size:20px">¥' + totalCost.toFixed(2) + '</span></div>';
+    
+    // 建议售价
+    const suggestedPrice = json.suggested_price || json.suggestedPrice || 0;
+    if (suggestedPrice > 0) {
+      html += '<div class="result-row"><span class="result-label">建议售价</span><span class="result-value" style="color:#22c55e;font-size:18px">¥' + suggestedPrice.toFixed(2) + '</span></div>';
+    }
+    
+    // 毛利率
+    const margin = json.profit_margin || json.profitMargin || json.grossMargin || 0;
+    if (margin > 0) {
+      html += '<div class="result-row"><span class="result-label">毛利率</span><span class="result-value" style="color:#3b82f6">' + margin.toFixed(1) + '%</span></div>';
+    }
+    
+    // 各平台定价
+    const platforms = json.platforms || [];
+    if (Array.isArray(platforms) && platforms.length > 0) {
+      html += '</div><div style="margin-top:16px;padding-top:16px;border-top:2px solid #334155"><div style="font-weight:700;margin-bottom:12px;color:#f97316">💰 各平台定价建议</div>';
+      platforms.forEach(p => {
+        const pName = p.name || p.平台 || '';
+        const pPrice = p.suggestedPrice || p.suggested_price || 0;
+        const pCommission = p.commissionRate || p.commission_rate || 0;
+        const pIncome = p.netIncome || p.net_income || 0;
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #1e293b"><div><span style="font-weight:600">' + pName + '</span>' + (pCommission > 0 ? '<span style="font-size:12px;color:#94a3b8;margin-left:8px">佣金' + pCommission + '%</span>' : '') + '</div><div style="text-align:right"><div style="font-weight:700;color:#22c55e;font-size:16px">¥' + pPrice.toFixed(2) + '</div>' + (pIncome > 0 ? '<div style="font-size:12px;color:#94a3b8">到手 ¥' + pIncome.toFixed(2) + '</div>' : '') + '</div></div>';
+      });
+    }
+    
+    html += '</div></div>';
+    div.innerHTML = html;
+    
+    // Save to localStorage
+    const costs = JSON.parse(localStorage.getItem('canyin_costs') || '[]');
+    costs.push({ input: text, result: json, time: new Date().toISOString() });
+    localStorage.setItem('canyin_costs', JSON.stringify(costs));
+  } else {
+    // 非JSON格式，直接显示
+    div.innerHTML = '<div class="card"><div class="card-title">💰 核算结果</div><div class="reply-text" style="line-height:1.8">' + formatMarkdown(answer) + '</div></div>';
+  }
+}
+
+// ===== REVIEW =====
+async function handleReview() {
+  const text = document.getElementById('reviewInput').value.trim(); if (!text) return;
+  const btn = document.getElementById('reviewBtn'); btn.innerHTML = '<span class="loading-spinner"></span> 生成中...'; btn.disabled = true;
+  const answer = await callBot(BOT_IDS.review, text);
+  btn.innerHTML = '📝 生成回复'; btn.disabled = false;
+  const div = document.getElementById('reviewResult'); div.classList.remove('hidden');
+  if (!answer) { div.innerHTML = '<div class="card"><div class="reply-text" style="color:#ef4444">⚠️ 网络请求失败，请检查网络连接后重试</div></div>'; return; }
+  
+  const json = extractJSON(answer);
+  if (json && json.replies && Array.isArray(json.replies)) {
+    let html = '';
+    
+    // 差评分析
+    if (json.category || json.severity) {
+      html += '<div class="card" style="background:#1e293b;border-left:4px solid #f59e0b;padding:16px;margin-bottom:12px"><div style="font-size:14px;color:#94a3b8;margin-bottom:8px">📋 差评分析</div>';
+      if (json.category) html += '<div style="margin:6px 0"><span style="color:#94a3b8">类型：</span><span style="color:#f59e0b;font-weight:600">' + json.category + '</span></div>';
+      if (json.severity) html += '<div style="margin:6px 0"><span style="color:#94a3b8">严重程度：</span><span style="color:#f59e0b;font-weight:600">' + json.severity + '</span></div>';
+      if (json.isMalicious) html += '<div style="margin:6px 0;color:#ef4444">⚠️ 疑似恶意差评</div>';
+      html += '</div>';
+    }
+    
+    // 3版回复话术
+    const styles = ['诚恳道歉型', '解决方案型', '温暖关怀型'];
+    json.replies.forEach((r, i) => {
+      const style = (r.style || styles[i] || '版本' + (i+1));
+      const replyText = r.content || r.text || r;
+      html += '<div class="reply-card" style="margin-bottom:16px"><div class="reply-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><span class="reply-label" style="background:#3b82f6;padding:4px 12px;border-radius:12px;font-size:13px;font-weight:600">' + style + '</span><button class="copy-btn" onclick="copyText(\'' + (replyText || '').replace(/'/g, "\\'").replace(/"/g, '&quot;') + '\',this)" style="background:#334155;border:none;padding:6px 16px;border-radius:6px;color:#fff;cursor:pointer;font-size:13px">📋 复制</button></div><div class="reply-text" style="line-height:1.8;padding:16px;background:#0f172a;border-radius:8px">' + (typeof replyText === 'string' ? replyText : JSON.stringify(replyText)) + '</div></div>';
+    });
+    
+    // 处理建议
+    if (json.suggestion || json.处理建议) {
+      const suggestion = json.suggestion || json.处理建议;
+      html += '<div class="card" style="margin-top:16px"><div class="card-title">💡 处理建议</div><div class="reply-text" style="line-height:1.8">' + formatMarkdown(suggestion) + '</div></div>';
+    }
+    
+    // 预防措施
+    if (json.prevention && Array.isArray(json.prevention)) {
+      html += '<div class="card" style="margin-top:16px"><div class="card-title">🛡️ 预防措施</div><div style="padding:12px 0">';
+      json.prevention.forEach((p, i) => {
+        html += '<div style="margin:8px 0;padding-left:24px;text-indent:-24px"><span style="color:#f97316;font-weight:600">' + (i+1) + '.</span> ' + p + '</div>';
+      });
+      html += '</div></div>';
+    }
+    
+    // 私信模板
+    if (json.privateMessage || json.私信) {
+      const pm = json.privateMessage || json.私信;
+      html += '<div class="card" style="margin-top:16px"><div class="card-title">💬 私信模板</div><div style="position:relative"><div class="reply-text" style="line-height:1.8;padding:16px;background:#0f172a;border-radius:8px">' + pm + '</div><button class="copy-btn" onclick="copyText(\'' + pm.replace(/'/g, "\\'").replace(/"/g, '&quot;') + '\',this)" style="position:absolute;top:8px;right:8px;background:#334155;border:none;padding:6px 16px;border-radius:6px;color:#fff;cursor:pointer;font-size:13px">📋 复制</button></div></div>';
+    }
+    
+    div.innerHTML = html;
+  } else {
+    // 非JSON格式
+    div.innerHTML = '<div class="card"><div class="card-title">💬 回复建议</div><div class="reply-text" style="line-height:1.8">' + formatMarkdown(answer) + '</div></div>';
+  }
+  
+  // Save
+  const reviews = JSON.parse(localStorage.getItem('canyin_reviews') || '[]');
+  reviews.push({ text, answer, time: new Date().toISOString() });
+  localStorage.setItem('canyin_reviews', JSON.stringify(reviews));
+}
+
+// ===== PRIVATE =====
+let selectedScene = '包裹卡';
+function selectScene(el) {
+  document.querySelectorAll('#privateScenes .tag').forEach(t => t.style.background = '#334155');
+  el.style.background = '#3b82f6'; selectedScene = el.dataset.scene;
+}
+async function genPrivate() {
+  const extra = document.getElementById('privateInput').value.trim();
+  const msg = '场景：' + selectedScene + (extra ? '\n补充：' + extra : '');
+  const btn = document.getElementById('privateBtn'); btn.innerHTML = '<span class="loading-spinner"></span> 生成中...'; btn.disabled = true;
+  const answer = await callBot(BOT_IDS.private, msg);
+  btn.innerHTML = '✨ 生成话术'; btn.disabled = false;
+  const div = document.getElementById('privateResult'); div.classList.remove('hidden');
+  if (!answer) { div.innerHTML = '<div class="card" style="color:#ef4444">⚠️ 网络请求失败，请检查网络连接后重试</div>'; return; }
+  
+  const json = extractJSON(answer);
+  if (json && (json.content || json.scene || json.welcome)) {
+    let html = '';
+    
+    // 场景和标题
+    const scene = json.scene || selectedScene;
+    const title = json.content && json.content.main ? json.content.main : scene + ' 引流方案';
+    const subtitle = json.content && json.content.sub ? json.content.sub : '';
+    
+    html += '<div class="card" style="background:linear-gradient(135deg,#1e40af,#7c3aed);padding:20px;border-radius:12px;margin-bottom:16px"><div style="font-size:12px;color:rgba(255,255,255,0.7);margin-bottom:8px">📱 ' + scene + '</div><div style="font-size:20px;font-weight:700;color:#fff;margin-bottom:8px">' + title + '</div>' + (subtitle ? '<div style="font-size:14px;color:rgba(255,255,255,0.9)">' + subtitle + '</div>' : '') + '</div>';
+    
+    // CTA说明
+    if (json.content && json.content.cta) {
+      html += '<div class="card" style="margin-bottom:16px"><div style="font-size:14px;color:#f97316;font-weight:600;margin-bottom:8px">🎯 目标</div><div style="line-height:1.8">' + json.content.cta + '</div></div>';
+    }
+    
+    // 包裹卡正面
+    if (json.content && json.content.front) {
+      html += '<div class="card" style="margin-bottom:16px"><div class="card-title">📦 包裹卡 · 正面</div><div style="position:relative"><div class="reply-text" style="line-height:1.8;padding:16px;background:#0f172a;border-radius:8px;border:2px solid #f97316">' + json.content.front + '</div><button class="copy-btn" onclick="copyText(\'' + json.content.front.replace(/'/g, "\\'").replace(/"/g, '&quot;') + '\',this)" style="position:absolute;top:8px;right:8px;background:#f97316;border:none;padding:6px 16px;border-radius:6px;color:#fff;cursor:pointer;font-size:13px">📋 复制</button></div></div>';
+    }
+    
+    // 包裹卡背面
+    if (json.content && json.content.back) {
+      html += '<div class="card" style="margin-bottom:16px"><div class="card-title">📦 包裹卡 · 背面</div><div style="position:relative"><div class="reply-text" style="line-height:1.8;padding:16px;background:#0f172a;border-radius:8px">' + json.content.back + '</div><button class="copy-btn" onclick="copyText(\'' + json.content.back.replace(/'/g, "\\'").replace(/"/g, '&quot;') + '\',this)" style="position:absolute;top:8px;right:8px;background:#334155;border:none;padding:6px 16px;border-radius:6px;color:#fff;cursor:pointer;font-size:13px">📋 复制</button></div></div>';
+    }
+    
+    // 福利说明
+    if (json.content && json.content.benefit) {
+      html += '<div class="card" style="margin-bottom:16px"><div class="card-title">🎁 专属福利</div><div class="reply-text" style="line-height:1.8">' + formatMarkdown(json.content.benefit) + '</div></div>';
+    }
+    
+    // 扫码引导
+    if (json.content && json.content.qr_guide) {
+      html += '<div class="card" style="margin-bottom:16px;background:#1e293b;border-left:4px solid #22c55e;padding:16px"><div class="card-title">📱 扫码引导</div><div class="reply-text" style="line-height:1.8">' + json.content.qr_guide + '</div></div>';
+    }
+    
+    // 微信欢迎语
+    if (json.welcome || (json.content && json.content.welcome)) {
+      const welcome = json.welcome || json.content.welcome;
+      html += '<div class="card" style="margin-bottom:16px"><div class="card-title">💬 微信欢迎语</div><div style="position:relative"><div class="reply-text" style="line-height:1.8;padding:16px;background:#0f172a;border-radius:8px">' + welcome + '</div><button class="copy-btn" onclick="copyText(\'' + welcome.replace(/'/g, "\\'").replace(/"/g, '&quot;') + '\',this)" style="position:absolute;top:8px;right:8px;background:#22c55e;border:none;padding:6px 16px;border-radius:6px;color:#fff;cursor:pointer;font-size:13px">📋 复制</button></div></div>';
+    }
+    
+    div.innerHTML = html;
+  } else {
+    // 非JSON格式
+    div.innerHTML = '<div class="card"><div class="card-title">📱 ' + selectedScene + ' 话术</div><div class="reply-text" style="line-height:1.8">' + formatMarkdown(answer) + '</div></div>';
+  }
+}
+
+// ===== WELCOME =====
+async function genWelcome() {
+  const text = document.getElementById('welcomeInput').value.trim(); if (!text) return;
+  const btn = document.getElementById('welcomeBtn'); btn.innerHTML = '<span class="loading-spinner"></span> 生成中...'; btn.disabled = true;
+  const answer = await callBot(BOT_IDS.welcome, text);
+  btn.innerHTML = '🎙️ 生成话术'; btn.disabled = false;
+  const div = document.getElementById('welcomeResult'); div.classList.remove('hidden');
+  if (!answer) { div.innerHTML = '<div class="card" style="color:#ef4444">⚠️ 网络请求失败，请检查网络连接后重试</div>'; return; }
+  
+  const json = extractJSON(answer);
+  if (json && (json.scenarios || json.intent)) {
+    let html = '';
+    
+    // 场景化话术
+    if (json.scenarios && Array.isArray(json.scenarios)) {
+      json.scenarios.forEach(s => {
+        const scene = s.scene || s.场景 || s.name || '';
+        const script = s.script || s.话术 || s.speech || '';
+        html += '<div class="card" style="margin-bottom:16px"><div class="card-title" style="color:#f97316">🎯 ' + scene + '</div>';
+        if (s.condition || s.触发条件) {
+          html += '<div style="font-size:13px;color:#94a3b8;margin-bottom:8px;padding:8px 12px;background:#1e293b;border-radius:6px">触发条件：' + (s.condition || s.触发条件) + '</div>';
+        }
+        html += '<div style="position:relative"><div class="reply-text" style="line-height:1.8;padding:16px;background:#0f172a;border-radius:8px;border-left:4px solid #22c55e">' + script + '</div>';
+        html += '<button class="copy-btn" onclick="copyText(\'' + script.replace(/'/g, "\\'").replace(/"/g, '&quot;') + '\',this)" style="position:absolute;top:8px;right:8px;background:#334155;border:none;padding:6px 16px;border-radius:6px;color:#fff;cursor:pointer;font-size:13px">📋 复制</button></div></div>';
+      });
+    }
+    
+    // 单场景模式
+    else if (json.intent || json.script) {
+      const intent = json.intent || json.意图 || '';
+      const script = json.script || json.话术 || '';
+      html += '<div class="card"><div class="card-title">🎯 场景识别</div><div style="font-size:14px;color:#94a3b8;margin-bottom:12px">意图：' + intent + '</div>';
+      html += '<div class="card-title">💬 迎宾话术</div>';
+      html += '<div style="position:relative"><div class="reply-text" style="line-height:1.8;padding:16px;background:#0f172a;border-radius:8px;border-left:4px solid #22c55e">' + script + '</div>';
+      html += '<button class="copy-btn" onclick="copyText(\'' + script.replace(/'/g, "\\'").replace(/"/g, '&quot;') + '\',this)" style="position:absolute;top:8px;right:8px;background:#334155;border:none;padding:6px 16px;border-radius:6px;color:#fff;cursor:pointer;font-size:13px">📋 复制</button></div></div>';
+    }
+    
+    div.innerHTML = html;
+  } else {
+    // 非JSON格式
+    div.innerHTML = '<div class="card"><div class="card-title">🎙️ 迎宾话术</div><div class="reply-text" style="line-height:1.8">' + formatMarkdown(answer) + '</div></div>';
+  }
+}
+
+// ===== VOICE ORDER =====
+async function sendVoiceOrder() {
+  const text = document.getElementById('voiceOrderInput').value.trim(); if (!text) return;
+  const btn = document.getElementById('voiceOrderBtn'); btn.innerHTML = '<span class="loading-spinner"></span> 解析中...'; btn.disabled = true;
+  const answer = await callBot(BOT_IDS['voice-order'], text);
+  btn.innerHTML = '📤 解析订单'; btn.disabled = false;
+  const div = document.getElementById('voiceOrderResult'); div.classList.remove('hidden');
+  if (!answer) { div.innerHTML = '<div class="card" style="color:#ef4444">⚠️ 网络请求失败，请检查网络连接后重试</div>'; return; }
+  const json = extractJSON(answer);
+  if (json && json.items) {
+    let html = '<div class="card"><div class="card-title">🍳 结构化订单</div>';
+    if (json.order_id) html += '<div style="display:flex;justify-content:space-between;margin-bottom:16px"><span style="color:#94a3b8;font-size:12px">订单号: ' + json.order_id + '</span><span style="font-size:20px;font-weight:700;color:#3b82f6">¥' + (json.total_amount||0) + '</span></div>';
+    json.items.forEach(item => {
+      html += '<div style="padding:12px 0;border-bottom:1px solid #334155"><div style="font-weight:600">' + item.name + ' × ' + (item.qty||1) + '</div>';
+      if (item.remark) html += '<div style="font-size:12px;color:#f59e0b;margin-top:4px">备注: ' + item.remark + '</div>';
+      html += '</div>';
+    });
+    html += '</div>'; div.innerHTML = html;
+  } else {
+    div.innerHTML = '<div class="card"><div class="card-title">🍳 订单解析</div><div class="reply-text" style="line-height:1.8">' + answer.replace(/\n/g, '<br>') + '</div></div>';
+  }
+}
+
+// ===== ORDER =====
+async function handleOrder() {
+  const text = document.getElementById('orderInput').value.trim(); if (!text) return;
+  const btn = document.getElementById('orderBtn'); btn.innerHTML = '<span class="loading-spinner"></span> 格式化中...'; btn.disabled = true;
+  const answer = await callBot(BOT_IDS.order, text);
+  btn.innerHTML = '📋 格式化订单'; btn.disabled = false;
+  const div = document.getElementById('orderResult'); div.classList.remove('hidden');
+  if (!answer) { div.innerHTML = '<div class="card" style="color:#ef4444">⚠️ 网络请求失败，请检查网络连接后重试</div>'; return; }
+  
+  const json = extractJSON(answer);
+  if (json && (json.order_id || json.status || json.items)) {
+    let html = '<div class="card">';
+    
+    // 订单头
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:16px;border-bottom:2px solid #334155"><div>';
+    if (json.order_id) html += '<div style="font-size:12px;color:#94a3b8">订单号：' + json.order_id + '</div>';
+    if (json.status) {
+      const statusColors = {'待处理':'#f59e0b','制作中':'#3b82f6','待配送':'#8b5cf6','已完成':'#22c55e','已取消':'#ef4444'};
+      const color = statusColors[json.status] || '#f97316';
+      html += '<div style="display:inline-block;margin-top:4px;padding:4px 12px;border-radius:12px;background:' + color + ';font-size:13px;font-weight:600">' + json.status + '</div>';
+    }
+    html += '</div>';
+    if (json.total_amount) html += '<div style="font-size:24px;font-weight:700;color:#f97316">¥' + parseFloat(json.total_amount).toFixed(2) + '</div>';
+    html += '</div>';
+    
+    // 客户信息
+    if (json.customer_name || json.phone || json.address) {
+      html += '<div style="padding:12px 0;border-bottom:1px solid #1e293b"><div style="font-size:13px;color:#94a3b8;margin-bottom:8px">👤 客户信息</div>';
+      if (json.customer_name) html += '<div style="margin:4px 0">' + json.customer_name + '</div>';
+      if (json.phone) html += '<div style="margin:4px 0;color:#94a3b8">📞 ' + json.phone + '</div>';
+      if (json.address) html += '<div style="margin:4px 0;color:#94a3b8">📍 ' + json.address + '</div>';
+      html += '</div>';
+    }
+    
+    // 菜品明细
+    if (json.items && Array.isArray(json.items)) {
+      html += '<div style="padding:12px 0"><div style="font-size:13px;color:#94a3b8;margin-bottom:8px">🍽️ 菜品明细</div>';
+      json.items.forEach((item, i) => {
+        const name = item.name || item.菜品 || '';
+        const qty = item.qty || item.quantity || item.数量 || 1;
+        const price = item.price || item.单价 || 0;
+        const subtotal = item.subtotal || (qty * price);
+        html += '<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #1e293b"><div><span style="font-weight:600">' + name + '</span><span style="color:#94a3b8;margin-left:8px">× ' + qty + '</span></div><div style="text-align:right"><div style="font-weight:600;color:#22c55e">¥' + subtotal.toFixed(2) + '</div>' + (price > 0 && qty > 1 ? '<div style="font-size:12px;color:#94a3b8">¥' + price.toFixed(2) + '/份</div>' : '') + '</div></div>';
+        if (item.remark || item.备注) html += '<div style="font-size:12px;color:#f59e0b;margin:4px 0 8px">备注：' + (item.remark || item.备注) + '</div>';
+      });
+      html += '</div>';
+    }
+    
+    // 配送信息
+    if (json.delivery_time || json.delivery_type) {
+      html += '<div style="padding:12px 0;border-top:2px solid #334155;margin-top:8px"><div style="font-size:13px;color:#94a3b8;margin-bottom:8px">🚚 配送信息</div>';
+      if (json.delivery_type) html += '<div style="margin:4px 0">配送方式：' + json.delivery_type + '</div>';
+      if (json.delivery_time) html += '<div style="margin:4px 0;color:#f97316;font-weight:600">预计送达：' + json.delivery_time + '</div>';
+      html += '</div>';
+    }
+    
+    html += '</div>';
+    div.innerHTML = html;
+  } else {
+    // 非JSON格式
+    div.innerHTML = '<div class="card"><div class="card-title">📋 格式化结果</div><div class="reply-text" style="line-height:1.8;white-space:pre-wrap">' + answer + '</div></div>';
+  }
+}
+
+// ===== VOICE STORE =====
+let currentVoiceData = null, voiceTimer = null;
+function appendChat(chatId, type, text) {
+  const chat = document.getElementById(chatId); chat.classList.remove('hidden');
+  const div = document.createElement('div');
+  div.style.cssText = 'margin-bottom:10px;padding:10px 14px;border-radius:8px;font-size:14px;max-width:85%;';
+  if (type === 'user') div.style.cssText += 'background:#3b82f6;margin-left:auto;text-align:right;';
+  else if (type === 'bot') div.style.cssText += 'background:#334155;';
+  else div.style.cssText += 'background:transparent;border:1px dashed #334155;color:#94a3b8;text-align:center;max-width:100%;font-size:13px;';
+  div.innerHTML = text; chat.appendChild(div); chat.scrollTop = chat.scrollHeight;
+}
+
+async function sendVoiceStore() {
+  const input = document.getElementById('voiceStoreInput'); const text = input.value.trim(); if (!text) return;
+  const btn = document.getElementById('voiceStoreBtn'); btn.innerHTML = '<span class="loading-spinner"></span> 解析中...'; btn.disabled = true;
+  appendChat('voiceChat', 'user', text); input.value = '';
+  const answer = await callBot(BOT_IDS['voice-store'], text);
+  btn.innerHTML = '📤 发送'; btn.disabled = false;
+  if (!answer) { appendChat('voiceChat', 'system', '⚠️ 网络请求失败，请检查网络连接'); return; }
+  const json = extractJSON(answer);
+  if (json && json.intent_id) {
+    currentVoiceData = json;
+    appendChat('voiceChat', 'bot', '意图: ' + json.intent + ' (' + json.intent_id + ')');
+    const params = Object.entries(json.extracted_data || {}).map(([k,v]) => k + ': ' + v).join('、');
+    if (params) appendChat('voiceChat', 'bot', '提取: ' + params);
+    document.getElementById('voiceConfirm').classList.remove('hidden');
+    document.getElementById('voiceConfirmText').textContent = json.next_action || '确认入库？';
+    startVoiceTimer();
+  } else { appendChat('voiceChat', 'bot', answer); }
+}
+
+function startVoiceTimer() {
+  let seconds = 15; const el = document.getElementById('voiceConfirmText'); const original = el.textContent;
+  if (voiceTimer) clearInterval(voiceTimer);
+  voiceTimer = setInterval(() => { seconds--; el.textContent = original + '（' + seconds + '秒后自动取消）'; if (seconds <= 0) { clearInterval(voiceTimer); confirmVoice('timeout'); } }, 1000);
+}
+
+async function confirmVoice(action) {
+  if (voiceTimer) { clearInterval(voiceTimer); voiceTimer = null; }
+  document.getElementById('voiceConfirm').classList.add('hidden');
+  const data = currentVoiceData; if (!data) return;
+  if (action === 'yes') {
+    appendChat('voiceChat', 'system', '✅ 入库成功！');
+    // Update localStorage
+    const inv = JSON.parse(localStorage.getItem('canyin_inventory') || '{}');
+    const ed = data.extracted_data || {};
+    const name = ed['食材'] || ed['品名'] || '未知';
+    const qty = parseFloat(ed['数量']) || 1;
+    const unit = ed['单位'] || '份';
+    const price = parseFloat(ed['单价']) || 0;
+    if (inv[name]) { inv[name].qty += qty; if (price) inv[name].price = price; inv[name].lastUpdate = new Date().toISOString(); }
+    else { inv[name] = { qty, unit, price, lastUpdate: new Date().toISOString() }; }
+    localStorage.setItem('canyin_inventory', JSON.stringify(inv));
+    const entries = JSON.parse(localStorage.getItem('canyin_entries') || '[]');
+    entries.push({ raw: Object.entries(ed).map(([k,v]) => k+':'+v).join(', '), time: new Date().toISOString() });
+    localStorage.setItem('canyin_entries', JSON.stringify(entries));
+  } else if (action === 'change') { appendChat('voiceChat', 'system', '✎ 请重新输入修改后的内容'); }
+  else { appendChat('voiceChat', 'system', '✗ 已取消'); }
+  currentVoiceData = null;
+}
+
+// ===== VOICE CONTROL =====
+function testIntent(text) { document.getElementById('controlInput').value = text; sendControl(); }
+async function sendControl() {
+  const input = document.getElementById('controlInput'); const text = input.value.trim(); if (!text) return;
+  const btn = document.getElementById('controlBtn'); btn.innerHTML = '<span class="loading-spinner"></span> 识别中...'; btn.disabled = true;
+  appendChat('controlChat', 'user', text); input.value = '';
+  const answer = await callBot(BOT_IDS['voice-control'], text);
+  btn.innerHTML = '🚀 发送指令'; btn.disabled = false;
+  if (!answer) { appendChat('controlChat', 'system', '⚠️ 网络请求失败，请检查网络连接'); return; }
+  const json = extractJSON(answer);
+  if (json && json.intent_id) {
+    let html = '<div style="font-weight:600;margin-bottom:6px">🎯 意图识别结果</div><div>意图: ' + json.intent + ' (' + json.intent_id + ')</div>';
+    if (json.extracted_data && Object.keys(json.extracted_data).length > 0) html += '<div style="margin-top:6px;color:#94a3b8">提取: ' + Object.entries(json.extracted_data).map(([k,v]) => k+'='+v).join(', ') + '</div>';
+    if (json.next_action) html += '<div style="margin-top:8px;color:#22c55e">➡️ ' + json.next_action + '</div>';
+    appendChat('controlChat', 'bot', html);
+  } else { appendChat('controlChat', 'bot', answer.replace(/\n/g, '<br>')); }
+}
+
+// ===== INVENTORY =====
+const THRESHOLD = 5;
+function loadInventory() {
+  const inv = JSON.parse(localStorage.getItem('canyin_inventory') || '{}');
+  const entries = JSON.parse(localStorage.getItem('canyin_entries') || '[]');
+  const today = new Date().toDateString();
+  const names = Object.keys(inv);
+  document.getElementById('statTotal').textContent = names.length;
+  document.getElementById('statLow').textContent = names.filter(n => inv[n].qty <= THRESHOLD).length;
+  document.getElementById('statToday').textContent = entries.filter(e => new Date(e.time).toDateString() === today).length;
+  document.getElementById('statEntries').textContent = entries.length;
+  const listDiv = document.getElementById('inventoryList');
+  if (names.length === 0) { listDiv.innerHTML = '<div style="color:#94a3b8;padding:20px 0;text-align:center">暂无库存数据</div>'; }
+  else {
+    listDiv.innerHTML = names.map(name => {
+      const d = inv[name], isLow = d.qty <= THRESHOLD;
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#0f172a;border-radius:8px;margin-bottom:8px"><div><span style="font-weight:500">' + name + '</span>' + (isLow ? ' <span style="color:#ef4444;font-size:12px">⚠️ 低库存</span>' : '') + '</div><div style="text-align:right"><span style="font-weight:600;' + (isLow ? 'color:#ef4444' : '') + '">' + d.qty + ' ' + (d.unit||'份') + '</span>' + (d.lastUpdate ? '<div style="font-size:11px;color:#64748b">' + new Date(d.lastUpdate).toLocaleDateString('zh-CN') + '</div>' : '') + '</div></div>';
+    }).join('');
+  }
+  const entDiv = document.getElementById('entryList');
+  if (entries.length === 0) { entDiv.innerHTML = '<div style="color:#94a3b8;padding:20px 0;text-align:center">暂无入库记录</div>'; }
+  else { entDiv.innerHTML = entries.slice(-15).reverse().map(e => '<div style="display:flex;justify-content:space-between;padding:10px 16px;background:#0f172a;border-radius:8px;margin-bottom:6px"><span>' + e.raw + '</span><span style="color:#94a3b8;font-size:13px">' + new Date(e.time).toLocaleString('zh-CN', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) + '</span></div>').join(''); }
+}
+
+function addInventoryItem() {
+  const name = document.getElementById('addInvName').value.trim();
+  const qty = parseFloat(document.getElementById('addInvQty').value) || 0;
+  const unit = document.getElementById('addInvUnit').value.trim() || '份';
+  if (!name || qty <= 0) { showToast('请填写食材名和数量', 'error'); return; }
+  const inv = JSON.parse(localStorage.getItem('canyin_inventory') || '{}');
+  if (inv[name]) inv[name].qty += qty; else inv[name] = { qty, unit, price: 0, lastUpdate: new Date().toISOString() };
+  localStorage.setItem('canyin_inventory', JSON.stringify(inv));
+  const entries = JSON.parse(localStorage.getItem('canyin_entries') || '[]');
+  entries.push({ raw: '手动添加: ' + name + ' ' + qty + unit, time: new Date().toISOString() });
+  localStorage.setItem('canyin_entries', JSON.stringify(entries));
+  document.getElementById('addInvName').value = ''; document.getElementById('addInvQty').value = ''; document.getElementById('addInvUnit').value = '';
+  loadInventory(); showToast('已添加 ' + name + ' ' + qty + unit);
+}
+
+function clearInventory() {
+  if (confirm('确定清空所有库存数据？')) { localStorage.removeItem('canyin_inventory'); localStorage.removeItem('canyin_entries'); loadInventory(); showToast('库存数据已清空'); }
+}
+
+// ===== REPORT =====
+function loadReport() {
+  const inv = JSON.parse(localStorage.getItem('canyin_inventory') || '{}');
+  const entries = JSON.parse(localStorage.getItem('canyin_entries') || '[]');
+  const today = new Date().toDateString();
+  const todayEntries = entries.filter(e => new Date(e.time).toDateString() === today);
+  const rev = todayEntries.length * 80, cost = todayEntries.length * 45, profit = rev - cost;
+  document.getElementById('revToday').textContent = '¥' + rev;
+  document.getElementById('costToday').textContent = '¥' + cost;
+  document.getElementById('profitToday').textContent = '¥' + profit;
+  const days = ['周一','周二','周三','周四','周五','周六','周日'];
+  const weekData = days.map((d,i) => ({ day: d, count: Math.floor(Math.random()*15) + todayEntries.length + i*2 }));
+  const max = Math.max(...weekData.map(d=>d.count), 1);
+  document.getElementById('weekTrend').innerHTML = weekData.map(d => {
+    const pct = (d.count/max*100).toFixed(0);
+    return '<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:13px"><span>' + d.day + '</span><span>' + d.count + '笔</span></div><div style="height:20px;background:#334155;border-radius:4px;overflow:hidden;margin-top:4px"><div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,#3b82f6,#22c55e);border-radius:4px"></div></div></div>';
+  }).join('');
+  const names = Object.keys(inv);
+  const invDiv = document.getElementById('reportInv');
+  if (names.length === 0) { invDiv.innerHTML = '<div style="color:#94a3b8;font-size:14px;padding:8px 0">暂无库存数据</div>'; }
+  else { invDiv.innerHTML = names.slice(0,8).map(n => { const d = inv[n], isLow = d.qty <= 5; return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #0f172a;font-size:14px"><span>' + n + '</span><span style="' + (isLow?'color:#ef4444':'') + '">' + d.qty + (d.unit||'份') + (isLow?' ⚠️':'') + '</span></div>'; }).join(''); }
+  document.getElementById('reportEntries').innerHTML = '<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:14px"><span>总入库次数</span><span style="font-weight:600">' + entries.length + '</span></div><div style="display:flex;justify-content:space-between;padding:6px 0;font-size:14px"><span>今日入库</span><span style="font-weight:600;color:#22c55e">' + todayEntries.length + '</span></div><div style="display:flex;justify-content:space-between;padding:6px 0;font-size:14px"><span>食材种类</span><span style="font-weight:600">' + names.length + '</span></div>';
+}
+
+// ===== MENU =====
+async function generateMenu() {
+  const text = document.getElementById('menuInput').value.trim();
+  if (!text) { alert('请输入店铺信息或需求'); return; }
+  const btn = document.getElementById('menuBtn');
+  const div = document.getElementById('menuResult');
+  div.classList.remove('hidden');
+  btn.innerHTML = '<span class="loading-spinner"></span> 设计中...';
+  btn.disabled = true;
+  
+  const prompt = `你是餐饮菜单设计专家。请根据以下店铺信息，给出专业的菜单设计方案，包括：
+1. 🔥 引流款（2-3款，吸引下单）
+2. 💰 利润款（3-5款，主要利润来源）
+3. 🎁 套餐搭配建议
+4. ➕ 加料项（提升客单价）
+5. 💡 SKU数量建议和首屏布局建议
+
+店铺信息：${text}
+
+请用简洁的要点式回答，不要啰嗦。`;
+  
+  const answer = await callBot(BOT_IDS.cost, prompt);
+  
+  btn.innerHTML = '📝 生成方案';
+  btn.disabled = false;
+  
+  if (answer) {
+    // 尝试解析JSON
+    const json = extractJSON(answer);
+    if (json && (json.menu_structure || json.categories || json.引流款)) {
+      let html = '<div class="card"><div class="card-title">📝 菜单优化方案</div>';
+      
+      // 引流款
+      const hotItems = json.引流款 || json.hot_items || [];
+      if (Array.isArray(hotItems) && hotItems.length > 0) {
+        html += '<div style="margin:16px 0"><div style="font-size:16px;font-weight:700;color:#ef4444;margin-bottom:12px">🔥 引流款</div>';
+        hotItems.forEach(item => {
+          const name = typeof item === 'string' ? item : (item.name || item.菜品 || '');
+          const desc = typeof item === 'object' ? (item.description || item.说明 || '') : '';
+          html += '<div style="margin:8px 0;padding:12px;background:#1e293b;border-radius:8px;border-left:4px solid #ef4444"><div style="font-weight:600">' + name + '</div>' + (desc ? '<div style="font-size:13px;color:#94a3b8;margin-top:4px">' + desc + '</div>' : '') + '</div>';
+        });
+        html += '</div>';
+      }
+      
+      // 利润款
+      const profitItems = json.利润款 || json.profit_items || [];
+      if (Array.isArray(profitItems) && profitItems.length > 0) {
+        html += '<div style="margin:16px 0"><div style="font-size:16px;font-weight:700;color:#f59e0b;margin-bottom:12px">💰 利润款</div>';
+        profitItems.forEach(item => {
+          const name = typeof item === 'string' ? item : (item.name || item.菜品 || '');
+          const desc = typeof item === 'object' ? (item.description || item.说明 || '') : '';
+          html += '<div style="margin:8px 0;padding:12px;background:#1e293b;border-radius:8px;border-left:4px solid #f59e0b"><div style="font-weight:600">' + name + '</div>' + (desc ? '<div style="font-size:13px;color:#94a3b8;margin-top:4px">' + desc + '</div>' : '') + '</div>';
+        });
+        html += '</div>';
+      }
+      
+      // 套餐搭配
+      const combos = json.套餐搭配 || json.combos || json.packages || [];
+      if (Array.isArray(combos) && combos.length > 0) {
+        html += '<div style="margin:16px 0"><div style="font-size:16px;font-weight:700;color:#8b5cf6;margin-bottom:12px">🎁 套餐搭配</div>';
+        combos.forEach(combo => {
+          const name = typeof combo === 'string' ? combo : (combo.name || combo.套餐名 || '');
+          const items = typeof combo === 'object' ? (combo.items || combo.内容 || '') : '';
+          html += '<div style="margin:8px 0;padding:12px;background:#1e293b;border-radius:8px;border-left:4px solid #8b5cf6"><div style="font-weight:600">' + name + '</div>' + (items ? '<div style="font-size:13px;color:#94a3b8;margin-top:4px">' + (Array.isArray(items) ? items.join(' + ') : items) + '</div>' : '') + '</div>';
+        });
+        html += '</div>';
+      }
+      
+      // 加料项
+      const addons = json.加料项 || json.addons || [];
+      if (Array.isArray(addons) && addons.length > 0) {
+        html += '<div style="margin:16px 0"><div style="font-size:16px;font-weight:700;color:#22c55e;margin-bottom:12px">➕ 加料项</div>';
+        addons.forEach(addon => {
+          const name = typeof addon === 'string' ? addon : (addon.name || addon.加料 || '');
+          const price = typeof addon === 'object' ? (addon.price || addon.价格 || '') : '';
+          html += '<div style="margin:6px 0;padding:10px;background:#0f172a;border-radius:6px;display:flex;justify-content:space-between"><span>' + name + '</span>' + (price ? '<span style="color:#22c55e;font-weight:600">+¥' + price + '</span>' : '') + '</div>';
+        });
+        html += '</div>';
+      }
+      
+      // SKU建议
+      if (json.sku建议 || json.sku_suggestion || json.首屏布局) {
+        html += '<div style="margin:16px 0;padding:16px;background:#1e293b;border-radius:8px"><div style="font-size:14px;font-weight:700;color:#3b82f6;margin-bottom:8px">💡 布局建议</div><div style="line-height:1.8">' + formatMarkdown(json.sku建议 || json.sku_suggestion || json.首屏布局 || '') + '</div></div>';
+      }
+      
+      html += '</div>';
+      div.innerHTML = html;
+    } else {
+      // Markdown格式
+      div.innerHTML = '<div class="card"><div class="card-title">📝 菜单优化方案</div><div class="reply-text" style="line-height:1.8">' + formatMarkdown(answer) + '</div></div>';
+    }
+  } else {
+    div.innerHTML = '<div class="card"><div class="reply-text error">生成失败，请重试</div></div>';
+  }
+}
+
+// ===== PRICING =====
+async function generatePricing() {
+  const text = document.getElementById('pricingInput').value.trim();
+  if (!text) { alert('请输入菜品成本信息'); return; }
+  const btn = document.getElementById('pricingBtn');
+  const div = document.getElementById('pricingResult');
+  div.classList.remove('hidden');
+  btn.innerHTML = '<span class="loading-spinner"></span> 计算中...';
+  btn.disabled = true;
+  
+  const prompt = `你是餐饮定价专家。请根据以下菜品成本信息，给出各平台定价方案，包括：
+1. 📊 美团外卖定价 + 满减方案
+2. 📊 京东到家定价 + 满减方案
+3. 📊 堂食定价建议
+4. 💡 定价原则和优化建议
+
+成本信息：${text}
+
+请用简洁的要点式回答，标注清楚每道菜的建议售价。`;
+  
+  const answer = await callBot(BOT_IDS.cost, prompt);
+  
+  btn.innerHTML = '💲 生成定价方案';
+  btn.disabled = false;
+  
+  if (answer) {
+    // 尝试解析JSON（可能是成本核算格式）
+    const json = extractJSON(answer);
+    if (json && (json.platforms || json.totalCost || json.total_cost)) {
+      let html = '<div class="card">';
+      
+      // 菜品名和成本
+      const dishName = json.dishName || json.dish_name || json.菜品 || '菜品';
+      const totalCost = json.totalCost || json.total_cost || 0;
+      const foodCost = json.foodCost || json.food_cost || 0;
+      
+      html += '<div style="margin-bottom:16px"><div style="font-size:18px;font-weight:700;color:#f97316;margin-bottom:8px">' + dishName + '</div>';
+      html += '<div style="display:flex;gap:16px"><div><span style="color:#94a3b8;font-size:13px">食材成本</span><div style="font-size:16px;font-weight:600;color:#f59e0b">¥' + parseFloat(foodCost).toFixed(2) + '</div></div>';
+      html += '<div><span style="color:#94a3b8;font-size:13px">总成本</span><div style="font-size:16px;font-weight:600;color:#f59e0b">¥' + parseFloat(totalCost).toFixed(2) + '</div></div></div></div>';
+      
+      // 各平台定价
+      const platforms = json.platforms || [];
+      if (Array.isArray(platforms) && platforms.length > 0) {
+        html += '<div style="font-size:14px;font-weight:700;color:#3b82f6;margin-bottom:12px">💰 各平台定价方案</div>';
+        const platformIcons = {'美团':'🟡','京东':'🔴','饿了么':'🔵','抖音':'⚫','堂食':'🏠'};
+        platforms.forEach(p => {
+          const pName = p.name || p.平台 || '';
+          const pPrice = p.suggestedPrice || p.suggested_price || 0;
+          const pCommission = p.commissionRate || p.commission_rate || 0;
+          const pIncome = p.netIncome || p.net_income || 0;
+          const icon = platformIcons[pName] || '📊';
+          
+          html += '<div style="padding:16px;background:#0f172a;border-radius:8px;margin-bottom:12px;border-left:4px solid #3b82f6"><div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:16px;font-weight:700">' + icon + ' ' + pName + '</div><div style="text-align:right"><div style="font-size:22px;font-weight:700;color:#22c55e">¥' + parseFloat(pPrice).toFixed(2) + '</div>' + (pCommission > 0 ? '<div style="font-size:12px;color:#94a3b8">佣金 ' + pCommission + '%</div>' : '') + '</div></div>';
+          if (pIncome > 0) {
+            html += '<div style="margin-top:8px;padding-top:8px;border-top:1px solid #1e293b;display:flex;justify-content:space-between"><span style="color:#94a3b8">到手收入</span><span style="color:#22c55e;font-weight:600">¥' + parseFloat(pIncome).toFixed(2) + '</span></div>';
+          }
+          // 满减方案（优先使用Bot返回，否则自动计算）
+          let fullReduction = p.fullReduction || p.满减 || null;
+          if (!fullReduction && pPrice > 0) {
+            // 根据平台类型和售价自动计算满减方案
+            if (pName.includes('美团')) {
+              // 美团高佣金，满减保守
+              if (pPrice >= 15) fullReduction = ['满15减3', '满25减5', '满35减8'];
+              else fullReduction = ['满10减2', '满18减4'];
+            } else if (pName.includes('京东')) {
+              // 京东低佣金，可以多让利
+              if (pPrice >= 12) fullReduction = ['满12减3', '满20减5'];
+              else fullReduction = ['满8减2', '满15减4'];
+            } else if (pName.includes('饿了么')) {
+              // 饿了么佣金中等
+              if (pPrice >= 15) fullReduction = ['满15减4', '满25减6', '满35减10'];
+              else fullReduction = ['满10减3', '满18减5'];
+            }
+          }
+          if (fullReduction) {
+            html += '<div style="margin-top:8px;padding:8px;background:#1e293b;border-radius:6px;font-size:13px;color:#f59e0b">🎯 ' + (Array.isArray(fullReduction) ? fullReduction.join('、') : fullReduction) + '</div>';
+          }
+          html += '</div>';
+        });
+      }
+      
+      // 毛利率
+      const margin = json.grossMargin || json.gross_margin || json.profitMargin || 0;
+      if (margin > 0) {
+        html += '<div style="margin-top:16px;padding:12px;background:#1e293b;border-radius:8px;text-align:center"><span style="color:#94a3b8">综合毛利率 </span><span style="font-size:24px;font-weight:700;color:#3b82f6">' + parseFloat(margin).toFixed(1) + '%</span></div>';
+      }
+      
+      // 定价建议
+      if (json.pricing_tips || json.suggestions || json.定价建议) {
+        const tips = json.pricing_tips || json.suggestions || json.定价建议;
+        html += '<div style="margin-top:16px"><div style="font-size:14px;font-weight:700;color:#f97316;margin-bottom:8px">💡 定价建议</div><div style="line-height:1.8">' + formatMarkdown(Array.isArray(tips) ? tips.join('\n') : tips) + '</div></div>';
+      }
+      
+      html += '</div>';
+      div.innerHTML = html;
+    } else {
+      // Markdown格式
+      div.innerHTML = '<div class="card"><div class="card-title">💲 定价方案</div><div class="reply-text" style="line-height:1.8">' + formatMarkdown(answer) + '</div></div>';
+    }
+  } else {
+    div.innerHTML = '<div class="card"><div class="reply-text error">生成失败，请重试</div></div>';
+  }
+}
+
+// ===== ENTER KEY SHORTCUTS =====
+function setupEnterKey(inputId, fn) {
+  const el = document.getElementById(inputId);
+  if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); fn(); } });
+}
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', () => {
+  buildNav();
+  initAPI();
+  renderPortal();
+
+  // Enter key shortcuts
+  setupEnterKey('costInput', calcCost);
+  setupEnterKey('reviewInput', handleReview);
+  setupEnterKey('menuInput', generateMenu);
+  setupEnterKey('pricingInput', generatePricing);
+  setupEnterKey('voiceOrderInput', sendVoiceOrder);
+  setupEnterKey('orderInput', handleOrder);
+  setupEnterKey('voiceStoreInput', sendVoiceStore);
+  setupEnterKey('controlInput', sendControl);
+
+  // Hash routing
+  const hash = window.location.hash.replace('#', '');
+  if (hash && MODULES.find(m => m.id === hash)) navigateTo(hash);
+});
+
+window.addEventListener('hashchange', () => {
+  const hash = window.location.hash.replace('#', '');
+  if (hash && MODULES.find(m => m.id === hash)) navigateTo(hash);
+});
+
+// Private scene initial highlight
+document.addEventListener('DOMContentLoaded', () => {
+  const firstScene = document.querySelector('#privateScenes .tag');
+  if (firstScene) firstScene.style.background = '#3b82f6';
+});
+
+
+// ===== REPURCHASE ENGINE =====
+function loadRepurchase() {
+  const members = JSON.parse(localStorage.getItem('repurchase_members') || '[]');
+  const today = new Date().toISOString().split('T')[0];
+  const todayNew = members.filter(m => m.joinDate === today).length;
+  
+  document.getElementById('repTotalMembers').textContent = members.length;
+  document.getElementById('repTodayNew').textContent = todayNew;
+  document.getElementById('repPendingTouch').textContent = members.filter(m => m.status === 'active').length;
+  document.getElementById('repInvitations').textContent = JSON.parse(localStorage.getItem('repurchase_invites') || '[]').length;
+  
+  const listEl = document.getElementById('repMemberList');
+  if (members.length === 0) {
+    listEl.innerHTML = '<div style="color:#94a3b8;padding:20px 0;text-align:center">暂无会员，请先添加</div>';
+  } else {
+    listEl.innerHTML = members.map((m, i) => {
+      const levelColors = { silver: '#94a3b8', gold: '#f59e0b', diamond: '#3b82f6' };
+      const levelNames = { silver: '银卡', gold: '金卡', diamond: '钻石卡' };
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #334155">' +
+        '<div>' +
+        '<div style="font-weight:600">' + m.name + '</div>' +
+        '<div style="color:#64748b;font-size:14px">' + m.phone + '</div>' +
+        '</div>' +
+        '<div style="text-align:right">' +
+        '<div style="display:inline-block;padding:4px 12px;border-radius:12px;background:' + levelColors[m.level] + '20;color:' + levelColors[m.level] + ';font-size:13px">' + levelNames[m.level] + '</div>' +
+        '<div style="color:#64748b;font-size:12px;margin-top:4px">加入: ' + m.joinDate + '</div>' +
+        '</div>' +
+        '<button class="btn" style="margin-left:12px;padding:6px 12px;font-size:13px" onclick="removeRepMember(' + i + ')">删除</button>' +
+        '</div>';
+    }).join('');
+  }
+}
+
+function addRepMember() {
+  const name = document.getElementById('repMemberName').value.trim();
+  const phone = document.getElementById('repMemberPhone').value.trim();
+  const level = document.getElementById('repMemberLevel').value;
+  if (!name) { showToast('请输入会员姓名', 'error'); return; }
+  const members = JSON.parse(localStorage.getItem('repurchase_members') || '[]');
+  members.push({ name, phone, level, joinDate: new Date().toISOString().split('T')[0], status: 'active' });
+  localStorage.setItem('repurchase_members', JSON.stringify(members));
+  document.getElementById('repMemberName').value = '';
+  document.getElementById('repMemberPhone').value = '';
+  loadRepurchase();
+  showToast('会员添加成功', 'success');
+}
+
+function removeRepMember(index) {
+  if (!confirm('确定删除？')) return;
+  const members = JSON.parse(localStorage.getItem('repurchase_members') || '[]');
+  members.splice(index, 1);
+  localStorage.setItem('repurchase_members', JSON.stringify(members));
+  loadRepurchase();
+}
+
+function generateInviteCode() {
+  const code = 'INV-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+  document.getElementById('repInviteCode').value = code;
+  const invites = JSON.parse(localStorage.getItem('repurchase_invites') || '[]');
+  invites.push({ code, createTime: new Date().toISOString(), used: false });
+  localStorage.setItem('repurchase_invites', JSON.stringify(invites));
+  loadRepurchase();
+  showToast('邀请码已生成', 'success');
+}
+
+function copyInviteCode() {
+  const code = document.getElementById('repInviteCode').value;
+  if (!code) { showToast('请先生成邀请码', 'error'); return; }
+  const inviteUrl = window.location.origin + window.location.pathname + '?invite=' + code;
+  navigator.clipboard.writeText(inviteUrl).then(() => showToast('邀请链接已复制', 'success')).catch(() => showToast('复制失败', 'error'));
+}
+
+function clearRepurchase() {
+  if (!confirm('确定清空所有数据？')) return;
+  localStorage.removeItem('repurchase_members');
+  localStorage.removeItem('repurchase_invites');
+  loadRepurchase();
+  showToast('数据已清空', 'success');
+}
+
+</script>
+</body>
+</html>
