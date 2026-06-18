@@ -25,6 +25,43 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .portal-card .card-desc { font-size: 13px; color: #94a3b8; margin-bottom: 10px; line-height: 1.4; }
 .portal-card .card-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
 
+/* Dashboard */
+.dashboard-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+@media (max-width: 768px) { .dashboard-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px) { .dashboard-grid { grid-template-columns: 1fr; } }
+.dash-card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 16px; text-align: center; position: relative; cursor: pointer; transition: all 0.2s; }
+.dash-card:hover { border-color: #3b82f6; transform: translateY(-1px); }
+.dash-card .dash-icon { font-size: 20px; margin-bottom: 4px; }
+.dash-card .dash-label { font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
+.dash-card .dash-value { font-size: 22px; font-weight: 700; }
+.dash-card .dash-add { display: inline-block; margin-top: 8px; padding: 3px 12px; background: #334155; border: 1px solid #475569; border-radius: 6px; color: #94a3b8; font-size: 12px; cursor: pointer; transition: all 0.15s; }
+.dash-card .dash-add:hover { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+.dash-total { background: linear-gradient(135deg, #1e293b, #0f172a); border: 1px solid #f97316; }
+.dash-total .dash-value { color: #f97316; }
+.dash-monthly { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 16px; margin: 0 8px 16px; }
+.dash-monthly-title { font-size: 14px; font-weight: 600; color: #94a3b8; margin-bottom: 12px; }
+.dash-monthly-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+@media (max-width: 768px) { .dash-monthly-grid { grid-template-columns: repeat(2, 1fr); } }
+.dash-monthly-item { text-align: center; }
+.dash-monthly-item .label { font-size: 12px; color: #64748b; }
+.dash-monthly-item .value { font-size: 16px; font-weight: 700; margin-top: 4px; }
+.dash-fixed-costs { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 16px; margin: 0 8px 16px; }
+.dash-fixed-costs-title { font-size: 14px; font-weight: 600; color: #94a3b8; margin-bottom: 12px; cursor: pointer; }
+.dash-fixed-costs-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+@media (max-width: 768px) { .dash-fixed-costs-grid { grid-template-columns: repeat(2, 1fr); } }
+.dash-cost-input { display: flex; flex-direction: column; gap: 4px; }
+.dash-cost-input label { font-size: 12px; color: #64748b; }
+.dash-cost-input input { padding: 6px 10px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: #f1f5f9; font-size: 14px; outline: none; width: 100%; box-sizing: border-box; }
+.dash-cost-input input:focus { border-color: #3b82f6; }
+/* Quick add modal */
+.dash-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+.dash-modal { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 24px; width: 320px; max-width: 90vw; }
+.dash-modal h3 { font-size: 16px; margin-bottom: 16px; }
+.dash-modal input { width: 100%; padding: 10px 14px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #f1f5f9; font-size: 16px; outline: none; margin-bottom: 12px; box-sizing: border-box; }
+.dash-modal input:focus { border-color: #3b82f6; }
+.dash-modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
+.dash-modal-btns button { padding: 8px 20px; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; font-weight: 600; }
+
 /* Page topbar */
 .page-topbar { display: flex; align-items: center; gap: 12px; padding: 16px 0; border-bottom: 1px solid #334155; margin-bottom: 16px; }
 .back-btn { padding: 8px 16px; background: #334155; border: 1px solid #475569; border-radius: 8px; color: #f1f5f9; font-size: 14px; cursor: pointer; transition: all 0.2s; flex-shrink: 0; }
@@ -124,7 +161,9 @@ textarea.input { min-height: 100px; resize: vertical; }
       <span class="badge badge-new">v2.1 卡片版</span>
     </div>
   </div>
-  <div class="grid-4" id="portalStats" style="margin-bottom:24px;padding:0 8px"></div>
+  <div id="dashboardContainer" style="padding:0 8px;margin-bottom:16px"></div>
+  <div id="monthlySummaryContainer"></div>
+  <div id="fixedCostsContainer"></div>
   <div class="portal-grid" id="portalModules"></div>
   <div style="text-align:center;margin-bottom:16px">
     <button onclick="testAPIConnection()" style="padding:6px 16px;background:#1e293b;border:1px solid #334155;border-radius:8px;color:#94a3b8;font-size:12px;cursor:pointer">🔍 连接诊断</button>
@@ -1315,34 +1354,166 @@ function buildNav() {
 }
 
 // ===== PORTAL =====
+// ===== DASHBOARD DATA =====
+function getDashboardKey(date) {
+  return 'dash_' + (date || new Date().toISOString().slice(0,10));
+}
+function getDashboardData(date) {
+  const key = getDashboardKey(date);
+  return JSON.parse(localStorage.getItem(key) || '{"purchases":[],"dinein":[],"delivery":[],"private_domain":[],"reviews":[]}');
+}
+function saveDashboardData(data, date) {
+  const key = getDashboardKey(date);
+  localStorage.setItem(key, JSON.stringify(data));
+}
+function addDashboardEntry(type, amount, extra) {
+  const today = new Date().toISOString().slice(0,10);
+  const data = getDashboardData(today);
+  data[type].push({ amount: parseFloat(amount), time: new Date().toISOString(), ...extra });
+  saveDashboardData(data, today);
+  if (document.getElementById('dashboardContainer')) renderPortal();
+}
+function getTodayTotals() {
+  const data = getDashboardData();
+  const sum = arr => arr.reduce((s, e) => s + (e.amount || 0), 0);
+  return {
+    purchases: sum(data.purchases),
+    dinein: sum(data.dinein),
+    delivery: sum(data.delivery),
+    private_domain: sum(data.private_domain),
+    total: sum(data.dinein) + sum(data.delivery) + sum(data.private_domain),
+    reviews: data.reviews.length
+  };
+}
+function getMonthlyTotals() {
+  const now = new Date();
+  const year = now.getFullYear(), month = now.getMonth();
+  let totals = { purchases: 0, dinein: 0, delivery: 0, private_domain: 0, reviews: 0, days: 0 };
+  for (let d = 1; d <= 31; d++) {
+    const date = new Date(year, month, d);
+    if (date.getMonth() !== month) break;
+    const data = getDashboardData(date.toISOString().slice(0,10));
+    const sum = arr => arr.reduce((s, e) => s + (e.amount || 0), 0);
+    totals.purchases += sum(data.purchases);
+    totals.dinein += sum(data.dinein);
+    totals.delivery += sum(data.delivery);
+    totals.private_domain += sum(data.private_domain);
+    totals.reviews += data.reviews.length;
+    if (data.dinein.length || data.delivery.length || data.private_domain.length) totals.days++;
+  }
+  totals.total = totals.dinein + totals.delivery + totals.private_domain;
+  return totals;
+}
+function getFixedCosts() {
+  return JSON.parse(localStorage.getItem('dash_fixed_costs') || '{"rent":0,"labor":0,"utilities":0,"other":0}');
+}
+function saveFixedCosts(costs) {
+  localStorage.setItem('dash_fixed_costs', JSON.stringify(costs));
+}
+
+// Quick add modal
+function showQuickAdd(type, label) {
+  const overlay = document.createElement('div');
+  overlay.className = 'dash-modal-overlay';
+  overlay.id = 'dashModal';
+  overlay.innerHTML = '<div class="dash-modal"><h3>记录' + label + '</h3><input type="number" id="dashModalAmount" placeholder="金额（元）" step="0.01" min="0" autofocus><div class="dash-modal-btns"><button onclick="closeDashModal()" style="background:#334155;color:#94a3b8">取消</button><button onclick="confirmDashAdd(\'' + type + '\')" style="background:#3b82f6;color:#fff">确认</button></div></div>';
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) closeDashModal(); });
+  document.body.appendChild(overlay);
+  setTimeout(function() { var inp = document.getElementById('dashModalAmount'); if (inp) inp.focus(); }, 100);
+}
+function closeDashModal() {
+  var m = document.getElementById('dashModal'); if (m) m.remove();
+}
+function confirmDashAdd(type) {
+  var amt = document.getElementById('dashModalAmount').value;
+  if (!amt || parseFloat(amt) <= 0) { showToast('请输入金额'); return; }
+  addDashboardEntry(type, amt);
+  closeDashModal();
+  showToast('已记录 ¥' + parseFloat(amt).toFixed(2));
+}
+
+// Dashboard render
 function renderPortal() {
-  const inv = JSON.parse(localStorage.getItem('canyin_inventory') || '{}');
-  const entries = JSON.parse(localStorage.getItem('canyin_entries') || '[]');
-  const reviews = JSON.parse(localStorage.getItem('canyin_reviews') || '[]');
-  const today = new Date().toDateString();
-  const todayEntries = entries.filter(e => new Date(e.time).toDateString() === today);
-  const todayRev = todayEntries.length * 80;
-  const lowStock = Object.keys(inv).filter(n => inv[n].qty <= 5).length;
+  var t = getTodayTotals();
+  
+  // 6 dashboard cards
+  document.getElementById('dashboardContainer').innerHTML = '<div class="dashboard-grid">' +
+    '<div class="dash-card" onclick="showQuickAdd(\'purchases\',\'采购\')">' +
+      '<div class="dash-icon">🛒</div><div class="dash-label">今日采购</div>' +
+      '<div class="dash-value" style="color:#3b82f6">¥' + t.purchases.toFixed(0) + '</div>' +
+      '<div class="dash-add">+1笔</div></div>' +
+    '<div class="dash-card" onclick="showQuickAdd(\'dinein\',\'堂食\')">' +
+      '<div class="dash-icon">🍽️</div><div class="dash-label">今日堂食</div>' +
+      '<div class="dash-value" style="color:#22c55e">¥' + t.dinein.toFixed(0) + '</div>' +
+      '<div class="dash-add">+1笔</div></div>' +
+    '<div class="dash-card" onclick="showQuickAdd(\'delivery\',\'外卖\')">' +
+      '<div class="dash-icon">🛵</div><div class="dash-label">今日外卖</div>' +
+      '<div class="dash-value" style="color:#f97316">¥' + t.delivery.toFixed(0) + '</div>' +
+      '<div class="dash-add">+1笔</div></div>' +
+    '<div class="dash-card" onclick="showQuickAdd(\'private_domain\',\'私域\')">' +
+      '<div class="dash-icon">💬</div><div class="dash-label">今日私域</div>' +
+      '<div class="dash-value" style="color:#a78bfa">¥' + t.private_domain.toFixed(0) + '</div>' +
+      '<div class="dash-add">+1笔</div></div>' +
+    '<div class="dash-card dash-total">' +
+      '<div class="dash-icon">💰</div><div class="dash-label">今日总营收</div>' +
+      '<div class="dash-value">¥' + t.total.toFixed(0) + '</div></div>' +
+    '<div class="dash-card" style="border-color:' + (t.reviews > 0 ? '#ef4444' : '#334155') + '">' +
+      '<div class="dash-icon">⭐</div><div class="dash-label">今日差评</div>' +
+      '<div class="dash-value" style="color:#ef4444">' + t.reviews + '</div>' +
+      '<div style="font-size:11px;color:#64748b;margin-top:4px">条</div></div>' +
+  '</div>';
 
-  document.getElementById('portalStats').innerHTML =
-    '<div class="card" style="text-align:center"><div class="card-title">今日营收(估)</div><div style="font-size:24px;font-weight:700;color:#22c55e">¥' + todayRev + '</div></div>' +
-    '<div class="card" style="text-align:center"><div class="card-title">待处理差评</div><div style="font-size:24px;font-weight:700;color:#f59e0b">' + reviews.length + '</div></div>' +
-    '<div class="card" style="text-align:center"><div class="card-title">库存预警</div><div style="font-size:24px;font-weight:700;color:#ef4444">' + lowStock + '</div></div>' +
-    '<div class="card" style="text-align:center"><div class="card-title">今日入库</div><div style="font-size:24px;font-weight:700;color:#3b82f6">' + todayEntries.length + '</div></div>';
+  // Monthly summary
+  var m = getMonthlyTotals();
+  var fc = getFixedCosts();
+  var monthlyFixedTotal = (fc.rent || 0) + (fc.labor || 0) + (fc.utilities || 0) + (fc.other || 0);
+  var dailyFixed = monthlyFixedTotal / 30;
+  var netProfit = m.total - m.purchases - dailyFixed * (m.days || 1);
+  
+  document.getElementById('monthlySummaryContainer').innerHTML = '<div class="dash-monthly">' +
+    '<div class="dash-monthly-title">📅 本月累计（' + (m.days || 0) + '天）</div>' +
+    '<div class="dash-monthly-grid">' +
+      '<div class="dash-monthly-item"><div class="label">总营收</div><div class="value" style="color:#f97316">¥' + m.total.toFixed(0) + '</div></div>' +
+      '<div class="dash-monthly-item"><div class="label">总采购</div><div class="value" style="color:#3b82f6">¥' + m.purchases.toFixed(0) + '</div></div>' +
+      '<div class="dash-monthly-item"><div class="label">固定支出/日</div><div class="value" style="color:#ef4444">¥' + dailyFixed.toFixed(0) + '</div></div>' +
+      '<div class="dash-monthly-item"><div class="label">净利润(估)</div><div class="value" style="color:' + (netProfit >= 0 ? '#22c55e' : '#ef4444') + '">¥' + netProfit.toFixed(0) + '</div></div>' +
+    '</div></div>';
 
-  const HIDDEN_MODULES = ['portal', 'voice-store', 'voice-control', 'voice-order', 'order'];
-  const moduleCards = MODULES.filter(m => !HIDDEN_MODULES.includes(m.id));
-  document.getElementById('portalModules').innerHTML = moduleCards.map(m => {
-    const badges = { site:'✅ 已上线', opening:'✅ 已上线', brand:'✅ 已上线', equipment:'✅ 已上线', welcome:'✅ 已上线', menu:'✅ 已上线', cost:'✅ 已上线', pricing:'✅ 已上线', inventory:'✅ 已上线', review:'✅ 已上线', report:'✅ 已上线', private:'✅ 已上线' };
-    const b = badges[m.id] || '✅ 已上线';
-    const badgeCls = b.includes('🆕') ? 'badge-new' : 'badge-live';
-    const clickAction = m.url ? "window.open('" + m.url + "', '_blank')" : "navigateTo('" + m.id + "')";
+  // Fixed costs settings
+  document.getElementById('fixedCostsContainer').innerHTML = '<div class="dash-fixed-costs">' +
+    '<div class="dash-fixed-costs-title" onclick="toggleFixedCosts()">⚙️ 月度固定支出 ▾</div>' +
+    '<div id="fixedCostsBody" style="display:none"><div class="dash-fixed-costs-grid">' +
+      '<div class="dash-cost-input"><label>租金</label><input type="number" value="' + (fc.rent||'') + '" placeholder="0" onchange="updateFixedCost(\'rent\',this.value)"></div>' +
+      '<div class="dash-cost-input"><label>人工</label><input type="number" value="' + (fc.labor||'') + '" placeholder="0" onchange="updateFixedCost(\'labor\',this.value)"></div>' +
+      '<div class="dash-cost-input"><label>水电气</label><input type="number" value="' + (fc.utilities||'') + '" placeholder="0" onchange="updateFixedCost(\'utilities\',this.value)"></div>' +
+      '<div class="dash-cost-input"><label>其他</label><input type="number" value="' + (fc.other||'') + '" placeholder="0" onchange="updateFixedCost(\'other\',this.value)"></div>' +
+    '</div></div></div>';
+
+  // Module cards
+  var HIDDEN_MODULES = ['portal', 'voice-store', 'voice-control', 'voice-order', 'order'];
+  var moduleCards = MODULES.filter(function(m) { return HIDDEN_MODULES.indexOf(m.id) === -1; });
+  document.getElementById('portalModules').innerHTML = moduleCards.map(function(m) {
+    var badges = { site:'✅ 已上线', opening:'✅ 已上线', brand:'✅ 已上线', equipment:'✅ 已上线', welcome:'✅ 已上线', menu:'✅ 已上线', cost:'✅ 已上线', pricing:'✅ 已上线', inventory:'✅ 已上线', review:'✅ 已上线', report:'✅ 已上线', private:'✅ 已上线' };
+    var b = badges[m.id] || '✅ 已上线';
+    var badgeCls = b.indexOf('🆕') >= 0 ? 'badge-new' : 'badge-live';
+    var clickAction = m.url ? "window.open('" + m.url + "', '_blank')" : "navigateTo('" + m.id + "')";
     return '<div class="portal-card" onclick="' + clickAction + '">' +
       '<div class="card-icon">' + m.emoji + '</div>' +
       '<div class="card-name">' + m.name + '</div>' +
       '<div class="card-desc">' + (m.desc || '') + '</div>' +
       '<span class="card-badge ' + badgeCls + '">' + b + '</span></div>';
   }).join('');
+}
+
+function toggleFixedCosts() {
+  var body = document.getElementById('fixedCostsBody');
+  body.style.display = body.style.display === 'none' ? 'block' : 'none';
+}
+function updateFixedCost(key, val) {
+  var fc = getFixedCosts();
+  fc[key] = parseFloat(val) || 0;
+  saveFixedCosts(fc);
+  renderPortal();
 }
 
 // ===== COST =====
@@ -1471,6 +1642,9 @@ async function handleReview() {
   const reviews = JSON.parse(localStorage.getItem('canyin_reviews') || '[]');
   reviews.push({ text, answer, time: new Date().toISOString() });
   localStorage.setItem('canyin_reviews', JSON.stringify(reviews));
+  
+  // Dashboard: 记录今日差评
+  addDashboardEntry('reviews', 0, { source: '差评处理' });
 }
 
 // ===== PRIVATE =====
@@ -1696,6 +1870,15 @@ async function sendVoiceOrder() {
     if (mergeable.length > 0) {
       showMergeAlert(mergeable);
     }
+    
+    // Dashboard: 记录语音点餐收入
+    if (json.total_amount && parseFloat(json.total_amount) > 0) {
+      var vChannel = (json.channel || json.delivery_type || '堂食').toLowerCase();
+      var vDashType = 'dinein';
+      if (vChannel.indexOf('外卖') >= 0 || vChannel.indexOf('meituan') >= 0 || vChannel.indexOf('eleme') >= 0 || vChannel.indexOf('美团') >= 0 || vChannel.indexOf('饿了么') >= 0) vDashType = 'delivery';
+      else if (vChannel.indexOf('私域') >= 0 || vChannel.indexOf('微信') >= 0) vDashType = 'private_domain';
+      addDashboardEntry(vDashType, parseFloat(json.total_amount), { order_id: json.order_id, channel: '语音点餐' });
+    }
   } else {
     div.innerHTML = '<div class="card"><div class="card-title">🍳 订单解析</div><div class="reply-text" style="line-height:1.8">' + answer.replace(/\n/g, '<br>') + '</div></div>';
   }
@@ -1769,6 +1952,15 @@ async function handleOrder() {
         showMergeAlert(mergeable);
       }
     }
+    
+    // Dashboard: 记录渠道收入
+    if (json.total_amount && parseFloat(json.total_amount) > 0) {
+      var channel = (json.channel || json.delivery_type || '').toLowerCase();
+      var dashType = 'dinein'; // 默认堂食
+      if (channel.indexOf('外卖') >= 0 || channel.indexOf('meituan') >= 0 || channel.indexOf('eleme') >= 0 || channel.indexOf('delivery') >= 0 || channel.indexOf('美团') >= 0 || channel.indexOf('饿了么') >= 0) dashType = 'delivery';
+      else if (channel.indexOf('私域') >= 0 || channel.indexOf('微信') >= 0 || channel.indexOf('wechat') >= 0 || channel.indexOf('private') >= 0) dashType = 'private_domain';
+      addDashboardEntry(dashType, parseFloat(json.total_amount), { order_id: json.order_id, channel: channel || '未标注' });
+    }
   } else {
     // 非JSON格式
     div.innerHTML = '<div class="card"><div class="card-title">📋 格式化结果</div><div class="reply-text" style="line-height:1.8;white-space:pre-wrap">' + answer + '</div></div>';
@@ -1831,6 +2023,10 @@ async function confirmVoice(action) {
     const entries = JSON.parse(localStorage.getItem('canyin_entries') || '[]');
     entries.push({ raw: Object.entries(ed).map(([k,v]) => k+':'+v).join(', '), time: new Date().toISOString() });
     localStorage.setItem('canyin_entries', JSON.stringify(entries));
+    
+    // Dashboard: 累加采购成本
+    var purchaseCost = (price || 0) * (qty || 1);
+    if (purchaseCost > 0) addDashboardEntry('purchases', purchaseCost, { item: name });
   } else if (action === 'change') { appendChat('voiceChat', 'system', '✎ 请重新输入修改后的内容'); }
   else { appendChat('voiceChat', 'system', '✗ 已取消'); }
   currentVoiceData = null;
