@@ -446,6 +446,41 @@ textarea.input { min-height: 100px; resize: vertical; }
   <div class="meta">餐饮AI店长 · 招牌设计</div>
 </div>
 
+<!-- Equipment -->
+<div class="module-page" id="page-equipment">
+  <div class="page-topbar"><button class="back-btn" onclick="navigateTo('portal')">← 返回</button><div class="page-topbar-title">🔧 AI设备选型</div></div>
+  <div class="page-subtitle">AI智能设备 · 采购清单 · 型号推荐 · 预算表</div>
+  <div class="card">
+    <div class="card-title">店铺基本信息</div>
+    <div style="margin-bottom:10px">
+      <label style="font-size:13px;color:#94a3b8;margin-bottom:4px;display:block">餐饮品类</label>
+      <select id="equipCategorySelect" class="input" onchange="if(this.value==='__custom__'){document.getElementById('equipCategoryInput').style.display='block';document.getElementById('equipCategoryInput').focus()}else{document.getElementById('equipCategoryInput').style.display='none'}">
+        <option value="">请选择品类</option>
+        <option value="炒饭/盖饭">炒饭/盖饭</option>
+        <option value="粉面">粉面</option>
+        <option value="快餐便当">快餐便当</option>
+        <option value="烧烤">烧烤</option>
+        <option value="火锅">火锅</option>
+        <option value="奶茶饮品">奶茶饮品</option>
+        <option value="小吃">小吃</option>
+        <option value="正餐">正餐</option>
+        <option value="__custom__">手动输入...</option>
+      </select>
+      <input id="equipCategoryInput" class="input" placeholder="输入你的品类" style="display:none;margin-top:6px">
+    </div>
+    <textarea class="input" id="equipInput" placeholder="例如：20㎡炒饭店，需要AI点餐、语音迎宾、自动接单、智能打印等功能，帮我推荐设备"></textarea>
+    <div style="margin-top:8px">
+      <button class="voice-btn" id="equipVoiceBtn" onmousedown="startVoice('equipInput','equipVoiceBtn')" onmouseup="stopVoice()" ontouchstart="event.preventDefault();startVoice('equipInput','equipVoiceBtn')" ontouchend="stopVoice()">🎤 按住说话</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="equipBtn" onclick="generateEquipment()">🔧 一键配齐AI设备</button>
+    </div>
+  </div>
+  <div id="equipResult" class="hidden"></div>
+  <div class="meta">餐饮AI店长 · AI设备选型</div>
+</div>
+
+
 <!-- 12. Menu -->
 <div class="module-page" id="page-menu">
   <div class="page-topbar"><button class="back-btn" onclick="navigateTo('portal')">← 返回</button><div class="page-topbar-title">📋 菜单设计</div></div>
@@ -704,7 +739,7 @@ const MODULES = [
   { id: 'site', emoji: '📍', name: '选址分析', desc: '商圈画像·竞品密度·客群分析' },
   { id: 'opening', emoji: '📋', name: '开店流程', desc: '证照办理·平台入驻全流程', url: 'https://wuli-bot.github.io/canyin-ai/opening.html' },
   { id: 'brand', emoji: '🎨', name: '招牌设计', desc: '品牌命名·Logo方向·门头排版' },
-  { id: 'equipment', emoji: '🔧', name: '设备选型', desc: '采购清单·型号参数·预算表', url: 'https://wuli-bot.github.io/canyin-ai/equipment.html' },
+  { id: 'equipment', emoji: '🔧', name: '设备选型', desc: 'AI智能设备·采购清单·预算表' },
   { id: 'menu', emoji: '📝', name: '菜单设计', desc: '引流款·利润款·套餐搭配' },
   { id: 'cost', emoji: '💰', name: '成本核算', desc: '食材成本·毛利率·平台定价' },
   { id: 'pricing', emoji: '💲', name: '定价策略', desc: '满减设计·平台差异化定价' },
@@ -1783,6 +1818,79 @@ async function generateBrand() {
     div.innerHTML = '<div class="card"><div class="card-title">🎨 招牌设计方案</div><div class="reply-text" style="line-height:1.8">' + formatMarkdown(answer) + '</div></div>';
   } else {
     div.innerHTML = '<div class="card"><div class="reply-text error">设计失败，请重试</div></div>';
+  }
+}
+
+
+// ===== EQUIPMENT =====
+async function generateEquipment() {
+  // 获取品类（优先手动输入）
+  let category = document.getElementById('equipCategoryInput').value.trim();
+  if (!category) category = document.getElementById('equipCategorySelect').value;
+  
+  const text = document.getElementById('equipInput').value.trim();
+  if (!text && !category) { alert('请至少选择品类或输入需求'); return; }
+  
+  const btn = document.getElementById('equipBtn');
+  const div = document.getElementById('equipResult');
+  div.classList.remove('hidden');
+  btn.innerHTML = '<span class="loading-spinner"></span> 选型中...';
+  btn.disabled = true;
+  
+  const prompt = `你是餐饮AI智能设备选型专家。请根据以下信息，推荐AI相关的智能设备，**只推荐AI功能相关设备，不要推荐后厨设备（如灶台、冰箱、排烟等）**。
+
+## 推荐设备类别（只推荐这些，不要后厨设备）：
+- AI语音设备：小爱音箱、天猫精灵、智能语音助手
+- AI视觉设备：摄像头（人脸识别/客流统计）、智能显示屏
+- 智能计算设备：树莓派（边缘网关）、工控机
+- 智能打印设备：热敏打印机、飞鹅云打印机
+- 智能网络设备：路由器、4G/5G备份路由器
+- 智能点餐设备：扫码点餐立牌、智能点餐屏
+- 智能接单设备：外卖接单打印机、自动接单盒
+- 智能显示设备：叫号屏、广告屏、KDS厨显
+- 其他AI设备：根据需求合理推荐
+
+## 输出格式（用Markdown）：
+## 🤖 AI设备选型方案
+
+**品类**：${category || '未指定'}
+**需求**：${text || '标准AI功能配置'}
+
+### 📋 设备清单
+| 序号 | 设备名称 | 推荐型号 | 用途说明 | 参考价格 |
+|-----|---------|---------|---------|---------|
+（列出6-10个设备）
+
+### 💰 预算汇总
+- 基础版（核心功能）：¥XXX
+- 标准版（推荐配置）：¥XXX
+- 高配版（全功能）：¥XXX
+
+### 🔌 安装要点
+- 网络要求
+- 电源要求
+- 安装位置建议
+
+### ⚠️ 避坑指南
+- 购买注意事项
+- 常见坑点
+- 兼容性说明
+
+注意：
+1. **严禁推荐后厨设备**（灶台、冰箱、排烟、蒸柜等）
+2. 只推荐AI智能化相关设备
+3. 给出具体型号和参考价格
+4. 用Markdown格式输出，不要用JSON`;
+  
+  const answer = await callBot(BOT_IDS.cost, prompt);
+  
+  btn.innerHTML = '🔧 一键配齐AI设备';
+  btn.disabled = false;
+  
+  if (answer) {
+    div.innerHTML = '<div class="card"><div class="card-title">🔧 AI设备选型方案</div><div class="reply-text" style="line-height:1.8">' + formatMarkdown(answer) + '</div></div>';
+  } else {
+    div.innerHTML = '<div class="card"><div class="reply-text error">选型失败，请重试</div></div>';
   }
 }
 
