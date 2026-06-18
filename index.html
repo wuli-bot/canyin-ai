@@ -779,17 +779,16 @@ const MODULES = [
   { id: 'site', emoji: '📍', name: '选址分析', desc: '商圈画像·竞品密度·客群分析' },
   { id: 'opening', emoji: '📋', name: '开店流程', desc: '证照办理·平台入驻全流程' },
   { id: 'brand', emoji: '🎨', name: '招牌设计', desc: '品牌命名·Logo方向·门头排版' },
-  { id: 'equipment', emoji: '🔧', name: '设备选型', desc: 'AI智能设备·采购清单·预算表' },
+  { id: 'equipment', emoji: '🔧', name: '设备选型', desc: '采购清单·型号参数·预算表' },
+  { id: 'welcome', emoji: '📷', name: '迎宾系统', desc: '人脸识别·新老客判断·偏好记忆·10种场景话术' },
   { id: 'menu', emoji: '📝', name: '菜单设计', desc: '引流款·利润款·套餐搭配' },
   { id: 'cost', emoji: '💰', name: '成本核算', desc: '食材成本·毛利率·平台定价' },
   { id: 'pricing', emoji: '💲', name: '定价策略', desc: '满减设计·平台差异化定价' },
   { id: 'inventory', emoji: '📦', name: '库存管理', desc: '采购补货·安全库存·损耗控制' },
   { id: 'review', emoji: '💬', name: '差评处理', desc: '差评回复·恶意差评识别' },
   { id: 'report', emoji: '📊', name: '财务报表', desc: '日报周报·利润趋势·漏洞诊断' },
-  { id: 'private', emoji: '📱', name: '私域引流', desc: '包裹卡·堂食扫码·社群运营' },
-  { id: 'repurchase', emoji: '🔄', name: '复购引擎', desc: '会员体系·7次触达·裂变方案' },
+  { id: 'private', emoji: '📱', name: '私域引流', desc: '包裹卡·社群运营·会员体系·7次触达·裂变方案' },
   // 隐藏的功能模块（融入其他环节，不独立展示）
-  { id: 'welcome', emoji: '📷', name: '迎宾系统', desc: '人脸识别·个性话术' },
   { id: 'voice-order', emoji: '🍳', name: '语音点餐', desc: '语音→结构化订单' },
   { id: 'order', emoji: '📋', name: '订单处理', desc: '多平台统一格式化' },
   { id: 'portal', emoji: '🏠', name: '门户首页', desc: '' },
@@ -1326,10 +1325,10 @@ function renderPortal() {
     '<div class="card" style="text-align:center"><div class="card-title">库存预警</div><div style="font-size:24px;font-weight:700;color:#ef4444">' + lowStock + '</div></div>' +
     '<div class="card" style="text-align:center"><div class="card-title">今日入库</div><div style="font-size:24px;font-weight:700;color:#3b82f6">' + todayEntries.length + '</div></div>';
 
-  const HIDDEN_MODULES = ['portal', 'voice-store', 'voice-control', 'welcome', 'voice-order', 'order'];
+  const HIDDEN_MODULES = ['portal', 'voice-store', 'voice-control', 'voice-order', 'order'];
   const moduleCards = MODULES.filter(m => !HIDDEN_MODULES.includes(m.id));
   document.getElementById('portalModules').innerHTML = moduleCards.map(m => {
-    const badges = { site:'✅ 已上线', opening:'✅ 已上线', brand:'✅ 已上线', equipment:'✅ 已上线', menu:'✅ 已上线', cost:'✅ 已上线', pricing:'✅ 已上线', inventory:'✅ 已上线', review:'✅ 已上线', report:'✅ 已上线', private:'✅ 已上线', repurchase:'✅ 已上线' };
+    const badges = { site:'✅ 已上线', opening:'✅ 已上线', brand:'✅ 已上线', equipment:'✅ 已上线', welcome:'✅ 已上线', menu:'✅ 已上线', cost:'✅ 已上线', pricing:'✅ 已上线', inventory:'✅ 已上线', review:'✅ 已上线', report:'✅ 已上线', private:'✅ 已上线' };
     const b = badges[m.id] || '✅ 已上线';
     const badgeCls = b.includes('🆕') ? 'badge-new' : 'badge-live';
     const clickAction = m.url ? "window.open('" + m.url + "', '_blank')" : "navigateTo('" + m.id + "')";
