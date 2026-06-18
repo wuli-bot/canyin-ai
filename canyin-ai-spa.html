@@ -391,6 +391,42 @@ textarea.input { min-height: 100px; resize: vertical; }
   <div class="meta">餐饮AI店长 · 财务报表</div>
 </div>
 
+<!-- 10. Site Analysis -->
+<div class="module-page" id="page-site">
+  <div class="page-topbar"><button class="back-btn" onclick="navigateTo('portal')">← 返回</button><div class="page-topbar-title">📍 选址分析</div></div>
+  <div class="page-subtitle">商圈画像 · 竞品密度 · 客群分析 · 选址评分</div>
+  <div class="card">
+    <div class="card-title">输入选址信息</div>
+    <textarea class="input" id="siteInput" placeholder="例如：长沙望城区湖南外国语职业学院北食堂，周边有3所学校，日均人流量约2000人"></textarea>
+    <div style="margin-top:8px">
+      <button class="voice-btn" id="siteVoiceBtn" onmousedown="startVoice('siteInput','siteVoiceBtn')" onmouseup="stopVoice()" ontouchstart="event.preventDefault();startVoice('siteInput','siteVoiceBtn')" ontouchend="stopVoice()">🎤 按住说话</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="siteBtn" onclick="analyzeSite()">📍 分析选址</button>
+    </div>
+  </div>
+  <div id="siteResult" class="hidden"></div>
+  <div class="meta">餐饮AI店长 · 选址分析</div>
+</div>
+
+<!-- 11. Brand Design -->
+<div class="module-page" id="page-brand">
+  <div class="page-topbar"><button class="back-btn" onclick="navigateTo('portal')">← 返回</button><div class="page-topbar-title">🎨 招牌设计</div></div>
+  <div class="page-subtitle">品牌命名 · Logo方向 · 配色方案 · 门头排版</div>
+  <div class="card">
+    <div class="card-title">输入店铺信息</div>
+    <textarea class="input" id="brandInput" placeholder="例如：哇塞猛火猪油炒饭，炒饭店，在学校食堂，目标客群是学生"></textarea>
+    <div style="margin-top:8px">
+      <button class="voice-btn" id="brandVoiceBtn" onmousedown="startVoice('brandInput','brandVoiceBtn')" onmouseup="stopVoice()" ontouchstart="event.preventDefault();startVoice('brandInput','brandVoiceBtn')" ontouchend="stopVoice()">🎤 按住说话</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="brandBtn" onclick="generateBrand()">🎨 生成方案</button>
+    </div>
+  </div>
+  <div id="brandResult" class="hidden"></div>
+  <div class="meta">餐饮AI店长 · 招牌设计</div>
+</div>
+
 <!-- 12. Menu -->
 <div class="module-page" id="page-menu">
   <div class="page-topbar"><button class="back-btn" onclick="navigateTo('portal')">← 返回</button><div class="page-topbar-title">📋 菜单设计</div></div>
@@ -646,9 +682,9 @@ textarea.input { min-height: 100px; resize: vertical; }
 // ===== NAV CONFIG =====
 const MODULES = [
   // 12个全链路模块（按业务流程排序）
-  { id: 'site', emoji: '📍', name: '选址分析', desc: '商圈画像·竞品密度·客群分析', url: 'https://wuli-bot.github.io/canyin-ai/site.html' },
+  { id: 'site', emoji: '📍', name: '选址分析', desc: '商圈画像·竞品密度·客群分析' },
   { id: 'opening', emoji: '📋', name: '开店流程', desc: '证照办理·平台入驻全流程', url: 'https://wuli-bot.github.io/canyin-ai/opening.html' },
-  { id: 'brand', emoji: '🎨', name: '招牌设计', desc: '品牌命名·Logo方向·门头排版', url: 'https://wuli-bot.github.io/canyin-ai/brand.html' },
+  { id: 'brand', emoji: '🎨', name: '招牌设计', desc: '品牌命名·Logo方向·门头排版' },
   { id: 'equipment', emoji: '🔧', name: '设备选型', desc: '采购清单·型号参数·预算表', url: 'https://wuli-bot.github.io/canyin-ai/equipment.html' },
   { id: 'menu', emoji: '📝', name: '菜单设计', desc: '引流款·利润款·套餐搭配' },
   { id: 'cost', emoji: '💰', name: '成本核算', desc: '食材成本·毛利率·平台定价' },
@@ -1578,6 +1614,95 @@ function loadReport() {
   document.getElementById('reportEntries').innerHTML = '<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:14px"><span>总入库次数</span><span style="font-weight:600">' + entries.length + '</span></div><div style="display:flex;justify-content:space-between;padding:6px 0;font-size:14px"><span>今日入库</span><span style="font-weight:600;color:#22c55e">' + todayEntries.length + '</span></div><div style="display:flex;justify-content:space-between;padding:6px 0;font-size:14px"><span>食材种类</span><span style="font-weight:600">' + names.length + '</span></div>';
 }
 
+// ===== SITE ANALYSIS =====
+async function analyzeSite() {
+  const text = document.getElementById('siteInput').value.trim();
+  if (!text) { alert('请输入选址信息'); return; }
+  const btn = document.getElementById('siteBtn');
+  const div = document.getElementById('siteResult');
+  div.classList.remove('hidden');
+  btn.innerHTML = '<span class="loading-spinner"></span> 分析中...';
+  btn.disabled = true;
+  
+  const prompt = `你是餐饮选址分析专家。请根据以下选址信息，给出专业的选址分析报告，用Markdown格式输出，包括：
+
+## 📊 选址综合评分
+给出0-100分的评分和评分理由
+
+## 👥 客群画像
+分析目标客群特征、消费能力、消费时段
+
+## 🏪 竞品分析
+周边竞品情况、差异化机会
+
+## ✅ 优势
+列出3-5个优势要点（用 - 开头）
+
+## ⚠️ 风险
+列出2-3个风险要点（用 - 开头）
+
+## 💡 建议
+给出具体可行的经营建议
+
+选址信息：${text}
+
+注意：请用Markdown格式输出，不要用JSON格式。`;
+  
+  const answer = await callBot(BOT_IDS.cost, prompt);
+  
+  btn.innerHTML = '📍 分析选址';
+  btn.disabled = false;
+  
+  if (answer) {
+    div.innerHTML = '<div class="card"><div class="card-title">📍 选址分析报告</div><div class="reply-text" style="line-height:1.8">' + formatMarkdown(answer) + '</div></div>';
+  } else {
+    div.innerHTML = '<div class="card"><div class="reply-text error">分析失败，请重试</div></div>';
+  }
+}
+
+// ===== BRAND DESIGN =====
+async function generateBrand() {
+  const text = document.getElementById('brandInput').value.trim();
+  if (!text) { alert('请输入店铺信息'); return; }
+  const btn = document.getElementById('brandBtn');
+  const div = document.getElementById('brandResult');
+  div.classList.remove('hidden');
+  btn.innerHTML = '<span class="loading-spinner"></span> 设计中...';
+  btn.disabled = true;
+  
+  const prompt = `你是餐饮品牌设计专家。请根据以下店铺信息，给出专业的招牌/品牌设计方案，用Markdown格式输出，包括：
+
+## 🏷️ 品牌命名建议
+给出3个品牌名备选，每个附上命名理由
+
+## 🎨 配色方案
+推荐2-3套配色方案（用色值标注），说明每套的适用场景
+
+## ✍️ 字体风格
+推荐适合的字体风格和设计要点
+
+## 📐 门头排版建议
+招牌尺寸建议、元素布局、视觉重点
+
+## 💡 设计要点总结
+3-5条核心设计原则
+
+店铺信息：${text}
+
+注意：请用Markdown格式输出，不要用JSON格式。`;
+  
+  const answer = await callBot(BOT_IDS.cost, prompt);
+  
+  btn.innerHTML = '🎨 生成方案';
+  btn.disabled = false;
+  
+  if (answer) {
+    div.innerHTML = '<div class="card"><div class="card-title">🎨 招牌设计方案</div><div class="reply-text" style="line-height:1.8">' + formatMarkdown(answer) + '</div></div>';
+  } else {
+    div.innerHTML = '<div class="card"><div class="reply-text error">设计失败，请重试</div></div>';
+  }
+}
+
 // ===== MENU =====
 async function generateMenu() {
   const text = document.getElementById('menuInput').value.trim();
@@ -1588,16 +1713,26 @@ async function generateMenu() {
   btn.innerHTML = '<span class="loading-spinner"></span> 设计中...';
   btn.disabled = true;
   
-  const prompt = `你是餐饮菜单设计专家。请根据以下店铺信息，给出专业的菜单设计方案，包括：
-1. 🔥 引流款（2-3款，吸引下单）
-2. 💰 利润款（3-5款，主要利润来源）
-3. 🎁 套餐搭配建议
-4. ➕ 加料项（提升客单价）
-5. 💡 SKU数量建议和首屏布局建议
+  const prompt = `你是餐饮菜单设计专家。请根据以下店铺信息，给出专业的菜单设计方案，用Markdown格式输出，包括：
+
+## 🔥 引流款（2-3款）
+吸引下单的低价高感知菜品，每款附定价建议和理由
+
+## 💰 利润款（3-5款）
+主要利润来源，每款附定价建议和毛利率
+
+## 🎁 套餐搭配建议
+2-3个套餐组合，每个附定价策略
+
+## ➕ 加料项
+提升客单价的加料选项，附价格
+
+## 💡 SKU数量和首屏布局建议
+具体建议总数和排列方式
 
 店铺信息：${text}
 
-请用简洁的要点式回答，不要啰嗦。`;
+注意：请用Markdown格式输出（用##标题和-列表），不要用JSON格式。`;
   
   const answer = await callBot(BOT_IDS.cost, prompt);
   
@@ -1605,70 +1740,7 @@ async function generateMenu() {
   btn.disabled = false;
   
   if (answer) {
-    // 尝试解析JSON
-    const json = extractJSON(answer);
-    if (json && (json.menu_structure || json.categories || json.引流款)) {
-      let html = '<div class="card"><div class="card-title">📝 菜单优化方案</div>';
-      
-      // 引流款
-      const hotItems = json.引流款 || json.hot_items || [];
-      if (Array.isArray(hotItems) && hotItems.length > 0) {
-        html += '<div style="margin:16px 0"><div style="font-size:16px;font-weight:700;color:#ef4444;margin-bottom:12px">🔥 引流款</div>';
-        hotItems.forEach(item => {
-          const name = typeof item === 'string' ? item : (item.name || item.菜品 || '');
-          const desc = typeof item === 'object' ? (item.description || item.说明 || '') : '';
-          html += '<div style="margin:8px 0;padding:12px;background:#1e293b;border-radius:8px;border-left:4px solid #ef4444"><div style="font-weight:600">' + name + '</div>' + (desc ? '<div style="font-size:13px;color:#94a3b8;margin-top:4px">' + desc + '</div>' : '') + '</div>';
-        });
-        html += '</div>';
-      }
-      
-      // 利润款
-      const profitItems = json.利润款 || json.profit_items || [];
-      if (Array.isArray(profitItems) && profitItems.length > 0) {
-        html += '<div style="margin:16px 0"><div style="font-size:16px;font-weight:700;color:#f59e0b;margin-bottom:12px">💰 利润款</div>';
-        profitItems.forEach(item => {
-          const name = typeof item === 'string' ? item : (item.name || item.菜品 || '');
-          const desc = typeof item === 'object' ? (item.description || item.说明 || '') : '';
-          html += '<div style="margin:8px 0;padding:12px;background:#1e293b;border-radius:8px;border-left:4px solid #f59e0b"><div style="font-weight:600">' + name + '</div>' + (desc ? '<div style="font-size:13px;color:#94a3b8;margin-top:4px">' + desc + '</div>' : '') + '</div>';
-        });
-        html += '</div>';
-      }
-      
-      // 套餐搭配
-      const combos = json.套餐搭配 || json.combos || json.packages || [];
-      if (Array.isArray(combos) && combos.length > 0) {
-        html += '<div style="margin:16px 0"><div style="font-size:16px;font-weight:700;color:#8b5cf6;margin-bottom:12px">🎁 套餐搭配</div>';
-        combos.forEach(combo => {
-          const name = typeof combo === 'string' ? combo : (combo.name || combo.套餐名 || '');
-          const items = typeof combo === 'object' ? (combo.items || combo.内容 || '') : '';
-          html += '<div style="margin:8px 0;padding:12px;background:#1e293b;border-radius:8px;border-left:4px solid #8b5cf6"><div style="font-weight:600">' + name + '</div>' + (items ? '<div style="font-size:13px;color:#94a3b8;margin-top:4px">' + (Array.isArray(items) ? items.join(' + ') : items) + '</div>' : '') + '</div>';
-        });
-        html += '</div>';
-      }
-      
-      // 加料项
-      const addons = json.加料项 || json.addons || [];
-      if (Array.isArray(addons) && addons.length > 0) {
-        html += '<div style="margin:16px 0"><div style="font-size:16px;font-weight:700;color:#22c55e;margin-bottom:12px">➕ 加料项</div>';
-        addons.forEach(addon => {
-          const name = typeof addon === 'string' ? addon : (addon.name || addon.加料 || '');
-          const price = typeof addon === 'object' ? (addon.price || addon.价格 || '') : '';
-          html += '<div style="margin:6px 0;padding:10px;background:#0f172a;border-radius:6px;display:flex;justify-content:space-between"><span>' + name + '</span>' + (price ? '<span style="color:#22c55e;font-weight:600">+¥' + price + '</span>' : '') + '</div>';
-        });
-        html += '</div>';
-      }
-      
-      // SKU建议
-      if (json.sku建议 || json.sku_suggestion || json.首屏布局) {
-        html += '<div style="margin:16px 0;padding:16px;background:#1e293b;border-radius:8px"><div style="font-size:14px;font-weight:700;color:#3b82f6;margin-bottom:8px">💡 布局建议</div><div style="line-height:1.8">' + formatMarkdown(json.sku建议 || json.sku_suggestion || json.首屏布局 || '') + '</div></div>';
-      }
-      
-      html += '</div>';
-      div.innerHTML = html;
-    } else {
-      // Markdown格式
-      div.innerHTML = '<div class="card"><div class="card-title">📝 菜单优化方案</div><div class="reply-text" style="line-height:1.8">' + formatMarkdown(answer) + '</div></div>';
-    }
+    div.innerHTML = '<div class="card"><div class="card-title">📝 菜单优化方案</div><div class="reply-text" style="line-height:1.8">' + formatMarkdown(answer) + '</div></div>';
   } else {
     div.innerHTML = '<div class="card"><div class="reply-text error">生成失败，请重试</div></div>';
   }
