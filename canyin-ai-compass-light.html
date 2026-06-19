@@ -480,88 +480,171 @@ function showToast(msg, type) {
 
 // ===== VOICE =====
 let recognition = null;
+let voiceCleanupTimer = null;
+function voiceLog(msg) {
+  console.log('[Voice]', msg);
+  const logEl = document.getElementById('voiceLogList');
+  if (logEl) {
+    const time = new Date().toLocaleTimeString('zh-CN', {hour12:false});
+    const line = document.createElement('div');
+    line.textContent = '[' + time + '] ' + msg;
+    line.style.cssText = 'padding:2px 0;border-bottom:1px solid #1e293b;font-size:12px;color:#94a3b8;word-break:break-all;';
+    logEl.appendChild(line);
+    logEl.scrollTop = logEl.scrollHeight;
+    while (logEl.children.length > 50) logEl.removeChild(logEl.firstChild);
+  }
+}
+
 function startVoice(inputId, btnId) {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { showToast('⚠️ 浏览器不支持语音识别，请使用Chrome/Safari', 'error'); return; }
+  if (!SR) { showToast('⚠️ 浏览器不支持语音识别，请使用Chrome/Safari', 'error'); voiceLog('❌ 浏览器不支持'); return; }
   if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-    showToast('⚠️ 语音功能需要HTTPS环境，请部署到服务器后使用', 'error'); return;
+    showToast('⚠️ 语音功能需要HTTPS环境', 'error'); voiceLog('❌ 非HTTPS环境'); return;
   }
   const targetInput = document.getElementById(inputId);
-  if (!targetInput) {
-    console.error('[Voice] 找不到输入框:', inputId);
-    showToast('⚠️ 内部错误：找不到输入框 ' + inputId, 'error');
-    return;
-  }
-  console.log('[Voice] 启动语音识别 → inputId=' + inputId + ', btnId=' + btnId);
-  if (recognition) { try { recognition.abort(); } catch(e) {} }
+  if (!targetInput) { voiceLog('❌ 找不到输入框: ' + inputId); showToast('⚠️ 内部错误：找不到输入框', 'error'); return; }
+
+  if (recognition) { try { recognition.abort(); } catch(e) {} recognition = null; }
+  if (voiceCleanupTimer) { clearTimeout(voiceCleanupTimer); voiceCleanupTimer = null; }
+  voiceLog('🎤 启动 → 目标: ' + inputId);
+
   recognition = new SR();
-  recognition.lang = 'zh-CN'; recognition.continuous = true; recognition.interimResults = true; recognition.maxAlternatives = 1;
+  recognition.lang = 'zh-CN';
+  recognition.continuous = false;
+  recognition.interimResults = true;
+  recognition.maxAlternatives = 1;
+
   const btn = document.getElementById(btnId);
   const originalText = btn.textContent;
-  btn.classList.add('recording'); btn.textContent = '🎤 正在听...'; btn.style.background = '#ef4444';
-  targetInput.style.borderColor = '#ef4444'; targetInput.style.boxShadow = '0 0 10px rgba(239,68,68,0.3)';
-  let lastFinalTranscript = '', lastInterimTranscript = '', finalReceived = false;
+  btn.classList.add('recording');
+  btn.textContent = '🎤 正在听...';
+  btn.style.background = '#ef4444';
+  targetInput.style.borderColor = '#ef4444';
+  targetInput.style.boxShadow = '0 0 10px rgba(239,68,68,0.3)';
+
+  let lastTranscript = '';
+  let finalReceived = false;
+  let ended = false;
+
   let startTime = Date.now();
-  let interval = setInterval(() => {
-    const elapsed = Math.floor((Date.now() - startTime) / 1000);
-    btn.textContent = elapsed < 10 ? `🎤 正在听... (${elapsed}s)` : `🎤 还在听... (${elapsed}s)`;
+  let timer = setInterval(() => {
+    const s = Math.floor((Date.now() - startTime) / 1000);
+    btn.textContent = s < 10 ? '🎤 正在听... (' + s + 's)' : '🎤 还在听... (' + s + 's)';
   }, 1000);
-  function setInputValue(value, isFinal) {
+
+  function fillInput(value, isFinal) {
     const el = document.getElementById(inputId);
-    if (!el) { console.error('[Voice] 赋值时找不到输入框:', inputId); return false; }
+    if (!el) return;
     el.value = value;
     el.style.color = isFinal ? '' : '#94a3b8';
-    el.dispatchEvent(new Event('input', { bubbles: true }));
-    el.dispatchEvent(new Event('change', { bubbles: true }));
-    console.log('[Voice] 已填入输入框 (' + (isFinal ? '最终' : '中间') + '):', value);
-    return true;
+    el.dispatchEvent(new Event('input', {bubbles:true}));
+    el.dispatchEvent(new Event('change', {bubbles:true}));
+    voiceLog((isFinal ? '✅ 填入' : '⏳ 中间') + ': "' + value + '" → #' + inputId);
   }
-  recognition.onstart = () => { console.log('[Voice] 语音识别已启动，目标输入框:', inputId); startTime = Date.now(); };
+
+  function doCleanup() {
+    if (ended) return;
+    ended = true;
+    clearInterval(timer);
+    btn.classList.remove('recording');
+    btn.style.background = '';
+    btn.style.transform = '';
+    targetInput.style.borderColor = '';
+    targetInput.style.boxShadow = '';
+    targetInput.style.color = '';
+    if (!finalReceived && lastTranscript) {
+      fillInput(lastTranscript, true);
+      btn.textContent = '✅ 识别完成';
+      btn.style.background = '#22c55e';
+      voiceLog('🔄 兜底填入: "' + lastTranscript + '"');
+      setTimeout(() => { btn.textContent = originalText; btn.style.background = ''; }, 1500);
+    } else if (btn.textContent.includes('正在听') || btn.textContent.includes('还在听')) {
+      btn.textContent = originalText;
+    }
+    voiceLog('🏁 录音结束 final=' + finalReceived + ' transcript="' + lastTranscript + '"');
+    recognition = null;
+  }
+
+  recognition.onstart = () => { startTime = Date.now(); voiceLog('▶️ 已开始监听'); };
+
   recognition.onresult = (e) => {
-    lastFinalTranscript = ''; lastInterimTranscript = '';
+    let finalText = '', interimText = '';
     for (let i = 0; i < e.results.length; i++) {
-      const transcript = e.results[i][0].transcript;
-      if (e.results[i].isFinal) { lastFinalTranscript += transcript; finalReceived = true; }
-      else { lastInterimTranscript += transcript; }
+      if (e.results[i].isFinal) finalText += e.results[i][0].transcript;
+      else interimText += e.results[i][0].transcript;
     }
-    console.log('[Voice] onresult: final="' + lastFinalTranscript + '", interim="' + lastInterimTranscript + '"');
-    if (lastFinalTranscript) {
-      setInputValue(lastFinalTranscript, true);
-      btn.textContent = '✅ 识别完成'; btn.style.background = '#22c55e'; clearInterval(interval);
-      targetInput.style.borderColor = ''; targetInput.style.boxShadow = '';
+    if (finalText) {
+      lastTranscript = finalText;
+      finalReceived = true;
+      fillInput(finalText, true);
+      btn.textContent = '✅ 识别完成';
+      btn.style.background = '#22c55e';
+      clearInterval(timer);
+      targetInput.style.borderColor = '';
+      targetInput.style.boxShadow = '';
+      voiceLog('✅ 最终结果: "' + finalText + '"');
       setTimeout(() => { btn.textContent = originalText; btn.style.background = ''; }, 1500);
-    } else if (lastInterimTranscript) {
-      setInputValue(lastInterimTranscript, false);
-      btn.textContent = '🎤 ' + lastInterimTranscript.slice(-15);
+    } else if (interimText) {
+      lastTranscript = interimText;
+      fillInput(interimText, false);
+      btn.textContent = '🎤 ' + interimText.slice(-15);
     }
   };
+
   recognition.onerror = (e) => {
-    console.error('[Voice] 识别错误:', e.error);
-    clearInterval(interval); btn.classList.remove('recording'); btn.style.background = '';
-    targetInput.style.borderColor = ''; targetInput.style.boxShadow = '';
+    voiceLog('❌ 错误: ' + e.error);
+    clearInterval(timer);
+    btn.classList.remove('recording');
+    btn.style.background = '';
+    btn.style.transform = '';
+    targetInput.style.borderColor = '';
+    targetInput.style.boxShadow = '';
+    if (e.error === 'aborted') { btn.textContent = originalText; return; }
     let msg = '⚠️ 语音识别失败';
-    if (e.error === 'not-allowed') msg = '⚠️ 麦克风权限被拒绝，请在浏览器设置中允许';
-    else if (e.error === 'no-speech') msg = '⚠️ 没有检测到语音，请重试';
-    else if (e.error === 'network') msg = '⚠️ 网络连接错误';
-    else if (e.error === 'audio-capture') msg = '⚠️ 无法访问麦克风，请检查设备';
-    else if (e.error === 'aborted') msg = originalText;
-    btn.textContent = msg; if (e.error !== 'aborted') { showToast(msg, 'error'); setTimeout(() => { btn.textContent = originalText; }, 2500); }
+    if (e.error === 'not-allowed') msg = '⚠️ 麦克风权限被拒绝';
+    else if (e.error === 'no-speech') msg = '⚠️ 没有检测到语音';
+    else if (e.error === 'network') msg = '⚠️ 网络错误';
+    btn.textContent = msg;
+    showToast(msg, 'error');
+    setTimeout(() => { btn.textContent = originalText; }, 2500);
+    ended = true;
+    recognition = null;
   };
+
   recognition.onend = () => {
-    console.log('[Voice] 识别结束, finalReceived=' + finalReceived + ', lastFinal="' + lastFinalTranscript + '", lastInterim="' + lastInterimTranscript + '"');
-    clearInterval(interval); btn.classList.remove('recording'); btn.style.background = '';
-    targetInput.style.borderColor = ''; targetInput.style.boxShadow = ''; targetInput.style.color = '';
-    if (!finalReceived && lastInterimTranscript) {
-      console.log('[Voice] onend兜底：将中间结果填入:', lastInterimTranscript);
-      setInputValue(lastInterimTranscript, true);
-      btn.textContent = '✅ 识别完成'; btn.style.background = '#22c55e';
-      setTimeout(() => { btn.textContent = originalText; btn.style.background = ''; }, 1500);
-    }
-    if (btn.textContent.includes('正在听') || btn.textContent.includes('还在听') || btn.textContent.includes('请说话')) btn.textContent = originalText;
+    voiceLog('⏹️ onend 触发');
+    doCleanup();
   };
-  try { recognition.start(); } catch(e) { clearInterval(interval); showToast('⚠️ 启动失败: ' + e.message, 'error'); btn.classList.remove('recording'); btn.style.background = ''; btn.textContent = originalText; }
+
+  try {
+    recognition.start();
+    voiceLog('📡 recognition.start() 已调用');
+  } catch(e) {
+    voiceLog('❌ start()异常: ' + e.message);
+    clearInterval(timer);
+    showToast('⚠️ 启动失败: ' + e.message, 'error');
+    btn.classList.remove('recording');
+    btn.style.background = '';
+    btn.textContent = originalText;
+    ended = true;
+    recognition = null;
+  }
 }
-function stopVoice() { if (recognition) { try { recognition.stop(); } catch(e) {} } document.querySelectorAll('.recording').forEach(el => el.classList.remove('recording')); }
+
+function stopVoice() {
+  voiceLog('🛑 stopVoice 调用');
+  if (recognition) {
+    try { recognition.stop(); } catch(e) { voiceLog('stop()异常: ' + e.message); }
+    voiceCleanupTimer = setTimeout(() => {
+      if (recognition) {
+        voiceLog('⚠️ onend 超时，强制清理');
+        try { recognition.abort(); } catch(e) {}
+        recognition = null;
+      }
+      document.querySelectorAll('.recording').forEach(el => el.classList.remove('recording'));
+    }, 500);
+  }
+}
 
 // ===== DASHBOARD DATA =====
 function getDashboardKey(date) { return 'dash_' + (date || new Date().toISOString().slice(0,10)); }
@@ -961,5 +1044,13 @@ document.addEventListener('DOMContentLoaded', () => {
   ['menuInput'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); generateMenu(); } }); });
 });
 </script>
+<!-- 语音调试日志区 -->
+<div id="voiceLogPanel" style="position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#0f172a;border-top:1px solid #334155;transition:height 0.2s;height:32px;overflow:hidden;font-family:monospace;">
+  <div onclick="document.getElementById('voiceLogPanel').style.height=document.getElementById('voiceLogPanel').style.height==='32px'?'160px':'32px'" style="padding:6px 12px;cursor:pointer;color:#94a3b8;font-size:12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #1e293b;">
+    <span>🎙️ 语音日志 <span style="color:#64748b">(点击展开/收起)</span></span>
+    <span onclick="event.stopPropagation();document.getElementById('voiceLogList').innerHTML='';" style="color:#64748b;cursor:pointer;font-size:11px;">清空</span>
+  </div>
+  <div id="voiceLogList" style="height:120px;overflow-y:auto;padding:4px 12px;"></div>
+</div>
 </body>
 </html>
