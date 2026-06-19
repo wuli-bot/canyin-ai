@@ -140,7 +140,7 @@ textarea.input { min-height: 100px; resize: vertical; }
     <div class="card-title">输入食材信息</div>
     <textarea class="input" id="costInput" placeholder="例如：蛋炒饭，米饭200g 1.2元，鸡蛋2个 2.4元，食用油10ml 0.3元"></textarea>
     <div style="margin-top:8px">
-      <button class="voice-btn" id="costVoiceBtn" onmousedown="startVoice('costInput','costVoiceBtn')" onmouseup="stopVoice()" ontouchstart="event.preventDefault();startVoice('costInput','costVoiceBtn')" ontouchend="stopVoice()">🎤 按住说话</button>
+      <button class="voice-btn" id="costVoiceBtn" data-voice-input="costInput" data-voice-btn="costVoiceBtn">🎤 按住说话</button>
     </div>
     <div style="margin-top:12px">
       <span class="tag" onclick="document.getElementById('costInput').value='蛋炒饭：米饭200g 1.2元，鸡蛋2个 2.4元，油10ml 0.3元，调料 0.5元'">蛋炒饭</span>
@@ -163,7 +163,7 @@ textarea.input { min-height: 100px; resize: vertical; }
     <div class="card-title">输入顾客差评</div>
     <textarea class="input" id="reviewInput" placeholder="粘贴顾客的差评内容..."></textarea>
     <div style="margin-top:8px">
-      <button class="voice-btn" id="reviewVoiceBtn" onmousedown="startVoice('reviewInput','reviewVoiceBtn')" onmouseup="stopVoice()" ontouchstart="event.preventDefault();startVoice('reviewInput','reviewVoiceBtn')" ontouchend="stopVoice()">🎤 按住说话</button>
+      <button class="voice-btn" id="reviewVoiceBtn" data-voice-input="reviewInput" data-voice-btn="reviewVoiceBtn">🎤 按住说话</button>
     </div>
     <div style="margin-top:12px">
       <span class="tag" onclick="document.getElementById('reviewInput').value='太咸了，根本没法吃，失望'">太咸了</span>
@@ -198,7 +198,7 @@ textarea.input { min-height: 100px; resize: vertical; }
     </div>
     <textarea class="input" id="privateInput" placeholder="补充信息（可选）：如店铺名、优惠力度等"></textarea>
     <div style="margin-top:8px">
-      <button class="voice-btn" id="privateVoiceBtn" onmousedown="startVoice('privateInput','privateVoiceBtn')" onmouseup="stopVoice()" ontouchstart="event.preventDefault();startVoice('privateInput','privateVoiceBtn')" ontouchend="stopVoice()">🎤 按住说话</button>
+      <button class="voice-btn" id="privateVoiceBtn" data-voice-input="privateInput" data-voice-btn="privateVoiceBtn">🎤 按住说话</button>
     </div>
     <div class="btn-row">
       <button class="btn btn-primary" id="privateBtn" onclick="genPrivate()">✨ 生成话术</button>
@@ -216,7 +216,7 @@ textarea.input { min-height: 100px; resize: vertical; }
     <div class="card-title">输入顾客特征/场景</div>
     <textarea class="input" id="welcomeInput" placeholder="例如：第一次来的年轻女顾客 / 回头客张哥带朋友来了"></textarea>
     <div style="margin-top:8px">
-      <button class="voice-btn" id="welcomeVoiceBtn" onmousedown="startVoice('welcomeInput','welcomeVoiceBtn')" onmouseup="stopVoice()" ontouchstart="event.preventDefault();startVoice('welcomeInput','welcomeVoiceBtn')" ontouchend="stopVoice()">🎤 按住说话</button>
+      <button class="voice-btn" id="welcomeVoiceBtn" data-voice-input="welcomeInput" data-voice-btn="welcomeVoiceBtn">🎤 按住说话</button>
     </div>
     <div style="margin-top:12px">
       <span class="tag" onclick="document.getElementById('welcomeInput').value='第一次来的年轻女顾客'">新客-女</span>
@@ -239,7 +239,7 @@ textarea.input { min-height: 100px; resize: vertical; }
     <div class="card-title">输入点餐内容</div>
     <input class="input" id="voiceOrderInput" placeholder="例如：一份蛋炒饭，重辣，加个卤蛋">
     <div style="margin-top:8px">
-      <button class="voice-btn" id="voiceOrderVoiceBtn" onmousedown="startVoice('voiceOrderInput','voiceOrderVoiceBtn')" onmouseup="stopVoice()" ontouchstart="event.preventDefault();startVoice('voiceOrderInput','voiceOrderVoiceBtn')" ontouchend="stopVoice()">🎤 按住说话</button>
+      <button class="voice-btn" id="voiceOrderVoiceBtn" data-voice-input="voiceOrderInput" data-voice-btn="voiceOrderVoiceBtn">🎤 按住说话</button>
     </div>
     <div style="margin-top:12px">
       <span class="tag" onclick="document.getElementById('voiceOrderInput').value='一份蛋炒饭，微辣'">蛋炒饭 微辣</span>
@@ -262,7 +262,7 @@ textarea.input { min-height: 100px; resize: vertical; }
     <div class="card-title">输入订单内容</div>
     <textarea class="input" id="orderInput" placeholder="粘贴或输入订单内容..."></textarea>
     <div style="margin-top:8px">
-      <button class="voice-btn" id="orderVoiceBtn" onmousedown="startVoice('orderInput','orderVoiceBtn')" onmouseup="stopVoice()" ontouchstart="event.preventDefault();startVoice('orderInput','orderVoiceBtn')" ontouchend="stopVoice()">🎤 按住说话</button>
+      <button class="voice-btn" id="orderVoiceBtn" data-voice-input="orderInput" data-voice-btn="orderVoiceBtn">🎤 按住说话</button>
     </div>
     <div class="btn-row">
       <button class="btn btn-primary" id="orderBtn" onclick="handleOrder()">📋 格式化订单</button>
@@ -280,7 +280,7 @@ textarea.input { min-height: 100px; resize: vertical; }
     <div class="card-title">语音输入或打字输入</div>
     <input class="input" id="voiceStoreInput" placeholder="说点什么... 例如：进了5斤猪肉，10块一斤">
     <div style="margin-top:8px">
-      <button class="voice-btn" id="voiceStoreVoiceBtn" onmousedown="startVoice('voiceStoreInput','voiceStoreVoiceBtn')" onmouseup="stopVoice()" ontouchstart="event.preventDefault();startVoice('voiceStoreInput','voiceStoreVoiceBtn')" ontouchend="stopVoice()">🎤 按住说话</button>
+      <button class="voice-btn" id="voiceStoreVoiceBtn" data-voice-input="voiceStoreInput" data-voice-btn="voiceStoreVoiceBtn">🎤 按住说话</button>
     </div>
     <div style="margin-top:12px">
       <span class="tag" onclick="document.getElementById('voiceStoreInput').value='进了5斤猪肉，10块一斤'">进5斤猪肉</span>
@@ -316,7 +316,7 @@ textarea.input { min-height: 100px; resize: vertical; }
     <div class="card-title">🎤 语音指令</div>
     <input class="input" id="controlInput" placeholder="试试说：'进了5斤鸡蛋' / '处理差评：太咸了' / '蛋炒饭成本多少'">
     <div style="margin-top:8px">
-      <button class="voice-btn" id="controlVoiceBtn" onmousedown="startVoice('controlInput','controlVoiceBtn')" onmouseup="stopVoice()" ontouchstart="event.preventDefault();startVoice('controlInput','controlVoiceBtn')" ontouchend="stopVoice()">🎤 按住说话</button>
+      <button class="voice-btn" id="controlVoiceBtn" data-voice-input="controlInput" data-voice-btn="controlVoiceBtn">🎤 按住说话</button>
     </div>
     <div class="btn-row">
       <button class="btn btn-primary" id="controlBtn" onclick="sendControl()">🚀 发送指令</button>
@@ -411,14 +411,14 @@ textarea.input { min-height: 100px; resize: vertical; }
     </select>
     <input class="input" id="siteCategoryInput" type="text" placeholder="或手动输入品类（如：炸鸡、麻辣烫、面包蛋糕...）" style="margin-top:8px" onfocus="document.getElementById('siteCategorySelect').value='__custom__'">
     <div style="margin-top:8px">
-      <button class="voice-btn" id="siteCategoryVoiceBtn" onmousedown="startVoice('siteCategoryInput','siteCategoryVoiceBtn')" onmouseup="stopVoice()" ontouchstart="event.preventDefault();startVoice('siteCategoryInput','siteCategoryVoiceBtn')" ontouchend="stopVoice()">🎤 按住说话</button>
+      <button class="voice-btn" id="siteCategoryVoiceBtn" data-voice-input="siteCategoryInput" data-voice-btn="siteCategoryVoiceBtn">🎤 按住说话</button>
     </div>
   </div>
   <div class="card">
     <div class="card-title">输入选址信息</div>
     <textarea class="input" id="siteInput" placeholder="例如：长沙望城区湖南外国语职业学院北食堂，周边有3所学校，日均人流量约2000人"></textarea>
     <div style="margin-top:8px">
-      <button class="voice-btn" id="siteVoiceBtn" onmousedown="startVoice('siteInput','siteVoiceBtn')" onmouseup="stopVoice()" ontouchstart="event.preventDefault();startVoice('siteInput','siteVoiceBtn')" ontouchend="stopVoice()">🎤 按住说话</button>
+      <button class="voice-btn" id="siteVoiceBtn" data-voice-input="siteInput" data-voice-btn="siteVoiceBtn">🎤 按住说话</button>
     </div>
     <div class="btn-row">
       <button class="btn btn-primary" id="siteBtn" onclick="analyzeSite()">📍 分析选址</button>
@@ -436,7 +436,7 @@ textarea.input { min-height: 100px; resize: vertical; }
     <div class="card-title">输入店铺信息</div>
     <textarea class="input" id="brandInput" placeholder="例如：哇塞猛火猪油炒饭，炒饭店，在学校食堂，目标客群是学生"></textarea>
     <div style="margin-top:8px">
-      <button class="voice-btn" id="brandVoiceBtn" onmousedown="startVoice('brandInput','brandVoiceBtn')" onmouseup="stopVoice()" ontouchstart="event.preventDefault();startVoice('brandInput','brandVoiceBtn')" ontouchend="stopVoice()">🎤 按住说话</button>
+      <button class="voice-btn" id="brandVoiceBtn" data-voice-input="brandInput" data-voice-btn="brandVoiceBtn">🎤 按住说话</button>
     </div>
     <div class="btn-row">
       <button class="btn btn-primary" id="brandBtn" onclick="generateBrand()">🎨 生成方案</button>
@@ -471,7 +471,7 @@ textarea.input { min-height: 100px; resize: vertical; }
     </div>
     <textarea class="input" id="openingInput" placeholder="例如：在长沙望城区开一家20㎡的炒饭店，帮我生成完整开店清单"></textarea>
     <div style="margin-top:8px">
-      <button class="voice-btn" id="openingVoiceBtn" onmousedown="startVoice('openingInput','openingVoiceBtn')" onmouseup="stopVoice()" ontouchstart="event.preventDefault();startVoice('openingInput','openingVoiceBtn')" ontouchend="stopVoice()">🎤 按住说话</button>
+      <button class="voice-btn" id="openingVoiceBtn" data-voice-input="openingInput" data-voice-btn="openingVoiceBtn">🎤 按住说话</button>
     </div>
     <div class="btn-row">
       <button class="btn btn-primary" id="openingBtn" onclick="generateOpening()">📋 一键生成开店清单</button>
@@ -505,7 +505,7 @@ textarea.input { min-height: 100px; resize: vertical; }
     </div>
     <textarea class="input" id="equipInput" placeholder="例如：20㎡炒饭店，需要AI点餐、语音迎宾、自动接单、智能打印等功能，帮我推荐设备"></textarea>
     <div style="margin-top:8px">
-      <button class="voice-btn" id="equipVoiceBtn" onmousedown="startVoice('equipInput','equipVoiceBtn')" onmouseup="stopVoice()" ontouchstart="event.preventDefault();startVoice('equipInput','equipVoiceBtn')" ontouchend="stopVoice()">🎤 按住说话</button>
+      <button class="voice-btn" id="equipVoiceBtn" data-voice-input="equipInput" data-voice-btn="equipVoiceBtn">🎤 按住说话</button>
     </div>
     <div class="btn-row">
       <button class="btn btn-primary" id="equipBtn" onclick="generateEquipment()">🔧 一键配齐AI设备</button>
@@ -524,7 +524,7 @@ textarea.input { min-height: 100px; resize: vertical; }
     <div class="card-title">输入店铺信息或需求</div>
     <textarea class="input" id="menuInput" placeholder="例如：20㎡炒饭店，主营蛋炒饭、辣椒炒肉、牛肉炒饭，想优化菜单结构"></textarea>
     <div style="margin-top:8px">
-      <button class="voice-btn" id="menuVoiceBtn" onmousedown="startVoice('menuInput','menuVoiceBtn')" onmouseup="stopVoice()" ontouchstart="event.preventDefault();startVoice('menuInput','menuVoiceBtn')" ontouchend="stopVoice()">🎤 按住说话</button>
+      <button class="voice-btn" id="menuVoiceBtn" data-voice-input="menuInput" data-voice-btn="menuVoiceBtn">🎤 按住说话</button>
     </div>
     <div class="btn-row">
       <button class="btn btn-primary" id="menuBtn" onclick="generateMenu()">📝 生成方案</button>
@@ -542,7 +542,7 @@ textarea.input { min-height: 100px; resize: vertical; }
     <div class="card-title">输入菜品成本信息</div>
     <textarea class="input" id="pricingInput" placeholder="例如：蛋炒饭成本4.4元，辣椒炒肉成本6.5元，牛肉炒饭成本8元"></textarea>
     <div style="margin-top:8px">
-      <button class="voice-btn" id="pricingVoiceBtn" onmousedown="startVoice('pricingInput','pricingVoiceBtn')" onmouseup="stopVoice()" ontouchstart="event.preventDefault();startVoice('pricingInput','pricingVoiceBtn')" ontouchend="stopVoice()">🎤 按住说话</button>
+      <button class="voice-btn" id="pricingVoiceBtn" data-voice-input="pricingInput" data-voice-btn="pricingVoiceBtn">🎤 按住说话</button>
     </div>
     <div class="btn-row">
       <button class="btn btn-primary" id="pricingBtn" onclick="generatePricing()">💲 生成定价方案</button>
@@ -1122,170 +1122,209 @@ function showToast(msg, type) {
 
 // ===== VOICE =====
 let recognition = null;
+let stopping = false;
+
+function voiceLog(msg) {
+  console.log('[Voice] ' + msg);
+  const logEl = document.getElementById('voiceLogList');
+  if (logEl) {
+    const d = document.createElement('div');
+    d.style.cssText = 'color:#94a3b8;font-size:11px;line-height:1.6;border-bottom:1px solid #1e293b;padding:2px 0';
+    d.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+    logEl.appendChild(d);
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+}
+
+function bindVoiceButtons() {
+  document.querySelectorAll('.voice-btn[data-voice-input]').forEach(btn => {
+    const inputId = btn.getAttribute('data-voice-input');
+    const btnId = btn.getAttribute('data-voice-btn') || btn.id;
+    btn.style.touchAction = 'none';
+    btn.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      startVoice(inputId, btnId);
+    });
+    btn.addEventListener('pointerup', (e) => {
+      e.preventDefault();
+      stopVoice();
+    });
+    btn.addEventListener('pointercancel', () => stopVoice());
+    btn.addEventListener('pointerleave', () => stopVoice());
+    btn.addEventListener('contextmenu', (e) => e.preventDefault());
+  });
+  voiceLog('🔗 已绑定 ' + document.querySelectorAll('.voice-btn[data-voice-input]').length + ' 个语音按钮');
+}
+
 function startVoice(inputId, btnId) {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { showToast('⚠️ 浏览器不支持语音识别，请使用Chrome/Safari', 'error'); return; }
-  
-  // 检查是否HTTPS环境
+  if (!SR) { showToast('⚠️ 浏览器不支持语音识别', 'error'); voiceLog('❌ 浏览器不支持'); return; }
   if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-    showToast('⚠️ 语音功能需要HTTPS环境，请部署到服务器后使用', 'error');
+    showToast('⚠️ 语音功能需要HTTPS环境', 'error'); voiceLog('❌ 非HTTPS环境'); return;
+  }
+  const targetInput = document.getElementById(inputId);
+  if (!targetInput) { voiceLog('❌ 找不到输入框: ' + inputId); showToast('⚠️ 找不到输入框', 'error'); return; }
+
+  // ===== 防重复启动保护 =====
+  if (recognition && recognition._isRunning) {
+    voiceLog('⚠️ 已有识别进行中，忽略本次启动');
     return;
   }
-  
+
+  // 清理上一轮（如果还在运行）
   if (recognition) { try { recognition.stop(); } catch(e) {} }
-  
+  stopping = false;
+  recognition = null;
+
+  voiceLog('🎤 启动 → #' + inputId);
+
   recognition = new SR();
   recognition.lang = 'zh-CN';
-  recognition.continuous = true;  // 持续监听，直到手动停止
-  recognition.interimResults = true;  // 显示中间结果
+  recognition.continuous = false;   // 单句模式，stop() 后立即结束
+  recognition.interimResults = true;
   recognition.maxAlternatives = 1;
-  
+  recognition._isRunning = true;  // 标记正在运行
+
   const btn = document.getElementById(btnId);
-  const originalText = btn.textContent;
-  btn.classList.add('recording');
-  btn.textContent = '🎤 正在听...';
-  btn.style.background = '#ef4444';
-  
-  // 添加音频级别指示器
-  const input = document.getElementById(inputId);
-  if (input) {
-    input.style.borderColor = '#ef4444';
-    input.style.boxShadow = '0 0 10px rgba(239, 68, 68, 0.3)';
+  const originalText = btn ? btn.textContent : '🎤';
+  if (btn) {
+    btn.classList.add('recording');
+    btn.textContent = '🎤 正在听...';
+    btn.style.background = '#ef4444';
   }
-  
+  targetInput.style.borderColor = '#ef4444';
+  targetInput.style.boxShadow = '0 0 10px rgba(239,68,68,0.3)';
+
+  let lastTranscript = '';
+  let finalReceived = false;
+  let ended = false;
   let startTime = Date.now();
-  let audioLevelInterval = setInterval(() => {
-    const elapsed = Math.floor((Date.now() - startTime) / 1000);
-    if (elapsed < 10) {
-      btn.textContent = `🎤 正在听... (${elapsed}s)`;
-      // 添加脉冲动画
-      btn.style.transform = elapsed % 2 === 0 ? 'scale(1.05)' : 'scale(1)';
-    } else {
-      btn.textContent = `🎤 还在听... (${elapsed}s)`;
-    }
+  let timer = setInterval(() => {
+    const s = Math.floor((Date.now() - startTime) / 1000);
+    if (btn) btn.textContent = s < 10 ? '🎤 正在听... (' + s + 's)' : '🎤 还在听... (' + s + 's)';
   }, 1000);
-  
-  // 请求麦克风权限
-  recognition.onstart = () => {
-    console.log('语音识别已启动');
-    startTime = Date.now();
-  };
-  
-  recognition.onresult = (e) => {
-    let finalTranscript = '';
-    let interimTranscript = '';
-    
-    for (let i = e.resultIndex; i < e.results.length; i++) {
-      const transcript = e.results[i][0].transcript;
-      if (e.results[i].isFinal) {
-        finalTranscript += transcript;
-        console.log('最终识别结果:', transcript);
-      } else {
-        interimTranscript += transcript;
-        console.log('中间结果:', transcript);
-      }
-    }
-    
+
+  function fillInput(value, isFinal) {
     const el = document.getElementById(inputId);
-    if (el) {
-      if (finalTranscript) {
-        el.value = finalTranscript;
+    if (!el) return;
+    el.value = value;
+    el.style.color = isFinal ? '' : '#94a3b8';
+    el.dispatchEvent(new Event('input', {bubbles:true}));
+    el.dispatchEvent(new Event('change', {bubbles:true}));
+    voiceLog((isFinal ? '✅ 已填入' : '⏳ 中间') + ': "' + value + '"');
+  }
+
+  function doCleanup() {
+    if (ended) return;
+    ended = true;
+    clearInterval(timer);
+    if (btn) {
+      btn.classList.remove('recording');
+      btn.style.background = '';
+      btn.style.transform = '';
+    }
+    targetInput.style.borderColor = '';
+    targetInput.style.boxShadow = '';
+    targetInput.style.color = '';
+    // 兜底：stop() 后只有 interim 没有 final，用 interim 填
+    if (!finalReceived && lastTranscript) {
+      fillInput(lastTranscript, true);
+      if (btn) {
         btn.textContent = '✅ 识别完成';
         btn.style.background = '#22c55e';
-        btn.style.transform = 'scale(1)';
-        clearInterval(audioLevelInterval);
-        if (input) {
-          input.style.borderColor = '';
-          input.style.boxShadow = '';
-        }
-        setTimeout(() => {
-          btn.textContent = originalText;
-          btn.style.background = '';
-        }, 1500);
-      } else if (interimTranscript) {
-        // 显示中间结果，让用户知道系统在工作
-        el.value = interimTranscript;
-        el.style.color = '#94a3b8'; // 灰色表示中间结果
-        btn.textContent = '🎤 ' + interimTranscript.slice(-15);
+        setTimeout(() => { btn.textContent = originalText; btn.style.background = ''; }, 1500);
       }
-    }
-  };
-  
-  recognition.onerror = (e) => {
-    console.error('语音识别错误:', e.error);
-    clearInterval(audioLevelInterval);
-    btn.classList.remove('recording');
-    btn.style.background = '';
-    btn.style.transform = 'scale(1)';
-    if (input) {
-      input.style.borderColor = '';
-      input.style.boxShadow = '';
-    }
-    
-    let errorMsg = '⚠️ 语音识别失败';
-    if (e.error === 'not-allowed') {
-      errorMsg = '⚠️ 麦克风权限被拒绝，请在浏览器设置中允许';
-    } else if (e.error === 'no-speech') {
-      errorMsg = '⚠️ 没有检测到语音，请重试';
-    } else if (e.error === 'network') {
-      errorMsg = '⚠️ 网络连接错误';
-    } else if (e.error === 'audio-capture') {
-      errorMsg = '⚠️ 无法访问麦克风，请检查设备';
-    } else if (e.error === 'aborted') {
-      errorMsg = originalText;
-    }
-    
-    btn.textContent = errorMsg;
-    if (e.error !== 'aborted') {
-      showToast(errorMsg, 'error');
-      setTimeout(() => {
-        btn.textContent = originalText;
-      }, 2500);
-    }
-  };
-  
-  recognition.onend = () => {
-    console.log('语音识别结束');
-    clearInterval(audioLevelInterval);
-    btn.classList.remove('recording');
-    btn.style.background = '';
-    btn.style.transform = 'scale(1)';
-    if (input) {
-      input.style.borderColor = '';
-      input.style.boxShadow = '';
-      // 如果中间结果是灰色，恢复为正常颜色
-      if (input.style.color === 'rgb(148, 163, 184)') {
-        input.style.color = '';
-      }
-    }
-    if (btn.textContent.includes('请说话') || btn.textContent.includes('正在听') || btn.textContent.includes('还在听')) {
+      voiceLog('🔄 兜底填入: "' + lastTranscript + '"');
+    } else if (btn && (btn.textContent.includes('正在听') || btn.textContent.includes('还在听'))) {
       btn.textContent = originalText;
     }
+    voiceLog('🏁 结束 final=' + finalReceived + ' text="' + lastTranscript + '"');
+    recognition = null;
+    stopping = false;
+  }
+
+  recognition.onstart = () => { startTime = Date.now(); voiceLog('▶️ 已开始监听'); };
+
+  recognition.onresult = (e) => {
+    let finalText = '', interimText = '';
+    for (let i = 0; i < e.results.length; i++) {
+      if (e.results[i].isFinal) finalText += e.results[i][0].transcript;
+      else interimText += e.results[i][0].transcript;
+    }
+    if (finalText) {
+      lastTranscript = finalText;
+      finalReceived = true;
+      fillInput(finalText, true);
+      if (btn) {
+        btn.textContent = '✅ 识别完成';
+        btn.style.background = '#22c55e';
+        setTimeout(() => { btn.textContent = originalText; btn.style.background = ''; }, 1500);
+      }
+      voiceLog('✅ 最终结果: "' + finalText + '"');
+    } else if (interimText) {
+      lastTranscript = interimText;
+      fillInput(interimText, false);
+      if (btn) btn.textContent = '🎤 ' + interimText.slice(-15);
+    }
   };
-  
+
+  recognition.onerror = (e) => {
+    voiceLog('❌ 错误: ' + e.error);
+    if (e.error === 'aborted') return;  // abort 是主动取消，交给 onend 清理
+    ended = true;
+    clearInterval(timer);
+    if (btn) { btn.classList.remove('recording'); btn.style.background = ''; btn.style.transform = ''; }
+    targetInput.style.borderColor = '';
+    targetInput.style.boxShadow = '';
+    let msg = '⚠️ 语音识别失败';
+    if (e.error === 'not-allowed') msg = '⚠️ 麦克风权限被拒绝';
+    else if (e.error === 'no-speech') msg = '⚠️ 没有检测到语音';
+    else if (e.error === 'network') msg = '⚠️ 网络错误';
+    if (btn) {
+      btn.textContent = msg;
+      setTimeout(() => { btn.textContent = originalText; }, 2500);
+    }
+    showToast(msg, 'error');
+    recognition = null;
+    stopping = false;
+  };
+
+  recognition.onend = () => {
+    recognition._isRunning = false;  // 清除运行标记
+    voiceLog('⏹️ onend');
+    doCleanup();
+    // 注意：此处绝不重新调用 startVoice() 或 recognition.start()
+  };
+
   try {
     recognition.start();
+    voiceLog('📡 start() 已调用');
   } catch(e) {
-    console.error('启动语音识别失败:', e);
-    clearInterval(audioLevelInterval);
-    showToast('⚠️ 启动语音识别失败: ' + e.message, 'error');
-    btn.classList.remove('recording');
-    btn.style.background = '';
-    btn.style.transform = 'scale(1)';
-    if (input) {
-      input.style.borderColor = '';
-      input.style.boxShadow = '';
-    }
-    btn.textContent = originalText;
+    voiceLog('❌ start()异常: ' + e.message);
+    clearInterval(timer);
+    showToast('⚠️ 启动失败: ' + e.message, 'error');
+    if (btn) { btn.classList.remove('recording'); btn.style.background = ''; btn.textContent = originalText; }
+    ended = true;
+    recognition = null;
+    stopping = false;
   }
 }
+
 function stopVoice() {
-  if (recognition) {
-    try { recognition.stop(); } catch(e) {}
+  if (stopping) { voiceLog('🛑 stopVoice 已跳过（重复调用）'); return; }
+  voiceLog('🛑 松手触发 stopVoice');
+  if (!recognition) { voiceLog('🛑 无需停止（recognition 为空）'); return; }
+  if (!recognition._isRunning) { voiceLog('🛑 无需停止（_isRunning=false）'); return; }
+  stopping = true;
+  try {
+    recognition.stop();  // 正常结束，触发 onresult(final) → onend
+    voiceLog('🛑 stop() 已调用，等待 onend');
+  } catch(e) {
+    voiceLog('❌ stop()异常: ' + e.message);
+    stopping = false;
   }
-  // 清理所有录音状态
-  document.querySelectorAll('.recording').forEach(el => el.classList.remove('recording'));
 }
+
 
 // ===== ROUTING =====
 function navigateTo(id) {
@@ -2240,6 +2279,7 @@ function setupEnterKey(inputId, fn) {
 document.addEventListener('DOMContentLoaded', () => {
   buildNav();
   initAPI();
+  bindVoiceButtons();
   renderPortal();
 
   // Enter key shortcuts
@@ -2350,5 +2390,12 @@ function clearRepurchase() {
 }
 
 </script>
+<div id="voiceLogPanel" style="position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#0f172a;border-top:1px solid #334155;transition:height 0.2s;height:32px;overflow:hidden;font-family:monospace;">
+  <div onclick="document.getElementById('voiceLogPanel').style.height=document.getElementById('voiceLogPanel').style.height==='32px'?'160px':'32px'" style="padding:6px 12px;cursor:pointer;color:#94a3b8;font-size:12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #1e293b;">
+    <span>🎤 语音日志（点击展开）</span>
+    <span onclick="event.stopPropagation();document.getElementById('voiceLogList').innerHTML='';" style="color:#64748b;cursor:pointer;font-size:11px;">清空</span>
+  </div>
+  <div id="voiceLogList" style="height:120px;overflow-y:auto;padding:4px 12px;"></div>
+</div>
 </body>
 </html>

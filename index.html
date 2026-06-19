@@ -1225,43 +1225,35 @@ function showToast(msg, type) {
 
 // ===== VOICE =====
 let recognition = null;
-let stopping = false;  // 防重复 stop 标志
+let stopping = false;
 
 function voiceLog(msg) {
-  console.log('[Voice]', msg);
+  console.log('[Voice] ' + msg);
   const logEl = document.getElementById('voiceLogList');
   if (logEl) {
-    const time = new Date().toLocaleTimeString('zh-CN', {hour12:false});
-    const line = document.createElement('div');
-    line.textContent = '[' + time + '] ' + msg;
-    line.style.cssText = 'padding:2px 0;border-bottom:1px solid #1e293b;font-size:12px;color:#94a3b8;word-break:break-all;';
-    logEl.appendChild(line);
+    const d = document.createElement('div');
+    d.style.cssText = 'color:#94a3b8;font-size:11px;line-height:1.6;border-bottom:1px solid #1e293b;padding:2px 0';
+    d.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+    logEl.appendChild(d);
     logEl.scrollTop = logEl.scrollHeight;
-    while (logEl.children.length > 50) logEl.removeChild(logEl.firstChild);
   }
 }
 
-// 统一绑定所有 .voice-btn 的指针事件（替代内联 onmousedown/ontouchstart）
 function bindVoiceButtons() {
   document.querySelectorAll('.voice-btn[data-voice-input]').forEach(btn => {
     const inputId = btn.getAttribute('data-voice-input');
     const btnId = btn.getAttribute('data-voice-btn') || btn.id;
-    // 防止重复绑定
-    if (btn.dataset.voiceBound) return;
-    btn.dataset.voiceBound = '1';
-    // 禁用浏览器默认的 touch 行为（避免延迟和滚动干扰）
     btn.style.touchAction = 'none';
     btn.addEventListener('pointerdown', (e) => {
-      e.preventDefault();  // 阻止默认，避免触发 click
+      e.preventDefault();
       startVoice(inputId, btnId);
-    }, {passive: false});
+    });
     btn.addEventListener('pointerup', (e) => {
       e.preventDefault();
       stopVoice();
-    }, {passive: false});
+    });
     btn.addEventListener('pointercancel', () => stopVoice());
     btn.addEventListener('pointerleave', () => stopVoice());
-    // 阻止 contextmenu（长按弹出菜单）
     btn.addEventListener('contextmenu', (e) => e.preventDefault());
   });
   voiceLog('🔗 已绑定 ' + document.querySelectorAll('.voice-btn[data-voice-input]').length + ' 个语音按钮');
@@ -1276,6 +1268,12 @@ function startVoice(inputId, btnId) {
   const targetInput = document.getElementById(inputId);
   if (!targetInput) { voiceLog('❌ 找不到输入框: ' + inputId); showToast('⚠️ 找不到输入框', 'error'); return; }
 
+  // ===== 防重复启动保护 =====
+  if (recognition && recognition._isRunning) {
+    voiceLog('⚠️ 已有识别进行中，忽略本次启动');
+    return;
+  }
+
   // 清理上一轮（如果还在运行）
   if (recognition) { try { recognition.stop(); } catch(e) {} }
   stopping = false;
@@ -1288,6 +1286,7 @@ function startVoice(inputId, btnId) {
   recognition.continuous = false;   // 单句模式，stop() 后立即结束
   recognition.interimResults = true;
   recognition.maxAlternatives = 1;
+  recognition._isRunning = true;  // 标记正在运行
 
   const btn = document.getElementById(btnId);
   const originalText = btn ? btn.textContent : '🎤';
@@ -1394,8 +1393,10 @@ function startVoice(inputId, btnId) {
   };
 
   recognition.onend = () => {
+    recognition._isRunning = false;  // 清除运行标记
     voiceLog('⏹️ onend');
     doCleanup();
+    // 注意：此处绝不重新调用 startVoice() 或 recognition.start()
   };
 
   try {
@@ -1416,6 +1417,7 @@ function stopVoice() {
   if (stopping) { voiceLog('🛑 stopVoice 已跳过（重复调用）'); return; }
   voiceLog('🛑 松手触发 stopVoice');
   if (!recognition) { voiceLog('🛑 无需停止（recognition 为空）'); return; }
+  if (!recognition._isRunning) { voiceLog('🛑 无需停止（_isRunning=false）'); return; }
   stopping = true;
   try {
     recognition.stop();  // 正常结束，触发 onresult(final) → onend
@@ -1425,6 +1427,7 @@ function stopVoice() {
     stopping = false;
   }
 }
+
 
 // ===== ROUTING =====
 function navigateTo(id) {

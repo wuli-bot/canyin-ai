@@ -483,16 +483,14 @@ let recognition = null;
 let stopping = false;
 
 function voiceLog(msg) {
-  console.log('[Voice]', msg);
+  console.log('[Voice] ' + msg);
   const logEl = document.getElementById('voiceLogList');
   if (logEl) {
-    const time = new Date().toLocaleTimeString('zh-CN', {hour12:false});
-    const line = document.createElement('div');
-    line.textContent = '[' + time + '] ' + msg;
-    line.style.cssText = 'padding:2px 0;border-bottom:1px solid #1e293b;font-size:12px;color:#94a3b8;word-break:break-all;';
-    logEl.appendChild(line);
+    const d = document.createElement('div');
+    d.style.cssText = 'color:#94a3b8;font-size:11px;line-height:1.6;border-bottom:1px solid #1e293b;padding:2px 0';
+    d.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+    logEl.appendChild(d);
     logEl.scrollTop = logEl.scrollHeight;
-    while (logEl.children.length > 50) logEl.removeChild(logEl.firstChild);
   }
 }
 
@@ -500,17 +498,15 @@ function bindVoiceButtons() {
   document.querySelectorAll('.voice-btn[data-voice-input]').forEach(btn => {
     const inputId = btn.getAttribute('data-voice-input');
     const btnId = btn.getAttribute('data-voice-btn') || btn.id;
-    if (btn.dataset.voiceBound) return;
-    btn.dataset.voiceBound = '1';
     btn.style.touchAction = 'none';
     btn.addEventListener('pointerdown', (e) => {
       e.preventDefault();
       startVoice(inputId, btnId);
-    }, {passive: false});
+    });
     btn.addEventListener('pointerup', (e) => {
       e.preventDefault();
       stopVoice();
-    }, {passive: false});
+    });
     btn.addEventListener('pointercancel', () => stopVoice());
     btn.addEventListener('pointerleave', () => stopVoice());
     btn.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -527,6 +523,13 @@ function startVoice(inputId, btnId) {
   const targetInput = document.getElementById(inputId);
   if (!targetInput) { voiceLog('❌ 找不到输入框: ' + inputId); showToast('⚠️ 找不到输入框', 'error'); return; }
 
+  // ===== 防重复启动保护 =====
+  if (recognition && recognition._isRunning) {
+    voiceLog('⚠️ 已有识别进行中，忽略本次启动');
+    return;
+  }
+
+  // 清理上一轮（如果还在运行）
   if (recognition) { try { recognition.stop(); } catch(e) {} }
   stopping = false;
   recognition = null;
@@ -535,9 +538,10 @@ function startVoice(inputId, btnId) {
 
   recognition = new SR();
   recognition.lang = 'zh-CN';
-  recognition.continuous = false;
+  recognition.continuous = false;   // 单句模式，stop() 后立即结束
   recognition.interimResults = true;
   recognition.maxAlternatives = 1;
+  recognition._isRunning = true;  // 标记正在运行
 
   const btn = document.getElementById(btnId);
   const originalText = btn ? btn.textContent : '🎤';
@@ -580,6 +584,7 @@ function startVoice(inputId, btnId) {
     targetInput.style.borderColor = '';
     targetInput.style.boxShadow = '';
     targetInput.style.color = '';
+    // 兜底：stop() 后只有 interim 没有 final，用 interim 填
     if (!finalReceived && lastTranscript) {
       fillInput(lastTranscript, true);
       if (btn) {
@@ -623,7 +628,7 @@ function startVoice(inputId, btnId) {
 
   recognition.onerror = (e) => {
     voiceLog('❌ 错误: ' + e.error);
-    if (e.error === 'aborted') return;
+    if (e.error === 'aborted') return;  // abort 是主动取消，交给 onend 清理
     ended = true;
     clearInterval(timer);
     if (btn) { btn.classList.remove('recording'); btn.style.background = ''; btn.style.transform = ''; }
@@ -643,8 +648,10 @@ function startVoice(inputId, btnId) {
   };
 
   recognition.onend = () => {
+    recognition._isRunning = false;  // 清除运行标记
     voiceLog('⏹️ onend');
     doCleanup();
+    // 注意：此处绝不重新调用 startVoice() 或 recognition.start()
   };
 
   try {
@@ -665,15 +672,17 @@ function stopVoice() {
   if (stopping) { voiceLog('🛑 stopVoice 已跳过（重复调用）'); return; }
   voiceLog('🛑 松手触发 stopVoice');
   if (!recognition) { voiceLog('🛑 无需停止（recognition 为空）'); return; }
+  if (!recognition._isRunning) { voiceLog('🛑 无需停止（_isRunning=false）'); return; }
   stopping = true;
   try {
-    recognition.stop();
+    recognition.stop();  // 正常结束，触发 onresult(final) → onend
     voiceLog('🛑 stop() 已调用，等待 onend');
   } catch(e) {
     voiceLog('❌ stop()异常: ' + e.message);
     stopping = false;
   }
 }
+
 
 // ===== DASHBOARD DATA =====
 function getDashboardKey(date) { return 'dash_' + (date || new Date().toISOString().slice(0,10)); }
