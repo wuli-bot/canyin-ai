@@ -2954,6 +2954,12 @@ function clearRepurchase() {
   showToast('数据已清空', 'success');
 }
 
+// ===== 选址品类选择联动 =====
+function onCategorySelect() {
+  const sel = document.getElementById('siteCategorySelect');
+  const input = document.getElementById('siteCategoryInput');
+  if (input) input.style.display = sel.value === '__custom__' ? '' : 'none';
+}
 </script>
 </body>
 </html>
