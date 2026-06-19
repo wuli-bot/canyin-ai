@@ -482,49 +482,82 @@ function showToast(msg, type) {
 let recognition = null;
 function startVoice(inputId, btnId) {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { showToast('⚠️ 浏览器不支持语音识别', 'error'); return; }
+  if (!SR) { showToast('⚠️ 浏览器不支持语音识别，请使用Chrome/Safari', 'error'); return; }
   if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-    showToast('⚠️ 语音功能需要HTTPS环境', 'error'); return;
+    showToast('⚠️ 语音功能需要HTTPS环境，请部署到服务器后使用', 'error'); return;
   }
-  if (recognition) { try { recognition.stop(); } catch(e) {} }
+  const targetInput = document.getElementById(inputId);
+  if (!targetInput) {
+    console.error('[Voice] 找不到输入框:', inputId);
+    showToast('⚠️ 内部错误：找不到输入框 ' + inputId, 'error');
+    return;
+  }
+  console.log('[Voice] 启动语音识别 → inputId=' + inputId + ', btnId=' + btnId);
+  if (recognition) { try { recognition.abort(); } catch(e) {} }
   recognition = new SR();
   recognition.lang = 'zh-CN'; recognition.continuous = true; recognition.interimResults = true; recognition.maxAlternatives = 1;
   const btn = document.getElementById(btnId);
   const originalText = btn.textContent;
   btn.classList.add('recording'); btn.textContent = '🎤 正在听...'; btn.style.background = '#ef4444';
-  const input = document.getElementById(inputId);
-  if (input) { input.style.borderColor = '#ef4444'; input.style.boxShadow = '0 0 10px rgba(239,68,68,0.3)'; }
+  targetInput.style.borderColor = '#ef4444'; targetInput.style.boxShadow = '0 0 10px rgba(239,68,68,0.3)';
+  let lastFinalTranscript = '', lastInterimTranscript = '', finalReceived = false;
   let startTime = Date.now();
   let interval = setInterval(() => {
     const elapsed = Math.floor((Date.now() - startTime) / 1000);
     btn.textContent = elapsed < 10 ? `🎤 正在听... (${elapsed}s)` : `🎤 还在听... (${elapsed}s)`;
   }, 1000);
-  recognition.onstart = () => { startTime = Date.now(); };
-  recognition.onresult = (e) => {
-    let finalTranscript = '', interimTranscript = '';
-    for (let i = e.resultIndex; i < e.results.length; i++) {
-      if (e.results[i].isFinal) finalTranscript += e.results[i][0].transcript;
-      else interimTranscript += e.results[i][0].transcript;
-    }
+  function setInputValue(value, isFinal) {
     const el = document.getElementById(inputId);
-    if (el) {
-      if (finalTranscript) { el.value = finalTranscript; btn.textContent = '✅ 识别完成'; btn.style.background = '#22c55e'; clearInterval(interval); if (input) { input.style.borderColor = ''; input.style.boxShadow = ''; } setTimeout(() => { btn.textContent = originalText; btn.style.background = ''; }, 1500); }
-      else if (interimTranscript) { el.value = interimTranscript; btn.textContent = '🎤 ' + interimTranscript.slice(-15); }
+    if (!el) { console.error('[Voice] 赋值时找不到输入框:', inputId); return false; }
+    el.value = value;
+    el.style.color = isFinal ? '' : '#94a3b8';
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+    console.log('[Voice] 已填入输入框 (' + (isFinal ? '最终' : '中间') + '):', value);
+    return true;
+  }
+  recognition.onstart = () => { console.log('[Voice] 语音识别已启动，目标输入框:', inputId); startTime = Date.now(); };
+  recognition.onresult = (e) => {
+    lastFinalTranscript = ''; lastInterimTranscript = '';
+    for (let i = 0; i < e.results.length; i++) {
+      const transcript = e.results[i][0].transcript;
+      if (e.results[i].isFinal) { lastFinalTranscript += transcript; finalReceived = true; }
+      else { lastInterimTranscript += transcript; }
+    }
+    console.log('[Voice] onresult: final="' + lastFinalTranscript + '", interim="' + lastInterimTranscript + '"');
+    if (lastFinalTranscript) {
+      setInputValue(lastFinalTranscript, true);
+      btn.textContent = '✅ 识别完成'; btn.style.background = '#22c55e'; clearInterval(interval);
+      targetInput.style.borderColor = ''; targetInput.style.boxShadow = '';
+      setTimeout(() => { btn.textContent = originalText; btn.style.background = ''; }, 1500);
+    } else if (lastInterimTranscript) {
+      setInputValue(lastInterimTranscript, false);
+      btn.textContent = '🎤 ' + lastInterimTranscript.slice(-15);
     }
   };
   recognition.onerror = (e) => {
+    console.error('[Voice] 识别错误:', e.error);
     clearInterval(interval); btn.classList.remove('recording'); btn.style.background = '';
-    if (input) { input.style.borderColor = ''; input.style.boxShadow = ''; }
+    targetInput.style.borderColor = ''; targetInput.style.boxShadow = '';
     let msg = '⚠️ 语音识别失败';
-    if (e.error === 'not-allowed') msg = '⚠️ 麦克风权限被拒绝';
-    else if (e.error === 'no-speech') msg = '⚠️ 没有检测到语音';
-    else if (e.error === 'network') msg = '⚠️ 网络错误';
+    if (e.error === 'not-allowed') msg = '⚠️ 麦克风权限被拒绝，请在浏览器设置中允许';
+    else if (e.error === 'no-speech') msg = '⚠️ 没有检测到语音，请重试';
+    else if (e.error === 'network') msg = '⚠️ 网络连接错误';
+    else if (e.error === 'audio-capture') msg = '⚠️ 无法访问麦克风，请检查设备';
+    else if (e.error === 'aborted') msg = originalText;
     btn.textContent = msg; if (e.error !== 'aborted') { showToast(msg, 'error'); setTimeout(() => { btn.textContent = originalText; }, 2500); }
   };
   recognition.onend = () => {
+    console.log('[Voice] 识别结束, finalReceived=' + finalReceived + ', lastFinal="' + lastFinalTranscript + '", lastInterim="' + lastInterimTranscript + '"');
     clearInterval(interval); btn.classList.remove('recording'); btn.style.background = '';
-    if (input) { input.style.borderColor = ''; input.style.boxShadow = ''; if (input.style.color === 'rgb(148, 163, 184)') input.style.color = ''; }
-    if (btn.textContent.includes('正在听') || btn.textContent.includes('还在听')) btn.textContent = originalText;
+    targetInput.style.borderColor = ''; targetInput.style.boxShadow = ''; targetInput.style.color = '';
+    if (!finalReceived && lastInterimTranscript) {
+      console.log('[Voice] onend兜底：将中间结果填入:', lastInterimTranscript);
+      setInputValue(lastInterimTranscript, true);
+      btn.textContent = '✅ 识别完成'; btn.style.background = '#22c55e';
+      setTimeout(() => { btn.textContent = originalText; btn.style.background = ''; }, 1500);
+    }
+    if (btn.textContent.includes('正在听') || btn.textContent.includes('还在听') || btn.textContent.includes('请说话')) btn.textContent = originalText;
   };
   try { recognition.start(); } catch(e) { clearInterval(interval); showToast('⚠️ 启动失败: ' + e.message, 'error'); btn.classList.remove('recording'); btn.style.background = ''; btn.textContent = originalText; }
 }

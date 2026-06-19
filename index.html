@@ -1235,12 +1235,21 @@ function startVoice(inputId, btnId) {
     return;
   }
   
-  if (recognition) { try { recognition.stop(); } catch(e) {} }
+  // 验证目标输入框是否存在
+  const targetInput = document.getElementById(inputId);
+  if (!targetInput) {
+    console.error('[Voice] 找不到输入框:', inputId);
+    showToast('⚠️ 内部错误：找不到输入框 ' + inputId, 'error');
+    return;
+  }
+  console.log('[Voice] 启动语音识别 → inputId=' + inputId + ', btnId=' + btnId);
+  
+  if (recognition) { try { recognition.abort(); } catch(e) {} }
   
   recognition = new SR();
   recognition.lang = 'zh-CN';
-  recognition.continuous = true;  // 持续监听，直到手动停止
-  recognition.interimResults = true;  // 显示中间结果
+  recognition.continuous = true;
+  recognition.interimResults = true;
   recognition.maxAlternatives = 1;
   
   const btn = document.getElementById(btnId);
@@ -1249,81 +1258,81 @@ function startVoice(inputId, btnId) {
   btn.textContent = '🎤 正在听...';
   btn.style.background = '#ef4444';
   
-  // 添加音频级别指示器
-  const input = document.getElementById(inputId);
-  if (input) {
-    input.style.borderColor = '#ef4444';
-    input.style.boxShadow = '0 0 10px rgba(239, 68, 68, 0.3)';
-  }
+  targetInput.style.borderColor = '#ef4444';
+  targetInput.style.boxShadow = '0 0 10px rgba(239, 68, 68, 0.3)';
+  
+  // 追踪所有识别结果，防止 onend 在 onresult(final) 之前触发导致丢失
+  let lastFinalTranscript = '';
+  let lastInterimTranscript = '';
+  let finalReceived = false;
   
   let startTime = Date.now();
   let audioLevelInterval = setInterval(() => {
     const elapsed = Math.floor((Date.now() - startTime) / 1000);
     if (elapsed < 10) {
       btn.textContent = `🎤 正在听... (${elapsed}s)`;
-      // 添加脉冲动画
       btn.style.transform = elapsed % 2 === 0 ? 'scale(1.05)' : 'scale(1)';
     } else {
       btn.textContent = `🎤 还在听... (${elapsed}s)`;
     }
   }, 1000);
   
-  // 请求麦克风权限
+  // 辅助函数：安全赋值到输入框
+  function setInputValue(value, isFinal) {
+    const el = document.getElementById(inputId);
+    if (!el) { console.error('[Voice] 赋值时找不到输入框:', inputId); return false; }
+    el.value = value;
+    el.style.color = isFinal ? '' : '#94a3b8';
+    // 主动触发 input 和 change 事件，确保所有监听器都能感知到值变化
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+    console.log('[Voice] 已填入输入框 (' + (isFinal ? '最终' : '中间') + '):', value);
+    return true;
+  }
+  
   recognition.onstart = () => {
-    console.log('语音识别已启动');
+    console.log('[Voice] 语音识别已启动，目标输入框:', inputId);
     startTime = Date.now();
   };
   
   recognition.onresult = (e) => {
-    let finalTranscript = '';
-    let interimTranscript = '';
+    lastFinalTranscript = '';
+    lastInterimTranscript = '';
     
-    for (let i = e.resultIndex; i < e.results.length; i++) {
+    for (let i = 0; i < e.results.length; i++) {
       const transcript = e.results[i][0].transcript;
       if (e.results[i].isFinal) {
-        finalTranscript += transcript;
-        console.log('最终识别结果:', transcript);
+        lastFinalTranscript += transcript;
+        finalReceived = true;
       } else {
-        interimTranscript += transcript;
-        console.log('中间结果:', transcript);
+        lastInterimTranscript += transcript;
       }
     }
+    console.log('[Voice] onresult: final="' + lastFinalTranscript + '", interim="' + lastInterimTranscript + '"');
     
-    const el = document.getElementById(inputId);
-    if (el) {
-      if (finalTranscript) {
-        el.value = finalTranscript;
-        btn.textContent = '✅ 识别完成';
-        btn.style.background = '#22c55e';
-        btn.style.transform = 'scale(1)';
-        clearInterval(audioLevelInterval);
-        if (input) {
-          input.style.borderColor = '';
-          input.style.boxShadow = '';
-        }
-        setTimeout(() => {
-          btn.textContent = originalText;
-          btn.style.background = '';
-        }, 1500);
-      } else if (interimTranscript) {
-        // 显示中间结果，让用户知道系统在工作
-        el.value = interimTranscript;
-        el.style.color = '#94a3b8'; // 灰色表示中间结果
-        btn.textContent = '🎤 ' + interimTranscript.slice(-15);
-      }
+    if (lastFinalTranscript) {
+      setInputValue(lastFinalTranscript, true);
+      btn.textContent = '✅ 识别完成';
+      btn.style.background = '#22c55e';
+      btn.style.transform = 'scale(1)';
+      clearInterval(audioLevelInterval);
+      targetInput.style.borderColor = '';
+      targetInput.style.boxShadow = '';
+      setTimeout(() => { btn.textContent = originalText; btn.style.background = ''; }, 1500);
+    } else if (lastInterimTranscript) {
+      setInputValue(lastInterimTranscript, false);
+      btn.textContent = '🎤 ' + lastInterimTranscript.slice(-15);
     }
   };
   
   recognition.onerror = (e) => {
-    console.error('语音识别错误:', e.error);
+    console.error('[Voice] 识别错误:', e.error);
     clearInterval(audioLevelInterval);
     btn.classList.remove('recording');
     btn.style.background = '';
     btn.style.transform = 'scale(1)';
-    if (input) {
-      input.style.borderColor = '';
-      input.style.boxShadow = '';
-    }
+    targetInput.style.borderColor = '';
+    targetInput.style.boxShadow = '';
     
     let errorMsg = '⚠️ 语音识别失败';
     if (e.error === 'not-allowed') {
@@ -1341,27 +1350,30 @@ function startVoice(inputId, btnId) {
     btn.textContent = errorMsg;
     if (e.error !== 'aborted') {
       showToast(errorMsg, 'error');
-      setTimeout(() => {
-        btn.textContent = originalText;
-      }, 2500);
+      setTimeout(() => { btn.textContent = originalText; }, 2500);
     }
   };
   
   recognition.onend = () => {
-    console.log('语音识别结束');
+    console.log('[Voice] 识别结束, finalReceived=' + finalReceived + ', lastFinal="' + lastFinalTranscript + '", lastInterim="' + lastInterimTranscript + '"');
     clearInterval(audioLevelInterval);
     btn.classList.remove('recording');
     btn.style.background = '';
     btn.style.transform = 'scale(1)';
-    if (input) {
-      input.style.borderColor = '';
-      input.style.boxShadow = '';
-      // 如果中间结果是灰色，恢复为正常颜色
-      if (input.style.color === 'rgb(148, 163, 184)') {
-        input.style.color = '';
-      }
+    targetInput.style.borderColor = '';
+    targetInput.style.boxShadow = '';
+    targetInput.style.color = '';
+    
+    // 关键修复：如果 onend 触发时没有收到最终结果，但有中间结果，将中间结果作为最终结果保留
+    if (!finalReceived && lastInterimTranscript) {
+      console.log('[Voice] onend兜底：将中间结果填入:', lastInterimTranscript);
+      setInputValue(lastInterimTranscript, true);
+      btn.textContent = '✅ 识别完成';
+      btn.style.background = '#22c55e';
+      setTimeout(() => { btn.textContent = originalText; btn.style.background = ''; }, 1500);
     }
-    if (btn.textContent.includes('请说话') || btn.textContent.includes('正在听') || btn.textContent.includes('还在听')) {
+    
+    if (btn.textContent.includes('正在听') || btn.textContent.includes('还在听') || btn.textContent.includes('请说话')) {
       btn.textContent = originalText;
     }
   };
