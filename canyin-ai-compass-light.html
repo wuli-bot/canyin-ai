@@ -161,7 +161,7 @@ textarea.input { min-height: 80px; resize: vertical; }
       <div class="tab-content active" id="area1-menu">
         <textarea class="input" id="menuInput" placeholder="例如：20㎡炒饭店，主营蛋炒饭、辣椒炒肉，想优化菜单结构"></textarea>
         <div style="margin-top:6px">
-          <button class="voice-btn" id="menuVoiceBtn" onmousedown="startVoice('menuInput','menuVoiceBtn')" onmouseup="stopVoice()" ontouchstart="event.preventDefault();startVoice('menuInput','menuVoiceBtn')" ontouchend="stopVoice()">🎤 按住说话</button>
+          <button class="voice-btn" id="menuVoiceBtn" data-voice-input="menuInput" data-voice-btn="menuVoiceBtn" >🎤 按住说话</button>
         </div>
         <div class="btn-row">
           <button class="btn btn-primary" id="menuBtn" onclick="generateMenu()">📝 生成方案</button>
@@ -172,7 +172,7 @@ textarea.input { min-height: 80px; resize: vertical; }
       <div class="tab-content" id="area1-cost">
         <textarea class="input" id="costInput" placeholder="例如：蛋炒饭，米饭200g 1.2元，鸡蛋2个 2.4元，食用油10ml 0.3元"></textarea>
         <div style="margin-top:6px">
-          <button class="voice-btn" id="costVoiceBtn" onmousedown="startVoice('costInput','costVoiceBtn')" onmouseup="stopVoice()" ontouchstart="event.preventDefault();startVoice('costInput','costVoiceBtn')" ontouchend="stopVoice()">🎤 按住说话</button>
+          <button class="voice-btn" id="costVoiceBtn" data-voice-input="costInput" data-voice-btn="costVoiceBtn" >🎤 按住说话</button>
         </div>
         <div style="margin-top:8px">
           <span class="tag" onclick="document.getElementById('costInput').value='蛋炒饭：米饭200g 1.2元，鸡蛋2个 2.4元，油10ml 0.3元，调料 0.5元'">蛋炒饭</span>
@@ -209,7 +209,7 @@ textarea.input { min-height: 80px; resize: vertical; }
         <button class="btn btn-primary" style="padding:8px 12px" onclick="addInventoryItemCompass()">➕</button>
       </div>
       <div style="margin-bottom:10px">
-        <button class="voice-btn" id="invVoiceBtn" onmousedown="startVoice('addInvName','invVoiceBtn')" onmouseup="stopVoice()" ontouchstart="event.preventDefault();startVoice('addInvName','invVoiceBtn')" ontouchend="stopVoice()" style="padding:6px 12px;font-size:12px">🎤 语音入库</button>
+        <button class="voice-btn" id="invVoiceBtn" data-voice-input="addInvName" data-voice-btn="invVoiceBtn" style="padding:6px 12px;font-size:12px">🎤 语音入库</button>
         <button class="btn btn-ghost" style="padding:6px 12px;font-size:12px" onclick="clearInventory()">🗑️ 清空</button>
       </div>
       <div class="card-title">当前库存 <span id="statTotal" style="color:#f1f5f9;font-size:14px">0</span> 种 · 低库存 <span id="statLow" style="color:#ef4444;font-size:14px">0</span></div>
@@ -253,7 +253,7 @@ textarea.input { min-height: 80px; resize: vertical; }
       <div class="tab-content" id="area3-review">
         <textarea class="input" id="reviewInput" placeholder="粘贴顾客的差评内容..."></textarea>
         <div style="margin-top:6px">
-          <button class="voice-btn" id="reviewVoiceBtn" onmousedown="startVoice('reviewInput','reviewVoiceBtn')" onmouseup="stopVoice()" ontouchstart="event.preventDefault();startVoice('reviewInput','reviewVoiceBtn')" ontouchend="stopVoice()" style="padding:6px 12px;font-size:12px">🎤 按住说话</button>
+          <button class="voice-btn" id="reviewVoiceBtn" data-voice-input="reviewInput" data-voice-btn="reviewVoiceBtn" style="padding:6px 12px;font-size:12px">🎤 按住说话</button>
         </div>
         <div style="margin-top:6px">
           <span class="tag" onclick="document.getElementById('reviewInput').value='太咸了，根本没法吃，失望'">太咸了</span>
@@ -480,7 +480,8 @@ function showToast(msg, type) {
 
 // ===== VOICE =====
 let recognition = null;
-let voiceCleanupTimer = null;
+let stopping = false;
+
 function voiceLog(msg) {
   console.log('[Voice]', msg);
   const logEl = document.getElementById('voiceLogList');
@@ -495,18 +496,42 @@ function voiceLog(msg) {
   }
 }
 
+function bindVoiceButtons() {
+  document.querySelectorAll('.voice-btn[data-voice-input]').forEach(btn => {
+    const inputId = btn.getAttribute('data-voice-input');
+    const btnId = btn.getAttribute('data-voice-btn') || btn.id;
+    if (btn.dataset.voiceBound) return;
+    btn.dataset.voiceBound = '1';
+    btn.style.touchAction = 'none';
+    btn.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      startVoice(inputId, btnId);
+    }, {passive: false});
+    btn.addEventListener('pointerup', (e) => {
+      e.preventDefault();
+      stopVoice();
+    }, {passive: false});
+    btn.addEventListener('pointercancel', () => stopVoice());
+    btn.addEventListener('pointerleave', () => stopVoice());
+    btn.addEventListener('contextmenu', (e) => e.preventDefault());
+  });
+  voiceLog('🔗 已绑定 ' + document.querySelectorAll('.voice-btn[data-voice-input]').length + ' 个语音按钮');
+}
+
 function startVoice(inputId, btnId) {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { showToast('⚠️ 浏览器不支持语音识别，请使用Chrome/Safari', 'error'); voiceLog('❌ 浏览器不支持'); return; }
+  if (!SR) { showToast('⚠️ 浏览器不支持语音识别', 'error'); voiceLog('❌ 浏览器不支持'); return; }
   if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
     showToast('⚠️ 语音功能需要HTTPS环境', 'error'); voiceLog('❌ 非HTTPS环境'); return;
   }
   const targetInput = document.getElementById(inputId);
-  if (!targetInput) { voiceLog('❌ 找不到输入框: ' + inputId); showToast('⚠️ 内部错误：找不到输入框', 'error'); return; }
+  if (!targetInput) { voiceLog('❌ 找不到输入框: ' + inputId); showToast('⚠️ 找不到输入框', 'error'); return; }
 
-  if (recognition) { try { recognition.abort(); } catch(e) {} recognition = null; }
-  if (voiceCleanupTimer) { clearTimeout(voiceCleanupTimer); voiceCleanupTimer = null; }
-  voiceLog('🎤 启动 → 目标: ' + inputId);
+  if (recognition) { try { recognition.stop(); } catch(e) {} }
+  stopping = false;
+  recognition = null;
+
+  voiceLog('🎤 启动 → #' + inputId);
 
   recognition = new SR();
   recognition.lang = 'zh-CN';
@@ -515,21 +540,22 @@ function startVoice(inputId, btnId) {
   recognition.maxAlternatives = 1;
 
   const btn = document.getElementById(btnId);
-  const originalText = btn.textContent;
-  btn.classList.add('recording');
-  btn.textContent = '🎤 正在听...';
-  btn.style.background = '#ef4444';
+  const originalText = btn ? btn.textContent : '🎤';
+  if (btn) {
+    btn.classList.add('recording');
+    btn.textContent = '🎤 正在听...';
+    btn.style.background = '#ef4444';
+  }
   targetInput.style.borderColor = '#ef4444';
   targetInput.style.boxShadow = '0 0 10px rgba(239,68,68,0.3)';
 
   let lastTranscript = '';
   let finalReceived = false;
   let ended = false;
-
   let startTime = Date.now();
   let timer = setInterval(() => {
     const s = Math.floor((Date.now() - startTime) / 1000);
-    btn.textContent = s < 10 ? '🎤 正在听... (' + s + 's)' : '🎤 还在听... (' + s + 's)';
+    if (btn) btn.textContent = s < 10 ? '🎤 正在听... (' + s + 's)' : '🎤 还在听... (' + s + 's)';
   }, 1000);
 
   function fillInput(value, isFinal) {
@@ -539,30 +565,35 @@ function startVoice(inputId, btnId) {
     el.style.color = isFinal ? '' : '#94a3b8';
     el.dispatchEvent(new Event('input', {bubbles:true}));
     el.dispatchEvent(new Event('change', {bubbles:true}));
-    voiceLog((isFinal ? '✅ 填入' : '⏳ 中间') + ': "' + value + '" → #' + inputId);
+    voiceLog((isFinal ? '✅ 已填入' : '⏳ 中间') + ': "' + value + '"');
   }
 
   function doCleanup() {
     if (ended) return;
     ended = true;
     clearInterval(timer);
-    btn.classList.remove('recording');
-    btn.style.background = '';
-    btn.style.transform = '';
+    if (btn) {
+      btn.classList.remove('recording');
+      btn.style.background = '';
+      btn.style.transform = '';
+    }
     targetInput.style.borderColor = '';
     targetInput.style.boxShadow = '';
     targetInput.style.color = '';
     if (!finalReceived && lastTranscript) {
       fillInput(lastTranscript, true);
-      btn.textContent = '✅ 识别完成';
-      btn.style.background = '#22c55e';
+      if (btn) {
+        btn.textContent = '✅ 识别完成';
+        btn.style.background = '#22c55e';
+        setTimeout(() => { btn.textContent = originalText; btn.style.background = ''; }, 1500);
+      }
       voiceLog('🔄 兜底填入: "' + lastTranscript + '"');
-      setTimeout(() => { btn.textContent = originalText; btn.style.background = ''; }, 1500);
-    } else if (btn.textContent.includes('正在听') || btn.textContent.includes('还在听')) {
+    } else if (btn && (btn.textContent.includes('正在听') || btn.textContent.includes('还在听'))) {
       btn.textContent = originalText;
     }
-    voiceLog('🏁 录音结束 final=' + finalReceived + ' transcript="' + lastTranscript + '"');
+    voiceLog('🏁 结束 final=' + finalReceived + ' text="' + lastTranscript + '"');
     recognition = null;
+    stopping = false;
   }
 
   recognition.onstart = () => { startTime = Date.now(); voiceLog('▶️ 已开始监听'); };
@@ -577,72 +608,70 @@ function startVoice(inputId, btnId) {
       lastTranscript = finalText;
       finalReceived = true;
       fillInput(finalText, true);
-      btn.textContent = '✅ 识别完成';
-      btn.style.background = '#22c55e';
-      clearInterval(timer);
-      targetInput.style.borderColor = '';
-      targetInput.style.boxShadow = '';
+      if (btn) {
+        btn.textContent = '✅ 识别完成';
+        btn.style.background = '#22c55e';
+        setTimeout(() => { btn.textContent = originalText; btn.style.background = ''; }, 1500);
+      }
       voiceLog('✅ 最终结果: "' + finalText + '"');
-      setTimeout(() => { btn.textContent = originalText; btn.style.background = ''; }, 1500);
     } else if (interimText) {
       lastTranscript = interimText;
       fillInput(interimText, false);
-      btn.textContent = '🎤 ' + interimText.slice(-15);
+      if (btn) btn.textContent = '🎤 ' + interimText.slice(-15);
     }
   };
 
   recognition.onerror = (e) => {
     voiceLog('❌ 错误: ' + e.error);
+    if (e.error === 'aborted') return;
+    ended = true;
     clearInterval(timer);
-    btn.classList.remove('recording');
-    btn.style.background = '';
-    btn.style.transform = '';
+    if (btn) { btn.classList.remove('recording'); btn.style.background = ''; btn.style.transform = ''; }
     targetInput.style.borderColor = '';
     targetInput.style.boxShadow = '';
-    if (e.error === 'aborted') { btn.textContent = originalText; return; }
     let msg = '⚠️ 语音识别失败';
     if (e.error === 'not-allowed') msg = '⚠️ 麦克风权限被拒绝';
     else if (e.error === 'no-speech') msg = '⚠️ 没有检测到语音';
     else if (e.error === 'network') msg = '⚠️ 网络错误';
-    btn.textContent = msg;
+    if (btn) {
+      btn.textContent = msg;
+      setTimeout(() => { btn.textContent = originalText; }, 2500);
+    }
     showToast(msg, 'error');
-    setTimeout(() => { btn.textContent = originalText; }, 2500);
-    ended = true;
     recognition = null;
+    stopping = false;
   };
 
   recognition.onend = () => {
-    voiceLog('⏹️ onend 触发');
+    voiceLog('⏹️ onend');
     doCleanup();
   };
 
   try {
     recognition.start();
-    voiceLog('📡 recognition.start() 已调用');
+    voiceLog('📡 start() 已调用');
   } catch(e) {
     voiceLog('❌ start()异常: ' + e.message);
     clearInterval(timer);
     showToast('⚠️ 启动失败: ' + e.message, 'error');
-    btn.classList.remove('recording');
-    btn.style.background = '';
-    btn.textContent = originalText;
+    if (btn) { btn.classList.remove('recording'); btn.style.background = ''; btn.textContent = originalText; }
     ended = true;
     recognition = null;
+    stopping = false;
   }
 }
 
 function stopVoice() {
-  voiceLog('🛑 stopVoice 调用');
-  if (recognition) {
-    try { recognition.stop(); } catch(e) { voiceLog('stop()异常: ' + e.message); }
-    voiceCleanupTimer = setTimeout(() => {
-      if (recognition) {
-        voiceLog('⚠️ onend 超时，强制清理');
-        try { recognition.abort(); } catch(e) {}
-        recognition = null;
-      }
-      document.querySelectorAll('.recording').forEach(el => el.classList.remove('recording'));
-    }, 500);
+  if (stopping) { voiceLog('🛑 stopVoice 已跳过（重复调用）'); return; }
+  voiceLog('🛑 松手触发 stopVoice');
+  if (!recognition) { voiceLog('🛑 无需停止（recognition 为空）'); return; }
+  stopping = true;
+  try {
+    recognition.stop();
+    voiceLog('🛑 stop() 已调用，等待 onend');
+  } catch(e) {
+    voiceLog('❌ stop()异常: ' + e.message);
+    stopping = false;
   }
 }
 
@@ -1035,6 +1064,7 @@ document.addEventListener('DOMContentLoaded', () => {
   updateDate();
   setInterval(updateDate, 60000);
   initAPI();
+  bindVoiceButtons();
   renderDashboard();
   refreshInventory();
 
