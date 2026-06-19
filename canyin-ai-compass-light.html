@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>小餐饮罗盘 · 经营驾驶舱</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #f1f5f9; }
+
+/* Topbar */
+.compass-topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid #334155; }
+.compass-topbar h1 { font-size: 22px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.compass-topbar .date-display { font-size: 14px; color: #94a3b8; }
+
+/* Grid layout */
+.compass-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 12px; padding: 12px; height: calc(100vh - 60px); overflow: hidden; }
+.compass-cell { background: #1e293b; border: 1px solid #334155; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; min-height: 0; }
+.compass-cell-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #334155; flex-shrink: 0; }
+.compass-cell-header .cell-title { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+.compass-cell-body { flex: 1; overflow-y: auto; padding: 12px 16px; min-height: 0; }
+
+/* Tabs */
+.tab-bar { display: flex; gap: 4px; background: #0f172a; border-radius: 8px; padding: 3px; }
+.tab-btn { padding: 6px 14px; border-radius: 6px; border: none; background: transparent; color: #94a3b8; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+.tab-btn.active { background: #3b82f6; color: #fff; }
+.tab-btn:hover:not(.active) { color: #f1f5f9; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* Shared components */
+.input, textarea.input { width: 100%; padding: 10px 14px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #f1f5f9; font-size: 14px; outline: none; transition: border-color 0.2s; font-family: inherit; }
+.input:focus { border-color: #3b82f6; }
+.input::placeholder { color: #64748b; }
+textarea.input { min-height: 80px; resize: vertical; }
+.btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+.btn-primary { background: #3b82f6; color: #fff; }
+.btn-primary:hover { background: #2563eb; }
+.btn-primary:disabled { background: #1e40af; opacity: 0.6; cursor: not-allowed; }
+.btn-success { background: #22c55e; color: #fff; }
+.btn-warning { background: #f59e0b; color: #000; }
+.btn-danger { background: #ef4444; color: #fff; }
+.btn-ghost { background: transparent; border: 1px solid #334155; color: #94a3b8; }
+.btn-ghost:hover { background: #334155; color: #f1f5f9; }
+.voice-btn { display: inline-flex !important; align-items: center; gap: 6px; padding: 8px 14px; background: #334155; border: 1px solid #475569; border-radius: 8px; color: #f1f5f9; font-size: 13px; cursor: pointer; transition: all 0.2s; user-select: none; -webkit-user-select: none; }
+.voice-btn:hover { background: #3b82f6; border-color: #3b82f6; }
+.voice-btn.recording { background: #ef4444; border-color: #ef4444; animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+.tag { display: inline-block; padding: 5px 10px; background: #334155; border-radius: 6px; font-size: 12px; color: #94a3b8; cursor: pointer; transition: all 0.2s; margin: 3px; }
+.tag:hover { background: #3b82f6; color: #fff; }
+.btn-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.result-box { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px; margin-top: 12px; }
+.result-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #1e293b; }
+.result-row:last-child { border-bottom: none; }
+.result-label { color: #94a3b8; font-size: 13px; }
+.result-value { font-weight: 600; font-size: 13px; }
+.reply-card { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px; margin-bottom: 10px; }
+.reply-text { line-height: 1.7; font-size: 13px; }
+.copy-btn { padding: 4px 10px; background: #334155; border: none; border-radius: 4px; color: #94a3b8; cursor: pointer; font-size: 12px; }
+.copy-btn:hover { background: #3b82f6; color: #fff; }
+.card-title { font-size: 13px; color: #94a3b8; margin-bottom: 8px; font-weight: 600; }
+
+.loading-spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #334155; border-top-color: #3b82f6; border-radius: 50%; animation: spin 0.6s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.toast { position: fixed; bottom: 24px; right: 24px; padding: 12px 20px; background: #22c55e; color: #fff; border-radius: 8px; font-size: 14px; opacity: 0; transform: translateY(20px); transition: all 0.3s; pointer-events: none; z-index: 9999; }
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.error { background: #ef4444; }
+
+/* Dashboard cards */
+.dashboard-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 10px; }
+.dash-card { background: #0f172a; border: 1px solid #334155; border-radius: 10px; padding: 10px; text-align: center; cursor: pointer; transition: all 0.2s; }
+.dash-card:hover { border-color: #3b82f6; transform: translateY(-1px); }
+.dash-card .dash-icon { font-size: 16px; }
+.dash-card .dash-label { font-size: 11px; color: #94a3b8; margin: 2px 0; }
+.dash-card .dash-value { font-size: 18px; font-weight: 700; }
+.dash-card .dash-add { display: inline-block; margin-top: 4px; padding: 2px 8px; background: #334155; border: 1px solid #475569; border-radius: 4px; color: #94a3b8; font-size: 11px; cursor: pointer; }
+.dash-card .dash-add:hover { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+.dash-total { border-color: #f97316 !important; }
+.dash-total .dash-value { color: #f97316; }
+.dash-profit { border: 2px solid #22c55e !important; }
+.dash-profit .dash-value { font-size: 20px; }
+
+/* Week trend */
+.week-trend { margin-top: 8px; }
+.week-bar { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.week-bar-label { font-size: 11px; color: #94a3b8; width: 36px; flex-shrink: 0; }
+.week-bar-track { flex: 1; height: 16px; background: #334155; border-radius: 4px; overflow: hidden; }
+.week-bar-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #22c55e); border-radius: 4px; transition: width 0.3s; }
+.week-bar-value { font-size: 11px; color: #94a3b8; width: 48px; text-align: right; flex-shrink: 0; }
+
+/* Inventory list */
+.inv-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: #0f172a; border-radius: 6px; margin-bottom: 6px; font-size: 13px; }
+.inv-item .inv-name { font-weight: 500; }
+.inv-item .inv-low { color: #ef4444; font-size: 11px; }
+.inv-item .inv-qty { font-weight: 600; text-align: right; }
+
+/* Modal */
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+.modal-box { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 20px; width: 400px; max-width: 90vw; max-height: 80vh; overflow-y: auto; }
+.modal-box h3 { font-size: 16px; margin-bottom: 12px; }
+.modal-box input { width: 100%; padding: 10px 14px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #f1f5f9; font-size: 15px; outline: none; margin-bottom: 10px; box-sizing: border-box; }
+.modal-box input:focus { border-color: #3b82f6; }
+.modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
+.modal-btns button { padding: 8px 18px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; }
+
+/* Floating buttons */
+.floating-btns { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 500; }
+.floating-btn { padding: 10px 18px; background: #1e293b; border: 1px solid #334155; border-radius: 24px; color: #f1f5f9; font-size: 13px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+.floating-btn:hover { background: #3b82f6; border-color: #3b82f6; transform: translateY(-2px); }
+
+/* Expand sections */
+.expand-section { border-top: 1px solid #334155; padding: 10px 16px; flex-shrink: 0; }
+.expand-toggle { display: flex; align-items: center; justify-content: space-between; cursor: pointer; font-size: 13px; color: #94a3b8; font-weight: 500; }
+.expand-toggle:hover { color: #f1f5f9; }
+.expand-body { display: none; margin-top: 10px; }
+.expand-body.show { display: block; }
+
+/* Fixed costs */
+.cost-input-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 8px; }
+.cost-input-row .cost-field { display: flex; flex-direction: column; gap: 2px; }
+.cost-input-row .cost-field label { font-size: 11px; color: #64748b; }
+.cost-input-row .cost-field input { padding: 6px 8px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: #f1f5f9; font-size: 13px; outline: none; width: 100%; box-sizing: border-box; }
+.cost-input-row .cost-field input:focus { border-color: #3b82f6; }
+
+/* Mobile */
+@media (max-width: 768px) {
+  .compass-grid { grid-template-columns: 1fr; grid-template-rows: auto; height: auto; overflow: auto; }
+  .compass-cell { min-height: 300px; }
+  .dashboard-grid { grid-template-columns: repeat(2, 1fr); }
+  .cost-input-row { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 480px) {
+  .compass-topbar h1 { font-size: 18px; }
+  .floating-btns { flex-wrap: wrap; justify-content: center; }
+}
+</style>
+</head>
+<body>
+
+<!-- Topbar -->
+<div class="compass-topbar">
+  <h1>🍳 小餐饮罗盘</h1>
+  <div class="date-display" id="topDate"></div>
+</div>
+
+<!-- 4-area grid -->
+<div class="compass-grid">
+
+  <!-- Area 1: 菜单管理 (Top Left) -->
+  <div class="compass-cell">
+    <div class="compass-cell-header">
+      <div class="cell-title">📋 菜单管理</div>
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('area1','menu')">菜单设计</button>
+        <button class="tab-btn" onclick="switchTab('area1','cost')">成本核算</button>
+      </div>
+    </div>
+    <div class="compass-cell-body">
+      <!-- Tab: 菜单设计 -->
+      <div class="tab-content active" id="area1-menu">
+        <textarea class="input" id="menuInput" placeholder="例如：20㎡炒饭店，主营蛋炒饭、辣椒炒肉，想优化菜单结构"></textarea>
+        <div style="margin-top:6px">
+          <button class="voice-btn" id="menuVoiceBtn" onmousedown="startVoice('menuInput','menuVoiceBtn')" onmouseup="stopVoice()" ontouchstart="event.preventDefault();startVoice('menuInput','menuVoiceBtn')" ontouchend="stopVoice()">🎤 按住说话</button>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="menuBtn" onclick="generateMenu()">📝 生成方案</button>
+        </div>
+        <div id="menuResult"></div>
+      </div>
+      <!-- Tab: 成本核算 -->
+      <div class="tab-content" id="area1-cost">
+        <textarea class="input" id="costInput" placeholder="例如：蛋炒饭，米饭200g 1.2元，鸡蛋2个 2.4元，食用油10ml 0.3元"></textarea>
+        <div style="margin-top:6px">
+          <button class="voice-btn" id="costVoiceBtn" onmousedown="startVoice('costInput','costVoiceBtn')" onmouseup="stopVoice()" ontouchstart="event.preventDefault();startVoice('costInput','costVoiceBtn')" ontouchend="stopVoice()">🎤 按住说话</button>
+        </div>
+        <div style="margin-top:8px">
+          <span class="tag" onclick="document.getElementById('costInput').value='蛋炒饭：米饭200g 1.2元，鸡蛋2个 2.4元，油10ml 0.3元，调料 0.5元'">蛋炒饭</span>
+          <span class="tag" onclick="document.getElementById('costInput').value='辣椒炒肉：猪肉150g 8元，辣椒200g 3元，米饭200g 1.2元，油15ml 0.5元，调料 1元'">辣椒炒肉</span>
+          <span class="tag" onclick="document.getElementById('costInput').value='牛肉炒饭：牛肉100g 10元，米饭200g 1.2元，鸡蛋1个 1.2元，油10ml 0.3元，调料 0.8元'">牛肉炒饭</span>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="costBtn" onclick="calcCost()">🧮 计算成本</button>
+          <button class="btn btn-ghost" id="pricingBtnInline" onclick="genPricingFromCost()" style="display:none">💲 生成定价方案</button>
+        </div>
+        <div id="costResult"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Area 2: 食材采购 (Top Right) -->
+  <div class="compass-cell">
+    <div class="compass-cell-header">
+      <div class="cell-title">📦 食材采购</div>
+      <button class="btn btn-ghost" style="padding:6px 12px;font-size:12px" onclick="refreshInventory()">🔄</button>
+    </div>
+    <div class="compass-cell-body">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+        <input class="input" id="addInvName" placeholder="食材名" style="flex:1;min-width:80px;padding:8px 10px">
+        <input class="input" id="addInvQty" placeholder="数量" style="width:60px;padding:8px 10px">
+        <select class="input" id="addInvUnit" style="width:70px;padding:8px 10px">
+          <option value="">单位</option>
+          <option value="个">个</option><option value="份">份</option><option value="袋">袋</option>
+          <option value="箱">箱</option><option value="瓶">瓶</option><option value="包">包</option>
+          <option value="公斤">公斤</option><option value="斤">斤</option><option value="克">克</option>
+          <option value="毫升">毫升</option><option value="升">升</option>
+        </select>
+        <input class="input" id="addInvPrice" placeholder="单价" style="width:70px;padding:8px 10px">
+        <button class="btn btn-primary" style="padding:8px 12px" onclick="addInventoryItemCompass()">➕</button>
+      </div>
+      <div style="margin-bottom:10px">
+        <button class="voice-btn" id="invVoiceBtn" onmousedown="startVoice('addInvName','invVoiceBtn')" onmouseup="stopVoice()" ontouchstart="event.preventDefault();startVoice('addInvName','invVoiceBtn')" ontouchend="stopVoice()" style="padding:6px 12px;font-size:12px">🎤 语音入库</button>
+        <button class="btn btn-ghost" style="padding:6px 12px;font-size:12px" onclick="clearInventory()">🗑️ 清空</button>
+      </div>
+      <div class="card-title">当前库存 <span id="statTotal" style="color:#f1f5f9;font-size:14px">0</span> 种 · 低库存 <span id="statLow" style="color:#ef4444;font-size:14px">0</span></div>
+      <div id="inventoryList"><div style="color:#64748b;text-align:center;padding:16px 0;font-size:13px">暂无库存数据</div></div>
+    </div>
+  </div>
+
+  <!-- Area 3: 营收录入 (Bottom Left) -->
+  <div class="compass-cell">
+    <div class="compass-cell-header">
+      <div class="cell-title">💰 营收录入</div>
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('area3','revenue')">营收录入</button>
+        <button class="tab-btn" onclick="switchTab('area3','review')">差评处理</button>
+      </div>
+    </div>
+    <div class="compass-cell-body">
+      <!-- Tab: 营收录入 -->
+      <div class="tab-content active" id="area3-revenue">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
+          <div class="dash-card" onclick="showQuickAdd('dinein','堂食')" style="cursor:pointer">
+            <div class="dash-icon">🍽️</div><div class="dash-label">堂食</div>
+            <div class="dash-value" style="color:#22c55e;font-size:16px" id="cell3Dinein">¥0</div>
+            <div class="dash-add">+1笔</div>
+          </div>
+          <div class="dash-card" onclick="showQuickAdd('delivery','外卖')" style="cursor:pointer">
+            <div class="dash-icon">🛵</div><div class="dash-label">外卖</div>
+            <div class="dash-value" style="color:#f97316;font-size:16px" id="cell3Delivery">¥0</div>
+            <div class="dash-add">+1笔</div>
+          </div>
+          <div class="dash-card" onclick="showQuickAdd('private_domain','私域')" style="cursor:pointer">
+            <div class="dash-icon">💬</div><div class="dash-label">私域</div>
+            <div class="dash-value" style="color:#a78bfa;font-size:16px" id="cell3Private">¥0</div>
+            <div class="dash-add">+1笔</div>
+          </div>
+        </div>
+        <div style="font-size:13px;color:#94a3b8;margin-bottom:6px">今日采购 <button onclick="showQuickAdd('purchases','采购')" style="background:none;border:none;color:#3b82f6;cursor:pointer;font-size:13px;text-decoration:underline">+1笔</button></div>
+        <div style="font-size:18px;font-weight:700;color:#3b82f6" id="cell3Purchases">¥0</div>
+      </div>
+      <!-- Tab: 差评处理 -->
+      <div class="tab-content" id="area3-review">
+        <textarea class="input" id="reviewInput" placeholder="粘贴顾客的差评内容..."></textarea>
+        <div style="margin-top:6px">
+          <button class="voice-btn" id="reviewVoiceBtn" onmousedown="startVoice('reviewInput','reviewVoiceBtn')" onmouseup="stopVoice()" ontouchstart="event.preventDefault();startVoice('reviewInput','reviewVoiceBtn')" ontouchend="stopVoice()" style="padding:6px 12px;font-size:12px">🎤 按住说话</button>
+        </div>
+        <div style="margin-top:6px">
+          <span class="tag" onclick="document.getElementById('reviewInput').value='太咸了，根本没法吃，失望'">太咸了</span>
+          <span class="tag" onclick="document.getElementById('reviewInput').value='饭都凉了才送过来，什么质量'">饭凉了</span>
+          <span class="tag" onclick="document.getElementById('reviewInput').value='服务态度很差，问什么都不耐烦'">服务态度差</span>
+          <span class="tag" onclick="document.getElementById('reviewInput').value='分量也太少了，这点东西这个价不值'">分量太少</span>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="reviewBtn" onclick="handleReview()">📝 生成回复</button>
+        </div>
+        <div id="reviewResult"></div>
+      </div>
+    </div>
+    <!-- Expand: 私域引流 -->
+    <div class="expand-section">
+      <div class="expand-toggle" onclick="toggleExpand('privateExpand')">
+        <span>📱 私域引流</span><span id="privateExpandArrow">▸</span>
+      </div>
+      <div class="expand-body" id="privateExpand">
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px" id="privateScenes">
+          <span class="tag active" data-scene="包裹卡" onclick="selectScene(this)" style="background:#3b82f6">📦 包裹卡</span>
+          <span class="tag" data-scene="欢迎语" onclick="selectScene(this)">👋 欢迎语</span>
+          <span class="tag" data-scene="社群运营" onclick="selectScene(this)">💬 社群</span>
+          <span class="tag" data-scene="桌贴引流" onclick="selectScene(this)">🪑 桌贴</span>
+          <span class="tag" data-scene="复购提醒" onclick="selectScene(this)">🔔 复购</span>
+          <span class="tag" data-scene="老带新裂变" onclick="selectScene(this)">🎁 裂变</span>
+        </div>
+        <textarea class="input" id="privateInput" placeholder="补充信息（可选）：如店铺名、优惠力度等" style="min-height:50px"></textarea>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="privateBtn" onclick="genPrivate()">✨ 生成话术</button>
+        </div>
+        <div id="privateResult"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Area 4: 经营看板 (Bottom Right) -->
+  <div class="compass-cell">
+    <div class="compass-cell-header">
+      <div class="cell-title">📊 经营看板</div>
+      <span style="font-size:12px;color:#64748b" id="dashDateLabel"></span>
+    </div>
+    <div class="compass-cell-body">
+      <div class="dashboard-grid" id="dashCards"></div>
+      <div class="card-title">📈 本周趋势</div>
+      <div class="week-trend" id="weekTrend"></div>
+    </div>
+    <!-- Expand: 固定支出 -->
+    <div class="expand-section">
+      <div class="expand-toggle" onclick="toggleExpand('fixedCostsExpand')">
+        <span>⚙️ 月度固定支出</span><span id="fixedCostsExpandArrow">▸</span>
+      </div>
+      <div class="expand-body" id="fixedCostsExpand">
+        <div class="cost-input-row">
+          <div class="cost-field"><label>租金</label><input type="number" id="fcRent" placeholder="0" onchange="updateFixedCost('rent',this.value)"></div>
+          <div class="cost-field"><label>人工</label><input type="number" id="fcLabor" placeholder="0" onchange="updateFixedCost('labor',this.value)"></div>
+          <div class="cost-field"><label>水电气</label><input type="number" id="fcUtilities" placeholder="0" onchange="updateFixedCost('utilities',this.value)"></div>
+          <div class="cost-field"><label>其他</label><input type="number" id="fcOther" placeholder="0" onchange="updateFixedCost('other',this.value)"></div>
+        </div>
+      </div>
+    </div>
+    <!-- Expand: 详细报表 -->
+    <div class="expand-section">
+      <div class="expand-toggle" onclick="toggleExpand('reportExpand');if(document.getElementById('reportExpand').classList.contains('show'))loadDetailedReport()">
+        <span>📊 查看详细报表</span><span id="reportExpandArrow">▸</span>
+      </div>
+      <div class="expand-body" id="reportExpand">
+        <div id="detailedReport"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Floating buttons -->
+<div class="floating-btns">
+  <div class="floating-btn" onclick="showWelcomeModal()">🎙️ 迎宾</div>
+  <div class="floating-btn" onclick="toggleExpand('privateExpand');document.getElementById('area3-revenue').classList.remove('active');document.getElementById('area3-review').classList.remove('active');switchTab('area3','revenue')">📱 私域</div>
+  <div class="floating-btn" onclick="showPricingModal()">💲 定价</div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Modal container -->
+<div id="modalContainer"></div>
+
+<script>
+// ===== BOT IDS =====
+const BOT_IDS = {
+  cost: '7651922196432338995',
+  review: '7651944084466794550',
+  private: '7651952126398054435',
+  welcome: '7651953305891405870',
+  'voice-store': '7652253691269103651'
+};
+const COZE_API = 'https://api.coze.cn';
+const API_TOKEN = 'sat_LvCuUkueRmeZlNEJFdSBf1qXCu61fPi32jkbpTWKpktSUkTVY6oH16QKqYLQNIfY';
+const USER_ID = 'compass_user_' + Date.now();
+
+let apiReady = false;
+
+// ===== DATE DISPLAY =====
+function updateDate() {
+  const now = new Date();
+  const opts = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+  document.getElementById('topDate').textContent = now.toLocaleDateString('zh-CN', opts);
+  document.getElementById('dashDateLabel').textContent = now.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+}
+
+// ===== TAB SWITCHING =====
+function switchTab(area, tab) {
+  const cell = area === 'area1' ? document.querySelector('.compass-cell:nth-child(1)') : document.querySelector('.compass-cell:nth-child(3)');
+  cell.querySelectorAll('.tab-btn').forEach((b, i) => {
+    b.classList.toggle('active', (area === 'area1' && tab === 'menu' && i === 0) || (area === 'area1' && tab === 'cost' && i === 1) || (area === 'area3' && tab === 'revenue' && i === 0) || (area === 'area3' && tab === 'review' && i === 1));
+  });
+  cell.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById(area + '-' + tab).classList.add('active');
+}
+
+// ===== EXPAND/COLLAPSE =====
+function toggleExpand(id) {
+  const body = document.getElementById(id);
+  const arrow = document.getElementById(id + 'Arrow');
+  body.classList.toggle('show');
+  if (arrow) arrow.textContent = body.classList.contains('show') ? '▾' : '▸';
+}
+
+// ===== API =====
+async function cozeRequest(method, path, data, params) {
+  let url = COZE_API + path;
+  if (params) { const qs = Object.entries(params).map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&'); url += '?' + qs; }
+  const opts = { method, headers: { 'Authorization': 'Bearer ' + API_TOKEN, 'Content-Type': 'application/json' } };
+  if (data) opts.body = JSON.stringify(data);
+  const r = await fetch(url, opts);
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return await r.json();
+}
+
+async function callBotDirect(botId, message) {
+  const result = await cozeRequest('POST', '/v3/chat', {
+    bot_id: botId, user_id: USER_ID, stream: false,
+    additional_messages: [{ role: 'user', content: message, content_type: 'text' }]
+  });
+  if (!result.data) throw new Error(result.msg || '创建对话失败');
+  const chatId = result.data.id, convId = result.data.conversation_id;
+  let status = result.data.status;
+  for (let i = 0; i < 30; i++) {
+    if (status === 'completed' || status === 'failed') break;
+    await new Promise(r => setTimeout(r, 1000));
+    const poll = await cozeRequest('GET', '/v3/chat/retrieve', null, { conversation_id: convId, chat_id: chatId });
+    if (poll.data) status = poll.data.status;
+  }
+  if (status === 'failed') throw new Error('Bot处理失败');
+  const msgs = await cozeRequest('GET', '/v3/chat/message/list', null, { conversation_id: convId, chat_id: chatId });
+  if (!msgs.data) throw new Error('获取消息失败');
+  for (const msg of msgs.data) { if (msg.type === 'answer') return { answer: msg.content, conversation_id: convId }; }
+  throw new Error('未找到回复');
+}
+
+async function callBot(botId, message) {
+  if (!apiReady) { showToast('API初始化中，请稍后', 'error'); return null; }
+  try {
+    const result = await callBotDirect(botId, message);
+    return result.answer;
+  } catch(e) {
+    console.error('[callBot]', e.message);
+    showToast('请求失败: ' + e.message, 'error');
+    return null;
+  }
+}
+
+function initAPI() {
+  apiReady = true;
+  console.log('[Compass] API ready');
+}
+
+// ===== UTILITIES =====
+function extractJSON(text) {
+  if (!text) return null; let depth = 0, start = -1;
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === '{') { if (depth === 0) start = i; depth++; }
+    else if (text[i] === '}') { depth--; if (depth === 0 && start >= 0) { try { return JSON.parse(text.substring(start, i+1)); } catch(e) { return null; } } }
+  }
+  return null;
+}
+
+function copyText(text, btn) {
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.textContent; btn.textContent = '✓ 已复制'; btn.style.background = '#22c55e';
+    setTimeout(() => { btn.textContent = orig; btn.style.background = ''; }, 2000);
+  }).catch(() => {
+    const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    const orig = btn.textContent; btn.textContent = '✓ 已复制'; setTimeout(() => { btn.textContent = orig; }, 2000);
+  });
+}
+
+function parseBotResponse(content) {
+  if (content && typeof content === 'string') {
+    const trimmed = content.trim();
+    if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+      try { const json = JSON.parse(trimmed); if (json.error) return '**⚠️ 提示**：' + json.error; if (json.content) return json.content; if (json.text) return json.text; } catch(e) {}
+    }
+  }
+  return content || '';
+}
+
+function formatMarkdown(md) {
+  return md
+    .replace(/^### (.+)$/gm, '<h4 style="margin:12px 0 6px;font-size:14px;font-weight:600;color:#f97316">$1</h4>')
+    .replace(/^## (.+)$/gm, '<h3 style="margin:14px 0 8px;font-size:16px;font-weight:700;color:#f97316">$1</h3>')
+    .replace(/^(\d+)\. (.+)$/gm, '<div style="margin:6px 0;padding-left:20px;text-indent:-20px"><span style="color:#f97316;font-weight:600">$1.</span> $2</div>')
+    .replace(/^- (.+)$/gm, '<div style="margin:4px 0;padding-left:16px;text-indent:-10px">• $1</div>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong style="color:#f97316">$1</strong>')
+    .replace(/\n\n/g, '<div style="height:8px"></div>')
+    .replace(/\n/g, '<br>');
+}
+
+function showToast(msg, type) {
+  const t = document.getElementById('toast'); if (!t) return;
+  t.textContent = msg; t.className = 'toast show' + (type === 'error' ? ' error' : '');
+  setTimeout(() => t.className = 'toast', 2500);
+}
+
+// ===== VOICE =====
+let recognition = null;
+function startVoice(inputId, btnId) {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { showToast('⚠️ 浏览器不支持语音识别', 'error'); return; }
+  if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+    showToast('⚠️ 语音功能需要HTTPS环境', 'error'); return;
+  }
+  if (recognition) { try { recognition.stop(); } catch(e) {} }
+  recognition = new SR();
+  recognition.lang = 'zh-CN'; recognition.continuous = true; recognition.interimResults = true; recognition.maxAlternatives = 1;
+  const btn = document.getElementById(btnId);
+  const originalText = btn.textContent;
+  btn.classList.add('recording'); btn.textContent = '🎤 正在听...'; btn.style.background = '#ef4444';
+  const input = document.getElementById(inputId);
+  if (input) { input.style.borderColor = '#ef4444'; input.style.boxShadow = '0 0 10px rgba(239,68,68,0.3)'; }
+  let startTime = Date.now();
+  let interval = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    btn.textContent = elapsed < 10 ? `🎤 正在听... (${elapsed}s)` : `🎤 还在听... (${elapsed}s)`;
+  }, 1000);
+  recognition.onstart = () => { startTime = Date.now(); };
+  recognition.onresult = (e) => {
+    let finalTranscript = '', interimTranscript = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) finalTranscript += e.results[i][0].transcript;
+      else interimTranscript += e.results[i][0].transcript;
+    }
+    const el = document.getElementById(inputId);
+    if (el) {
+      if (finalTranscript) { el.value = finalTranscript; btn.textContent = '✅ 识别完成'; btn.style.background = '#22c55e'; clearInterval(interval); if (input) { input.style.borderColor = ''; input.style.boxShadow = ''; } setTimeout(() => { btn.textContent = originalText; btn.style.background = ''; }, 1500); }
+      else if (interimTranscript) { el.value = interimTranscript; btn.textContent = '🎤 ' + interimTranscript.slice(-15); }
+    }
+  };
+  recognition.onerror = (e) => {
+    clearInterval(interval); btn.classList.remove('recording'); btn.style.background = '';
+    if (input) { input.style.borderColor = ''; input.style.boxShadow = ''; }
+    let msg = '⚠️ 语音识别失败';
+    if (e.error === 'not-allowed') msg = '⚠️ 麦克风权限被拒绝';
+    else if (e.error === 'no-speech') msg = '⚠️ 没有检测到语音';
+    else if (e.error === 'network') msg = '⚠️ 网络错误';
+    btn.textContent = msg; if (e.error !== 'aborted') { showToast(msg, 'error'); setTimeout(() => { btn.textContent = originalText; }, 2500); }
+  };
+  recognition.onend = () => {
+    clearInterval(interval); btn.classList.remove('recording'); btn.style.background = '';
+    if (input) { input.style.borderColor = ''; input.style.boxShadow = ''; if (input.style.color === 'rgb(148, 163, 184)') input.style.color = ''; }
+    if (btn.textContent.includes('正在听') || btn.textContent.includes('还在听')) btn.textContent = originalText;
+  };
+  try { recognition.start(); } catch(e) { clearInterval(interval); showToast('⚠️ 启动失败: ' + e.message, 'error'); btn.classList.remove('recording'); btn.style.background = ''; btn.textContent = originalText; }
+}
+function stopVoice() { if (recognition) { try { recognition.stop(); } catch(e) {} } document.querySelectorAll('.recording').forEach(el => el.classList.remove('recording')); }
+
+// ===== DASHBOARD DATA =====
+function getDashboardKey(date) { return 'dash_' + (date || new Date().toISOString().slice(0,10)); }
+function getDashboardData(date) { const key = getDashboardKey(date); return JSON.parse(localStorage.getItem(key) || '{"purchases":[],"dinein":[],"delivery":[],"private_domain":[],"reviews":[]}'); }
+function saveDashboardData(data, date) { localStorage.setItem(getDashboardKey(date), JSON.stringify(data)); }
+function addDashboardEntry(type, amount, extra) {
+  const today = new Date().toISOString().slice(0,10);
+  const data = getDashboardData(today);
+  data[type].push({ amount: parseFloat(amount), time: new Date().toISOString(), ...extra });
+  saveDashboardData(data, today);
+  renderDashboard();
+}
+function getTodayTotals() {
+  const data = getDashboardData();
+  const sum = arr => arr.reduce((s, e) => s + (e.amount || 0), 0);
+  return { purchases: sum(data.purchases), dinein: sum(data.dinein), delivery: sum(data.delivery), private_domain: sum(data.private_domain), total: sum(data.dinein) + sum(data.delivery) + sum(data.private_domain), reviews: data.reviews.length };
+}
+function getFixedCosts() { return JSON.parse(localStorage.getItem('dash_fixed_costs') || '{"rent":0,"labor":0,"utilities":0,"other":0}'); }
+function saveFixedCosts(costs) { localStorage.setItem('dash_fixed_costs', JSON.stringify(costs)); }
+function updateFixedCost(key, val) { const fc = getFixedCosts(); fc[key] = parseFloat(val) || 0; saveFixedCosts(fc); renderDashboard(); }
+
+// Floating costs
+function getFloatingCosts() { return JSON.parse(localStorage.getItem('dash_floating_costs') || '[]'); }
+function saveFloatingCosts(costs) { localStorage.setItem('dash_floating_costs', JSON.stringify(costs)); }
+function addFloatingCost(cost) { cost.id = 'fc_' + Date.now(); cost.createdAt = new Date().toISOString(); const costs = getFloatingCosts(); costs.push(cost); saveFloatingCosts(costs); renderDashboard(); }
+function deleteFloatingCost(id) { if (!confirm('确定删除？')) return; const costs = getFloatingCosts().filter(c => c.id !== id); saveFloatingCosts(costs); renderDashboard(); }
+function getDailyFloatingCost(date) {
+  const dateStr = typeof date === 'string' ? date : date.toISOString().slice(0,10);
+  const costs = getFloatingCosts(); let dailyTotal = 0; let hasActual = false;
+  costs.forEach(cost => {
+    if (cost.mode === 'period') { if (dateStr >= cost.startDate && dateStr <= cost.endDate) { const days = Math.max(1, Math.ceil((new Date(cost.endDate) - new Date(cost.startDate)) / 86400000) + 1); dailyTotal += cost.amount / days; hasActual = true; } }
+    else if (cost.mode === 'prepaid') { const rd = new Date(cost.rechargeDate); const ud = cost.useDays || 30; const ed = new Date(rd); ed.setDate(ed.getDate() + ud - 1); if (dateStr >= cost.rechargeDate && dateStr <= ed.toISOString().slice(0,10)) { dailyTotal += cost.amount / ud; hasActual = true; } }
+  });
+  return { amount: dailyTotal, hasActual };
+}
+
+// Quick add modal
+function showQuickAdd(type, label) {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = '<div class="modal-box"><h3>记录' + label + '</h3><input type="number" id="modalAmount" placeholder="金额（元）" step="0.01" min="0" autofocus><div class="modal-btns"><button onclick="this.closest(\'.modal-overlay\').remove()" style="background:#334155;color:#94a3b8">取消</button><button onclick="confirmDashAdd(\'' + type + '\')" style="background:#3b82f6;color:#fff">确认</button></div></div>';
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+  setTimeout(() => { const inp = document.getElementById('modalAmount'); if (inp) inp.focus(); }, 100);
+}
+function confirmDashAdd(type) {
+  const amt = document.getElementById('modalAmount').value;
+  if (!amt || parseFloat(amt) <= 0) { showToast('请输入金额'); return; }
+  addDashboardEntry(type, amt);
+  document.querySelector('.modal-overlay').remove();
+  showToast('已记录 ¥' + parseFloat(amt).toFixed(2));
+}
+
+// Render dashboard
+function renderDashboard() {
+  const t = getTodayTotals();
+  const fc = getFixedCosts();
+  const monthlyFixed = (fc.rent||0) + (fc.labor||0) + (fc.utilities||0) + (fc.other||0);
+  const dailyFixed = monthlyFixed / 30;
+  const dailyFloating = getDailyFloatingCost(new Date());
+  let dailyFloatingAmt = dailyFloating.amount;
+  if (!dailyFloating.hasActual && t.total > 0) dailyFloatingAmt = t.total * 0.04;
+  const netProfit = t.total - t.purchases - dailyFixed - dailyFloatingAmt;
+
+  // 7 cards in 4-col grid
+  document.getElementById('dashCards').innerHTML = 
+    '<div class="dash-card" onclick="showQuickAdd(\'purchases\',\'采购\')"><div class="dash-icon">🛒</div><div class="dash-label">采购</div><div class="dash-value" style="color:#3b82f6">¥' + t.purchases.toFixed(0) + '</div><div class="dash-add">+1笔</div></div>' +
+    '<div class="dash-card" onclick="showQuickAdd(\'dinein\',\'堂食\')"><div class="dash-icon">🍽️</div><div class="dash-label">堂食</div><div class="dash-value" style="color:#22c55e">¥' + t.dinein.toFixed(0) + '</div><div class="dash-add">+1笔</div></div>' +
+    '<div class="dash-card" onclick="showQuickAdd(\'delivery\',\'外卖\')"><div class="dash-icon">🛵</div><div class="dash-label">外卖</div><div class="dash-value" style="color:#f97316">¥' + t.delivery.toFixed(0) + '</div><div class="dash-add">+1笔</div></div>' +
+    '<div class="dash-card" onclick="showQuickAdd(\'private_domain\',\'私域\')"><div class="dash-icon">💬</div><div class="dash-label">私域</div><div class="dash-value" style="color:#a78bfa">¥' + t.private_domain.toFixed(0) + '</div><div class="dash-add">+1笔</div></div>' +
+    '<div class="dash-card dash-total"><div class="dash-icon">💰</div><div class="dash-label">总营收</div><div class="dash-value">¥' + t.total.toFixed(0) + '</div></div>' +
+    '<div class="dash-card dash-profit"><div class="dash-icon">💎</div><div class="dash-label">净利润</div><div class="dash-value" style="color:' + (netProfit >= 0 ? '#22c55e' : '#ef4444') + '">¥' + netProfit.toFixed(0) + '</div></div>' +
+    '<div class="dash-card" style="border-color:' + (t.reviews > 0 ? '#ef4444' : '#334155') + '"><div class="dash-icon">⭐</div><div class="dash-label">差评</div><div class="dash-value" style="color:#ef4444">' + t.reviews + '</div></div>';
+
+  // Update area 3 quick-add cards
+  document.getElementById('cell3Dinein').textContent = '¥' + t.dinein.toFixed(0);
+  document.getElementById('cell3Delivery').textContent = '¥' + t.delivery.toFixed(0);
+  document.getElementById('cell3Private').textContent = '¥' + t.private_domain.toFixed(0);
+  document.getElementById('cell3Purchases').textContent = '¥' + t.purchases.toFixed(0);
+
+  // Fixed costs inputs
+  document.getElementById('fcRent').value = fc.rent || '';
+  document.getElementById('fcLabor').value = fc.labor || '';
+  document.getElementById('fcUtilities').value = fc.utilities || '';
+  document.getElementById('fcOther').value = fc.other || '';
+
+  // Week trend
+  renderWeekTrend();
+}
+
+function renderWeekTrend() {
+  const now = new Date();
+  const labels = [], values = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now); d.setDate(d.getDate() - i);
+    const dd = getDashboardData(d.toISOString().slice(0,10));
+    const rev = (dd.dinein||[]).reduce((s,e)=>s+(e.amount||0),0) + (dd.delivery||[]).reduce((s,e)=>s+(e.amount||0),0) + (dd.private_domain||[]).reduce((s,e)=>s+(e.amount||0),0);
+    labels.push(d.getDay() === 0 ? '周日' : ['','周一','周二','周三','周四','周五','周六'][d.getDay()]);
+    values.push(rev);
+  }
+  const maxRev = Math.max(...values, 1);
+  if (!values.some(v => v > 0)) {
+    document.getElementById('weekTrend').innerHTML = '<div style="color:#64748b;font-size:12px;text-align:center;padding:8px 0">暂无数据，录入营收后自动显示</div>';
+    return;
+  }
+  document.getElementById('weekTrend').innerHTML = labels.map((l, i) => {
+    const pct = (values[i] / maxRev * 100).toFixed(0);
+    return '<div class="week-bar"><span class="week-bar-label">' + l + '</span><div class="week-bar-track"><div class="week-bar-fill" style="width:' + pct + '%"></div></div><span class="week-bar-value">¥' + values[i].toFixed(0) + '</span></div>';
+  }).join('');
+}
+
+// ===== INVENTORY =====
+const THRESHOLD = 5;
+function refreshInventory() {
+  const inv = JSON.parse(localStorage.getItem('canyin_inventory') || '{}');
+  const entries = JSON.parse(localStorage.getItem('canyin_entries') || '[]');
+  const names = Object.keys(inv);
+  document.getElementById('statTotal').textContent = names.length;
+  document.getElementById('statLow').textContent = names.filter(n => inv[n].qty <= THRESHOLD).length;
+  const listDiv = document.getElementById('inventoryList');
+  if (names.length === 0) { listDiv.innerHTML = '<div style="color:#64748b;text-align:center;padding:16px 0;font-size:13px">暂无库存数据</div>'; return; }
+  listDiv.innerHTML = names.map(name => {
+    const d = inv[name], isLow = d.qty <= THRESHOLD;
+    return '<div class="inv-item"><div><span class="inv-name">' + name + '</span>' + (d.price ? ' <span style="color:#94a3b8;font-size:11px">¥' + d.price + '/' + (d.unit||'份') + '</span>' : '') + (isLow ? ' <span class="inv-low">⚠️低</span>' : '') + '</div><div class="inv-qty" style="' + (isLow ? 'color:#ef4444' : '') + '">' + d.qty + ' ' + (d.unit||'份') + '</div></div>';
+  }).join('');
+}
+
+function addInventoryItemCompass() {
+  const name = document.getElementById('addInvName').value.trim();
+  const qty = parseFloat(document.getElementById('addInvQty').value) || 0;
+  const unit = document.getElementById('addInvUnit').value.trim() || '份';
+  const price = parseFloat(document.getElementById('addInvPrice').value) || 0;
+  if (!name || qty <= 0) { showToast('请填写食材名和数量', 'error'); return; }
+  const inv = JSON.parse(localStorage.getItem('canyin_inventory') || '{}');
+  if (inv[name]) { inv[name].qty += qty; if (price) inv[name].price = price; inv[name].lastUpdate = new Date().toISOString(); }
+  else { inv[name] = { qty, unit, price, lastUpdate: new Date().toISOString() }; }
+  localStorage.setItem('canyin_inventory', JSON.stringify(inv));
+  const entries = JSON.parse(localStorage.getItem('canyin_entries') || '[]');
+  entries.push({ raw: (price ? name + ' ' + qty + unit + ' ¥' + price : '手动添加: ' + name + ' ' + qty + unit), time: new Date().toISOString() });
+  localStorage.setItem('canyin_entries', JSON.stringify(entries));
+  // Dashboard: 累加采购
+  if (price > 0) addDashboardEntry('purchases', price * qty, { item: name });
+  document.getElementById('addInvName').value = ''; document.getElementById('addInvQty').value = ''; document.getElementById('addInvUnit').value = ''; document.getElementById('addInvPrice').value = '';
+  refreshInventory(); showToast('已添加 ' + name);
+}
+
+function clearInventory() {
+  if (confirm('确定清空所有库存数据？')) { localStorage.removeItem('canyin_inventory'); localStorage.removeItem('canyin_entries'); refreshInventory(); showToast('库存已清空'); }
+}
+
+// ===== COST =====
+let lastCostResult = null;
+async function calcCost() {
+  const text = document.getElementById('costInput').value.trim(); if (!text) return;
+  const btn = document.getElementById('costBtn'); btn.innerHTML = '<span class="loading-spinner"></span> 计算中...'; btn.disabled = true;
+  const enhancedPrompt = text + '\n\n请严格按以下JSON格式输出：\n{"dishName":"菜品名称","ingredients":[{"name":"食材名","qty":"用量","cost":单价}],"foodCost":食材总成本,"packingCost":包装成本,"totalCost":总成本,"suggestedPrice":建议售价,"profitMargin":毛利率百分比,"platforms":[{"name":"堂食","suggestedPrice":售价,"commissionRate":0,"netIncome":到手},{"name":"美团","suggestedPrice":售价,"commissionRate":佣金比例,"netIncome":到手,"fullReduction":"满减建议"},{"name":"京东","suggestedPrice":售价,"commissionRate":佣金比例,"netIncome":到手,"fullReduction":"满减建议"},{"name":"饿了么","suggestedPrice":售价,"commissionRate":佣金比例,"netIncome":到手,"fullReduction":"满减建议"}]}';
+  const answer = await callBot(BOT_IDS.cost, enhancedPrompt);
+  btn.innerHTML = '🧮 计算成本'; btn.disabled = false;
+  const div = document.getElementById('costResult');
+  if (!answer) { div.innerHTML = '<div style="color:#ef4444;padding:8px">网络请求失败</div>'; return; }
+  const json = extractJSON(answer);
+  if (json && (json.totalCost || json.total_cost)) {
+    lastCostResult = json;
+    let html = '<div class="result-box">';
+    const totalCost = json.totalCost || json.total_cost || 0;
+    const foodCost = json.foodCost || json.food_cost || 0;
+    const packingCost = json.packingCost || json.packing_cost || 0;
+    if (foodCost > 0 && foodCost !== totalCost) html += '<div class="result-row"><span class="result-label">食材成本</span><span class="result-value" style="color:#f59e0b">¥' + parseFloat(foodCost).toFixed(2) + '</span></div>';
+    if (packingCost > 0) html += '<div class="result-row"><span class="result-label">包装成本</span><span class="result-value">¥' + parseFloat(packingCost).toFixed(2) + '</span></div>';
+    html += '<div class="result-row" style="border-top:2px solid #334155;padding-top:8px;margin-top:4px"><span class="result-label" style="font-weight:700">总成本</span><span class="result-value" style="color:#f59e0b;font-size:18px">¥' + totalCost.toFixed(2) + '</span></div>';
+    const sp = json.suggestedPrice || json.suggested_price || 0;
+    if (sp > 0) html += '<div class="result-row"><span class="result-label">建议售价</span><span class="result-value" style="color:#22c55e;font-size:16px">¥' + sp.toFixed(2) + '</span></div>';
+    const margin = json.profitMargin || json.profit_margin || 0;
+    if (margin > 0) html += '<div class="result-row"><span class="result-label">毛利率</span><span class="result-value" style="color:#3b82f6">' + margin.toFixed(1) + '%</span></div>';
+    const platforms = json.platforms || [];
+    if (platforms.length > 0) {
+      html += '<div style="margin-top:10px;padding-top:10px;border-top:1px solid #334155;font-size:12px;color:#f97316;font-weight:600">💰 平台定价</div>';
+      platforms.forEach(p => {
+        const pPrice = p.suggestedPrice || p.suggested_price || 0;
+        const pIncome = p.netIncome || p.net_income || 0;
+        html += '<div class="result-row"><span class="result-label">' + (p.name||'') + '</span><span class="result-value" style="color:#22c55e">¥' + pPrice.toFixed(2) + (pIncome > 0 ? ' → 到手¥' + pIncome.toFixed(2) : '') + '</span></div>';
+      });
+    }
+    html += '</div>';
+    div.innerHTML = html;
+    // Show pricing button
+    document.getElementById('pricingBtnInline').style.display = 'inline-flex';
+    // Save
+    const costs = JSON.parse(localStorage.getItem('canyin_costs') || '[]');
+    costs.push({ input: text, result: json, time: new Date().toISOString() });
+    localStorage.setItem('canyin_costs', JSON.stringify(costs));
+  } else {
+    div.innerHTML = '<div class="result-box"><div class="reply-text" style="line-height:1.6">' + formatMarkdown(parseBotResponse(answer)) + '</div></div>';
+  }
+}
+
+function genPricingFromCost() {
+  if (!lastCostResult) { showToast('请先完成成本核算', 'error'); return; }
+  const text = document.getElementById('costInput').value.trim();
+  showPricingModal(text);
+}
+
+// ===== REVIEW =====
+async function handleReview() {
+  const text = document.getElementById('reviewInput').value.trim(); if (!text) return;
+  const btn = document.getElementById('reviewBtn'); btn.innerHTML = '<span class="loading-spinner"></span> 生成中...'; btn.disabled = true;
+  const answer = await callBot(BOT_IDS.review, text);
+  btn.innerHTML = '📝 生成回复'; btn.disabled = false;
+  const div = document.getElementById('reviewResult');
+  if (!answer) { div.innerHTML = '<div style="color:#ef4444;padding:8px">网络请求失败</div>'; return; }
+  const json = extractJSON(answer);
+  if (json && json.replies && Array.isArray(json.replies)) {
+    let html = '';
+    const styles = ['诚恳道歉型', '解决方案型', '温暖关怀型'];
+    json.replies.forEach((r, i) => {
+      const style = r.style || styles[i] || '版本' + (i+1);
+      const replyText = r.content || r.text || r;
+      html += '<div class="reply-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="background:#3b82f6;padding:3px 10px;border-radius:10px;font-size:12px;font-weight:600">' + style + '</span><button class="copy-btn" onclick="copyText(\'' + (replyText||'').replace(/'/g,"\\'").replace(/"/g,'&quot;') + '\',this)">📋 复制</button></div><div class="reply-text" style="padding:10px;background:#0f172a;border-radius:6px">' + (typeof replyText === 'string' ? replyText : JSON.stringify(replyText)) + '</div></div>';
+    });
+    if (json.suggestion || json.处理建议) html += '<div style="margin-top:8px;font-size:12px;color:#94a3b8">💡 ' + (json.suggestion || json.处理建议) + '</div>';
+    div.innerHTML = html;
+  } else {
+    div.innerHTML = '<div class="result-box"><div class="reply-text" style="line-height:1.6">' + formatMarkdown(parseBotResponse(answer)) + '</div></div>';
+  }
+  // Record
+  addDashboardEntry('reviews', 0, { source: '差评处理' });
+}
+
+// ===== PRIVATE =====
+let selectedScene = '包裹卡';
+function selectScene(el) {
+  document.querySelectorAll('#privateScenes .tag').forEach(t => { t.style.background = '#334155'; });
+  el.style.background = '#3b82f6'; selectedScene = el.dataset.scene;
+}
+async function genPrivate() {
+  const extra = document.getElementById('privateInput').value.trim();
+  const msg = '场景：' + selectedScene + (extra ? '\n补充：' + extra : '');
+  const btn = document.getElementById('privateBtn'); btn.innerHTML = '<span class="loading-spinner"></span> 生成中...'; btn.disabled = true;
+  const answer = await callBot(BOT_IDS.private, msg);
+  btn.innerHTML = '✨ 生成话术'; btn.disabled = false;
+  const div = document.getElementById('privateResult');
+  if (!answer) { div.innerHTML = '<div style="color:#ef4444;padding:8px">网络请求失败</div>'; return; }
+  const json = extractJSON(answer);
+  if (json && (json.content || json.scene || json.welcome)) {
+    let html = '';
+    if (json.content && json.content.front) html += '<div class="reply-card"><div class="card-title">📦 包裹卡正面</div><div class="reply-text" style="padding:8px;background:#0f172a;border-radius:6px;border:1px solid #f97316">' + json.content.front + '</div></div>';
+    if (json.welcome || (json.content && json.content.welcome)) { const w = json.welcome || json.content.welcome; html += '<div class="reply-card"><div class="card-title">💬 欢迎语</div><div class="reply-text" style="padding:8px;background:#0f172a;border-radius:6px">' + w + '</div></div>'; }
+    if (json.content && json.content.benefit) html += '<div class="reply-card"><div class="card-title">🎁 福利</div><div class="reply-text">' + formatMarkdown(json.content.benefit) + '</div></div>';
+    div.innerHTML = html || '<div class="result-box">' + formatMarkdown(parseBotResponse(answer)) + '</div>';
+  } else {
+    div.innerHTML = '<div class="result-box"><div class="reply-text" style="line-height:1.6">' + formatMarkdown(parseBotResponse(answer)) + '</div></div>';
+  }
+}
+
+// ===== MENU =====
+async function generateMenu() {
+  const text = document.getElementById('menuInput').value.trim(); if (!text) { showToast('请输入店铺信息'); return; }
+  const btn = document.getElementById('menuBtn'); btn.innerHTML = '<span class="loading-spinner"></span> 设计中...'; btn.disabled = true;
+  const prompt = '你是餐饮菜单设计专家。根据以下信息给出菜单设计方案，用Markdown输出：\n\n## 🔥 引流款（2-3款）\n## 💰 利润款（3-5款）\n## 🎁 套餐搭配\n## ➕ 加料项\n## 💡 SKU建议\n\n店铺信息：' + text;
+  const answer = await callBot(BOT_IDS.cost, prompt);
+  btn.innerHTML = '📝 生成方案'; btn.disabled = false;
+  const div = document.getElementById('menuResult');
+  if (!answer) { div.innerHTML = '<div style="color:#ef4444;padding:8px">网络请求失败</div>'; return; }
+  div.innerHTML = '<div class="result-box" style="margin-top:12px"><div class="reply-text" style="line-height:1.6">' + formatMarkdown(parseBotResponse(answer)) + '</div></div>';
+}
+
+// ===== PRICING (modal) =====
+async function showPricingModal(prefill) {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.id = 'pricingModal';
+  overlay.innerHTML = '<div class="modal-box"><h3>💲 定价策略</h3><textarea class="input" id="pricingInput" placeholder="例如：蛋炒饭成本4.4元，辣椒炒肉成本6.5元" style="min-height:60px">' + (prefill||'') + '</textarea><div class="modal-btns" style="margin-top:10px"><button onclick="this.closest(\'.modal-overlay\').remove()" style="background:#334155;color:#94a3b8">关闭</button><button onclick="submitPricing()" style="background:#3b82f6;color:#fff">生成方案</button></div><div id="pricingResult" style="margin-top:12px"></div></div>';
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
+
+async function submitPricing() {
+  const text = document.getElementById('pricingInput').value.trim();
+  if (!text) { showToast('请输入成本信息'); return; }
+  const div = document.getElementById('pricingResult');
+  div.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:10px"><span class="loading-spinner"></span> 计算中...</div>';
+  const prompt = '你是餐饮定价专家。根据以下成本信息，输出各平台定价方案（Markdown格式）：\n\n' + text + '\n\n包括：堂食/美团/京东/饿了么的售价、佣金率、到手金额、满减建议';
+  const answer = await callBot(BOT_IDS.cost, prompt);
+  if (!answer) { div.innerHTML = '<div style="color:#ef4444">请求失败</div>'; return; }
+  div.innerHTML = '<div class="result-box"><div class="reply-text" style="line-height:1.6">' + formatMarkdown(parseBotResponse(answer)) + '</div></div>';
+}
+
+// ===== WELCOME (modal) =====
+async function showWelcomeModal() {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.id = 'welcomeModal';
+  overlay.innerHTML = '<div class="modal-box"><h3>🎙️ 迎宾系统</h3><textarea class="input" id="welcomeInput" placeholder="例如：第一次来的年轻女顾客 / 回头客张哥带朋友" style="min-height:60px"></textarea><div style="margin-top:6px"><span class="tag" onclick="document.getElementById(\'welcomeInput\').value=\'第一次来的年轻女顾客\'">新客-女</span><span class="tag" onclick="document.getElementById(\'welcomeInput\').value=\'回头客张哥带了两个朋友\'">老客带人</span><span class="tag" onclick="document.getElementById(\'welcomeInput\').value=\'带小孩的一家三口\'">家庭客</span></div><div class="modal-btns" style="margin-top:10px"><button onclick="this.closest(\'.modal-overlay\').remove()" style="background:#334155;color:#94a3b8">关闭</button><button onclick="submitWelcome()" style="background:#3b82f6;color:#fff">生成话术</button></div><div id="welcomeResult" style="margin-top:12px"></div></div>';
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
+
+async function submitWelcome() {
+  const text = document.getElementById('welcomeInput').value.trim(); if (!text) return;
+  const div = document.getElementById('welcomeResult');
+  div.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:10px"><span class="loading-spinner"></span> 生成中...</div>';
+  const answer = await callBot(BOT_IDS.welcome, text);
+  if (!answer) { div.innerHTML = '<div style="color:#ef4444">请求失败</div>'; return; }
+  const json = extractJSON(answer);
+  if (json && json.scenarios && Array.isArray(json.scenarios)) {
+    let html = '';
+    json.scenarios.forEach(s => {
+      const scene = s.scene || s.场景 || '';
+      const script = s.script || s.话术 || '';
+      html += '<div class="reply-card"><div class="card-title" style="color:#f97316">🎯 ' + scene + '</div><div class="reply-text" style="padding:8px;background:#0f172a;border-radius:6px;border-left:3px solid #22c55e">' + script + '</div></div>';
+    });
+    div.innerHTML = html;
+  } else {
+    div.innerHTML = '<div class="result-box"><div class="reply-text" style="line-height:1.6">' + formatMarkdown(parseBotResponse(answer)) + '</div></div>';
+  }
+}
+
+// ===== DETAILED REPORT =====
+function loadDetailedReport() {
+  const inv = JSON.parse(localStorage.getItem('canyin_inventory') || '{}');
+  const entries = JSON.parse(localStorage.getItem('canyin_entries') || '[]');
+  const today = new Date().toDateString();
+  const todayEntries = entries.filter(e => new Date(e.time).toDateString() === today);
+  const t = getTodayTotals();
+  const profit = t.total - t.purchases;
+
+  let html = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px">';
+  html += '<div style="text-align:center;padding:8px;background:#0f172a;border-radius:6px"><div style="font-size:11px;color:#94a3b8">营收</div><div style="font-size:16px;font-weight:700;color:#22c55e">¥' + t.total.toFixed(0) + '</div></div>';
+  html += '<div style="text-align:center;padding:8px;background:#0f172a;border-radius:6px"><div style="font-size:11px;color:#94a3b8">成本</div><div style="font-size:16px;font-weight:700;color:#f59e0b">¥' + t.purchases.toFixed(0) + '</div></div>';
+  html += '<div style="text-align:center;padding:8px;background:#0f172a;border-radius:6px"><div style="font-size:11px;color:#94a3b8">利润</div><div style="font-size:16px;font-weight:700;color:#3b82f6">¥' + profit.toFixed(0) + '</div></div>';
+  html += '</div>';
+  html += '<div style="font-size:12px;color:#94a3b8;margin-bottom:6px">📦 库存：' + Object.keys(inv).length + '种 · 今日入库' + todayEntries.length + '次</div>';
+  if (Object.keys(inv).length > 0) {
+    html += '<div style="max-height:120px;overflow-y:auto">';
+    Object.keys(inv).slice(0,10).forEach(n => {
+      const d = inv[n], isLow = d.qty <= 5;
+      html += '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px solid #1e293b"><span>' + n + '</span><span style="' + (isLow?'color:#ef4444':'') + '">' + d.qty + (d.unit||'份') + (isLow?' ⚠️':'') + '</span></div>';
+    });
+    html += '</div>';
+  }
+  document.getElementById('detailedReport').innerHTML = html;
+}
+
+// ===== VOICE STORE (inline in area 2) =====
+let currentVoiceData = null, voiceTimer = null;
+async function sendVoiceStoreInline() {
+  const input = document.getElementById('addInvName');
+  const text = input.value.trim(); if (!text) return;
+  const btn = document.getElementById('invVoiceBtn');
+  const origText = btn.innerHTML;
+  btn.innerHTML = '<span class="loading-spinner"></span>';
+  const answer = await callBot(BOT_IDS['voice-store'], text);
+  btn.innerHTML = origText;
+  if (!answer) { showToast('网络请求失败', 'error'); return; }
+  const json = extractJSON(answer);
+  if (json && json.intent_id && json.intent_id === 'store') {
+    const ed = json.extracted_data || {};
+    const name = ed['食材'] || ed['品名'] || '';
+    const qty = parseFloat(ed['数量']) || 1;
+    const unit = ed['单位'] || '份';
+    const price = parseFloat(ed['单价']) || 0;
+    if (name) {
+      document.getElementById('addInvName').value = name;
+      document.getElementById('addInvQty').value = qty;
+      document.getElementById('addInvUnit').value = unit;
+      if (price) document.getElementById('addInvPrice').value = price;
+      showToast('已解析：' + name + ' ' + qty + unit + (price ? ' ¥' + price : ''));
+    }
+  } else if (json && json.extracted_data) {
+    const ed = json.extracted_data;
+    showToast('识别: ' + Object.entries(ed).map(([k,v]) => k+'='+v).join(', '));
+  } else {
+    showToast(answer.slice(0, 50));
+  }
+}
+
+// Override voice button to parse
+document.addEventListener('DOMContentLoaded', () => {
+  const invVoiceBtn = document.getElementById('invVoiceBtn');
+  if (invVoiceBtn) {
+    // Keep original voice functionality but also parse on result
+    const origOnResult = null;
+  }
+});
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', () => {
+  updateDate();
+  setInterval(updateDate, 60000);
+  initAPI();
+  renderDashboard();
+  refreshInventory();
+
+  // Enter key shortcuts
+  ['costInput'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); calcCost(); } }); });
+  ['reviewInput'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleReview(); } }); });
+  ['menuInput'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); generateMenu(); } }); });
+});
+</script>
+</body>
+</html>
