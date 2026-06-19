@@ -436,8 +436,24 @@ textarea.input { min-height: 100px; resize: vertical; }
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <input class="input" id="addInvName" placeholder="食材名" style="flex:1;min-width:100px">
       <input class="input" id="addInvQty" placeholder="数量" style="width:80px">
-      <input class="input" id="addInvUnit" placeholder="单位" style="width:80px">
+      <select class="input" id="addInvUnit" style="width:90px">
+        <option value="">单位</option>
+        <option value="个">个</option>
+        <option value="份">份</option>
+        <option value="袋">袋</option>
+        <option value="箱">箱</option>
+        <option value="瓶">瓶</option>
+        <option value="包">包</option>
+        <option value="公斤">公斤</option>
+        <option value="斤">斤</option>
+        <option value="克">克</option>
+        <option value="毫升">毫升</option>
+        <option value="升">升</option>
+      </select>
       <button class="btn btn-primary" onclick="addInventoryItem()">➕ 添加</button>
+    </div>
+    <div style="margin-top:8px">
+      <button class="voice-btn" id="invVoiceBtn" onmousedown="startVoice('addInvName','invVoiceBtn')" onmouseup="stopVoice()" ontouchstart="event.preventDefault();startVoice('addInvName','invVoiceBtn')" ontouchend="stopVoice()">🎤 语音录入食材</button>
     </div>
   </div>
   <div class="card">
@@ -540,6 +556,9 @@ textarea.input { min-height: 100px; resize: vertical; }
     <div style="margin-bottom:12px">
       <label style="font-size:13px;color:#94a3b8;margin-bottom:4px;display:block">开店地址</label>
       <input type="text" class="input" id="openingLocation" placeholder="如：长沙望月湖">
+      <div style="margin-top:8px">
+        <button class="voice-btn" id="openingVoiceBtn" onmousedown="startVoice('openingLocation','openingVoiceBtn')" onmouseup="stopVoice()" ontouchstart="event.preventDefault();startVoice('openingLocation','openingVoiceBtn')" ontouchend="stopVoice()">🎤 按住说话</button>
+      </div>
     </div>
     <div style="margin-bottom:12px">
       <label style="font-size:13px;color:#94a3b8;margin-bottom:6px;display:block">目标平台（可多选）</label>
@@ -574,8 +593,8 @@ textarea.input { min-height: 100px; resize: vertical; }
     <div class="card-title">店铺基本信息</div>
     <div style="margin-bottom:10px">
       <label style="font-size:13px;color:#94a3b8;margin-bottom:4px;display:block">餐饮品类</label>
-      <select id="equipCategorySelect" class="input" onchange="if(this.value==='__custom__'){document.getElementById('equipCategoryInput').style.display='block';document.getElementById('equipCategoryInput').focus()}else{document.getElementById('equipCategoryInput').style.display='none'}">
-        <option value="">请选择品类</option>
+      <select id="equipCategorySelect" class="input" onchange="if(this.value==='__custom__'){document.getElementById('equipCategoryInput').style.display='block';document.getElementById('equipCategoryInput').focus()}else{document.getElementById('equipCategoryInput').style.display='block'}">
+        <option value="">请选择品类（可选）</option>
         <option value="炒饭/盖饭">炒饭/盖饭</option>
         <option value="粉面">粉面</option>
         <option value="快餐便当">快餐便当</option>
@@ -584,9 +603,9 @@ textarea.input { min-height: 100px; resize: vertical; }
         <option value="奶茶饮品">奶茶饮品</option>
         <option value="小吃">小吃</option>
         <option value="正餐">正餐</option>
-        <option value="__custom__">手动输入...</option>
+        <option value="__custom__">其他（手动输入）</option>
       </select>
-      <input id="equipCategoryInput" class="input" placeholder="输入你的品类" style="display:none;margin-top:6px">
+      <input id="equipCategoryInput" class="input" placeholder="或手动输入品类（如：炸鸡、麻辣烫、面包蛋糕...）" style="margin-top:6px">
     </div>
     <textarea class="input" id="equipInput" placeholder="例如：20㎡炒饭店，需要AI点餐、语音迎宾、自动接单、智能打印等功能，帮我推荐设备"></textarea>
     <div style="margin-top:8px">
@@ -1848,7 +1867,23 @@ function toggleFloatingCosts() {
 async function calcCost() {
   const text = document.getElementById('costInput').value.trim(); if (!text) return;
   const btn = document.getElementById('costBtn'); btn.innerHTML = '<span class="loading-spinner"></span> 计算中...'; btn.disabled = true;
-  const answer = await callBot(BOT_IDS.cost, text);
+  const enhancedPrompt = text + `\n\n请严格按以下JSON格式输出（不要输出其他内容）：
+{
+  "dishName": "菜品名称",
+  "ingredients": [{"name":"食材名","qty":"用量","cost":单价}],
+  "foodCost": 食材总成本数字,
+  "packingCost": 包装成本数字,
+  "totalCost": 总成本(食材+包装)数字,
+  "suggestedPrice": 建议售价数字,
+  "profitMargin": 毛利率百分比数字,
+  "platforms": [
+    {"name":"堂食","suggestedPrice":售价,"commissionRate":0,"netIncome":到手金额},
+    {"name":"美团","suggestedPrice":售价,"commissionRate":佣金比例,"netIncome":到手金额,"fullReduction":"满减建议"},
+    {"name":"京东","suggestedPrice":售价,"commissionRate":佣金比例,"netIncome":到手金额,"fullReduction":"满减建议"},
+    {"name":"饿了么","suggestedPrice":售价,"commissionRate":佣金比例,"netIncome":到手金额,"fullReduction":"满减建议"}
+  ]
+}`;
+  const answer = await callBot(BOT_IDS.cost, enhancedPrompt);
   btn.innerHTML = '🧮 计算成本'; btn.disabled = false;
   const div = document.getElementById('costResult'); div.classList.remove('hidden');
   if (!answer) { div.innerHTML = '<div class="card"><div class="reply-text" style="color:#ef4444">网络请求失败，请检查网络连接</div></div>'; return; }
@@ -1869,6 +1904,14 @@ async function calcCost() {
     
     // 总成本
     const totalCost = json.total_cost || json.totalCost || 0;
+    const foodCost = json.foodCost || json.food_cost || 0;
+    const packingCost = json.packingCost || json.packing_cost || 0;
+    if (foodCost > 0 && foodCost !== totalCost) {
+      html += '<div class="result-row"><span class="result-label">食材成本</span><span class="result-value" style="color:#f59e0b">¥' + parseFloat(foodCost).toFixed(2) + '</span></div>';
+    }
+    if (packingCost > 0) {
+      html += '<div class="result-row"><span class="result-label">包装成本</span><span class="result-value">¥' + parseFloat(packingCost).toFixed(2) + '</span></div>';
+    }
     html += '<div class="result-row" style="border-top:2px solid #334155;padding-top:12px;margin-top:12px"><span class="result-label" style="font-weight:700">总成本</span><span class="result-value" style="color:#f59e0b;font-size:20px">¥' + totalCost.toFixed(2) + '</span></div>';
     
     // 建议售价
@@ -1893,6 +1936,8 @@ async function calcCost() {
         const pCommission = p.commissionRate || p.commission_rate || 0;
         const pIncome = p.netIncome || p.net_income || 0;
         html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #1e293b"><div><span style="font-weight:600">' + pName + '</span>' + (pCommission > 0 ? '<span style="font-size:12px;color:#94a3b8;margin-left:8px">佣金' + pCommission + '%</span>' : '') + '</div><div style="text-align:right"><div style="font-weight:700;color:#22c55e;font-size:16px">¥' + pPrice.toFixed(2) + '</div>' + (pIncome > 0 ? '<div style="font-size:12px;color:#94a3b8">到手 ¥' + pIncome.toFixed(2) + '</div>' : '') + '</div></div>';
+        const fr = p.fullReduction || p.满减;
+        if (fr) { html += '<div style="font-size:13px;color:#f59e0b;padding:4px 0">🎯 ' + (Array.isArray(fr) ? fr.join('、') : fr) + '</div>'; }
       });
     }
     
@@ -2427,22 +2472,47 @@ function loadReport() {
   const entries = JSON.parse(localStorage.getItem('canyin_entries') || '[]');
   const today = new Date().toDateString();
   const todayEntries = entries.filter(e => new Date(e.time).toDateString() === today);
-  const rev = todayEntries.length * 80, cost = todayEntries.length * 45, profit = rev - cost;
-  document.getElementById('revToday').textContent = '¥' + rev;
-  document.getElementById('costToday').textContent = '¥' + cost;
-  document.getElementById('profitToday').textContent = '¥' + profit;
-  const days = ['周一','周二','周三','周四','周五','周六','周日'];
-  const weekData = days.map((d,i) => ({ day: d, count: Math.floor(Math.random()*15) + todayEntries.length + i*2 }));
-  const max = Math.max(...weekData.map(d=>d.count), 1);
-  document.getElementById('weekTrend').innerHTML = weekData.map(d => {
-    const pct = (d.count/max*100).toFixed(0);
-    return '<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:13px"><span>' + d.day + '</span><span>' + d.count + '笔</span></div><div style="height:20px;background:#334155;border-radius:4px;overflow:hidden;margin-top:4px"><div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,#3b82f6,#22c55e);border-radius:4px"></div></div></div>';
-  }).join('');
   const names = Object.keys(inv);
   const invDiv = document.getElementById('reportInv');
   if (names.length === 0) { invDiv.innerHTML = '<div style="color:#94a3b8;font-size:14px;padding:8px 0">暂无库存数据</div>'; }
   else { invDiv.innerHTML = names.slice(0,8).map(n => { const d = inv[n], isLow = d.qty <= 5; return '<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #0f172a;font-size:14px"><span>' + n + '</span><span style="' + (isLow?'color:#ef4444':'') + '">' + d.qty + (d.unit||'份') + (isLow?' ⚠️':'') + '</span></div>'; }).join(''); }
   document.getElementById('reportEntries').innerHTML = '<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:14px"><span>总入库次数</span><span style="font-weight:600">' + entries.length + '</span></div><div style="display:flex;justify-content:space-between;padding:6px 0;font-size:14px"><span>今日入库</span><span style="font-weight:600;color:#22c55e">' + todayEntries.length + '</span></div><div style="display:flex;justify-content:space-between;padding:6px 0;font-size:14px"><span>食材种类</span><span style="font-weight:600">' + names.length + '</span></div>';
+  // 从仪表盘数据读取营收/成本/利润
+  const todayKey = 'dash_' + new Date().toISOString().slice(0,10);
+  const todayData = JSON.parse(localStorage.getItem(todayKey) || '{}');
+  const tPurchases = (todayData.purchases||[]).reduce((s,e)=>s+(e.amount||0),0);
+  const tDinein = (todayData.dinein||[]).reduce((s,e)=>s+(e.amount||0),0);
+  const tDelivery = (todayData.delivery||[]).reduce((s,e)=>s+(e.amount||0),0);
+  const tPrivate = (todayData.private_domain||[]).reduce((s,e)=>s+(e.amount||0),0);
+  const tRevenue = tDinein + tDelivery + tPrivate;
+  const tProfit = tRevenue - tPurchases;
+  document.getElementById('revToday').textContent = '¥' + tRevenue.toFixed(2);
+  document.getElementById('costToday').textContent = '¥' + tPurchases.toFixed(2);
+  document.getElementById('profitToday').textContent = '¥' + tProfit.toFixed(2);
+  // 本周趋势：从仪表盘数据按天统计
+  const now = new Date();
+  const weekLabels = [];
+  const weekCounts = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now); d.setDate(d.getDate() - i);
+    const key = 'dash_' + d.toISOString().slice(0,10);
+    const dd = JSON.parse(localStorage.getItem(key) || '{}');
+    const rev = (dd.dinein||[]).reduce((s,e)=>s+(e.amount||0),0) + (dd.delivery||[]).reduce((s,e)=>s+(e.amount||0),0) + (dd.private_domain||[]).reduce((s,e)=>s+(e.amount||0),0);
+    const dayLabel = d.getDay() === 0 ? '周日' : ['','周一','周二','周三','周四','周五','周六'][d.getDay()];
+    weekLabels.push(dayLabel);
+    weekCounts.push(rev);
+  }
+  const maxRev = Math.max(...weekCounts, 1);
+  const hasData = weekCounts.some(v => v > 0);
+  if (!hasData) {
+    document.getElementById('weekTrend').innerHTML = '<div style="color:#94a3b8;font-size:14px;text-align:center;padding:12px 0">暂无本周数据，通过首页+1笔录入后自动显示</div>';
+  } else {
+    document.getElementById('weekTrend').innerHTML = weekLabels.map((d,i) => {
+      const v = weekCounts[i];
+      const pct = (v/maxRev*100).toFixed(0);
+      return '<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:13px"><span>' + d + '</span><span>¥' + v.toFixed(0) + '</span></div><div style="height:20px;background:#334155;border-radius:4px;overflow:hidden;margin-top:4px"><div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,#3b82f6,#22c55e);border-radius:4px"></div></div></div>';
+    }).join('');
+  }
 }
 
 // ===== SITE ANALYSIS =====
@@ -2741,15 +2811,34 @@ async function generatePricing() {
   btn.innerHTML = '<span class="loading-spinner"></span> 计算中...';
   btn.disabled = true;
   
-  const prompt = `你是餐饮定价专家。请根据以下菜品成本信息，给出各平台定价方案，包括：
-1. 📊 美团外卖定价 + 满减方案
-2. 📊 京东到家定价 + 满减方案
-3. 📊 堂食定价建议
-4. 💡 定价原则和优化建议
+  const prompt = `你是餐饮定价专家。请根据以下菜品成本信息，严格按JSON格式输出各平台定价方案：
 
 成本信息：${text}
 
-请用简洁的要点式回答，标注清楚每道菜的建议售价。`;
+请输出JSON格式：
+{
+  "dishes": [
+    {
+      "name": "菜品名",
+      "foodCost": 食材成本,
+      "totalCost": 总成本(含包装),
+      "profitMargin": 毛利率百分比,
+      "platforms": [
+        {"name":"堂食","suggestedPrice":建议售价,"commissionRate":0,"netIncome":到手金额},
+        {"name":"美团","suggestedPrice":建议售价,"commissionRate":佣金比例,"netIncome":到手金额,"fullReduction":"满减方案如：满20减3"},
+        {"name":"京东","suggestedPrice":建议售价,"commissionRate":佣金比例,"netIncome":到手金额,"fullReduction":"满减方案"},
+        {"name":"饿了么","suggestedPrice":建议售价,"commissionRate":佣金比例,"netIncome":到手金额,"fullReduction":"满减方案"}
+      ]
+    }
+  ],
+  "tips": ["定价建议1","定价建议2"]
+}
+
+要求：
+1. 每个平台佣金率按实际：美团约20%、京东约8-12%、饿了么约18-22%
+2. 满减方案要具体可执行
+3. 堂食无佣金，到手=售价
+4. 毛利率目标55-65%`;
   
   const answer = await callBot(BOT_IDS.cost, prompt);
   
@@ -2757,9 +2846,41 @@ async function generatePricing() {
   btn.disabled = false;
   
   if (answer) {
-    // 尝试解析JSON（可能是成本核算格式）
+    // 尝试解析JSON
     const json = extractJSON(answer);
-    if (json && (json.platforms || json.totalCost || json.total_cost)) {
+    if (json && json.dishes && Array.isArray(json.dishes)) {
+      // 多菜品格式: { dishes: [{name, foodCost, totalCost, profitMargin, platforms:[...]}] }
+      let html = '<div class="card">';
+      const platformIcons = {'美团':'🟡','京东':'🔴','饿了么':'🔵','抖音':'⚫','堂食':'🏠'};
+      json.dishes.forEach(dish => {
+        html += '<div style="margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #1e293b">';
+        html += '<div style="font-size:18px;font-weight:700;color:#f97316;margin-bottom:8px">' + (dish.name||'菜品') + '</div>';
+        html += '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px">';
+        if (dish.foodCost) html += '<div><span style="color:#94a3b8;font-size:13px">食材成本</span><div style="font-size:16px;font-weight:600;color:#f59e0b">¥' + parseFloat(dish.foodCost).toFixed(2) + '</div></div>';
+        if (dish.totalCost) html += '<div><span style="color:#94a3b8;font-size:13px">总成本</span><div style="font-size:16px;font-weight:600;color:#f59e0b">¥' + parseFloat(dish.totalCost).toFixed(2) + '</div></div>';
+        if (dish.profitMargin) html += '<div><span style="color:#94a3b8;font-size:13px">毛利率</span><div style="font-size:16px;font-weight:600;color:#3b82f6">' + parseFloat(dish.profitMargin).toFixed(1) + '%</div></div>';
+        html += '</div>';
+        const platforms = dish.platforms || [];
+        platforms.forEach(p => {
+          const pName = p.name || '';
+          const pPrice = p.suggestedPrice || 0;
+          const pCommission = p.commissionRate || 0;
+          const pIncome = p.netIncome || 0;
+          const icon = platformIcons[pName] || '📊';
+          html += '<div style="padding:12px;background:#0f172a;border-radius:8px;margin-bottom:8px;border-left:4px solid #3b82f6"><div style="display:flex;justify-content:space-between;align-items:center"><div style="font-weight:700">' + icon + ' ' + pName + '</div><div style="text-align:right"><div style="font-weight:700;color:#22c55e;font-size:18px">¥' + parseFloat(pPrice).toFixed(2) + '</div>' + (pCommission > 0 ? '<div style="font-size:12px;color:#94a3b8">佣金' + pCommission + '%</div>' : '') + '</div></div>';
+          if (pIncome > 0) html += '<div style="margin-top:4px;font-size:13px;display:flex;justify-content:space-between"><span style="color:#94a3b8">到手</span><span style="color:#22c55e;font-weight:600">¥' + parseFloat(pIncome).toFixed(2) + '</span></div>';
+          const fr = p.fullReduction || p.满减;
+          if (fr) html += '<div style="margin-top:4px;font-size:13px;color:#f59e0b">🎯 ' + (Array.isArray(fr) ? fr.join('、') : fr) + '</div>';
+          html += '</div>';
+        });
+        html += '</div>';
+      });
+      if (json.tips && Array.isArray(json.tips)) {
+        html += '<div style="margin-top:12px"><div style="font-size:14px;font-weight:700;color:#f97316;margin-bottom:8px">💡 定价建议</div><div style="line-height:1.8;color:#e2e8f0">' + json.tips.map(t => '• ' + t).join('<br>') + '</div></div>';
+      }
+      html += '</div>';
+      div.innerHTML = html;
+    } else if (json && (json.platforms || json.totalCost || json.total_cost)) {
       let html = '<div class="card">';
       
       // 菜品名和成本
