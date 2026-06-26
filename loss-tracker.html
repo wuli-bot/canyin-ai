@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>损耗追踪+预警</title>
+<style>
+:root {
+  --bg-primary: #0f172a;
+  --bg-card: #1e293b;
+  --accent: #f97316;
+  --yellow: #f59e0b;
+  --red: #ef4444;
+  --green: #10b981;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --border: #334155;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  padding: 20px;
+}
+.container { max-width: 1400px; margin: 0 auto; }
+h1 { font-size: 24px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+h1 .badge { background: var(--accent); color: #fff; font-size: 12px; padding: 2px 8px; border-radius: 10px; }
+h2 { font-size: 16px; margin-bottom: 14px; color: var(--text-primary); }
+
+.grid { display: grid; gap: 16px; }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+.grid-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+
+.card {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid var(--border);
+}
+.stat-card { text-align: center; }
+.stat-card .label { font-size: 13px; color: var(--text-secondary); margin-bottom: 6px; }
+.stat-card .value { font-size: 28px; font-weight: 700; }
+.stat-card .sub { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+
+.status-tag {
+  display: inline-block; padding: 3px 10px; border-radius: 12px;
+  font-size: 12px; font-weight: 600;
+}
+.status-normal { background: rgba(16,185,129,.15); color: var(--green); }
+.status-warning { background: rgba(245,158,11,.15); color: var(--yellow); }
+.status-critical { background: rgba(239,68,68,.15); color: var(--red); }
+
+/* 仪表盘 */
+.gauge-wrap { display: flex; justify-content: center; align-items: center; padding: 20px 0; }
+.gauge { position: relative; width: 200px; height: 110px; overflow: hidden; }
+.gauge-bg, .gauge-fill {
+  position: absolute; top: 0; left: 0; width: 200px; height: 200px;
+  border-radius: 50%; border: 18px solid transparent;
+  clip-path: polygon(0 0, 100% 0, 100% 50%, 0 50%);
+}
+.gauge-bg { border-color: #334155; }
+.gauge-fill { border-color: var(--green); transition: all .6s ease; }
+.gauge-value {
+  position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+  font-size: 28px; font-weight: 700;
+}
+.gauge-labels { display: flex; justify-content: space-between; width: 200px; margin: 6px auto 0; font-size: 11px; color: var(--text-secondary); }
+
+/* 表单 */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.form-group { display: flex; flex-direction: column; gap: 4px; }
+.form-group label { font-size: 12px; color: var(--text-secondary); }
+.form-group input, .form-group select, .form-group textarea {
+  background: #0f172a; border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px 12px; color: var(--text-primary); font-size: 14px; outline: none;
+}
+.form-group input:focus, .form-group select:focus { border-color: var(--accent); }
+.form-group.full { grid-column: 1 / -1; }
+.btn {
+  background: var(--accent); color: #fff; border: none; border-radius: 8px;
+  padding: 10px 24px; font-size: 14px; font-weight: 600; cursor: pointer;
+  transition: opacity .2s;
+}
+.btn:hover { opacity: .85; }
+.btn-row { margin-top: 14px; display: flex; gap: 10px; }
+
+/* 柱状图 */
+.bar-chart { display: flex; align-items: flex-end; gap: 12px; height: 160px; padding-top: 10px; }
+.bar-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
+.bar { width: 100%; border-radius: 4px 4px 0 0; background: var(--accent); min-height: 4px; transition: height .4s ease; }
+.bar-label { font-size: 11px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60px; text-align: center; }
+.bar-value { font-size: 11px; color: var(--text-primary); font-weight: 600; }
+
+/* 折线图 */
+.line-chart { position: relative; height: 180px; padding: 10px 0; }
+.line-chart svg { width: 100%; height: 100%; }
+.line-chart .axis-label { font-size: 10px; fill: var(--text-secondary); }
+
+/* 饼图 */
+.pie-section { display: flex; align-items: center; gap: 24px; }
+.pie-chart { width: 120px; height: 120px; }
+.pie-legend { display: flex; flex-direction: column; gap: 8px; }
+.pie-legend-item { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.pie-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+/* 历史表格 */
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; padding: 10px 8px; color: var(--text-secondary); border-bottom: 1px solid var(--border); font-weight: 500; }
+td { padding: 10px 8px; border-bottom: 1px solid rgba(51,65,85,.4); }
+tr:hover td { background: rgba(249,115,22,.04); }
+
+.mb-16 { margin-bottom: 16px; }
+.mt-16 { margin-top: 16px; }
+
+@media (max-width: 900px) {
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { grid-template-columns: 1fr; }
+  .grid-2 { grid-template-columns: 1fr; }
+  .form-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🔍 损耗追踪+预警 <span class="badge">P2-1</span></h1>
+
+  <!-- 今日概览 -->
+  <div class="grid grid-4 mb-16">
+    <div class="card stat-card">
+      <div class="label">今日损耗金额</div>
+      <div class="value" style="color:var(--red)">¥386</div>
+      <div class="sub">较昨日 +12%</div>
+    </div>
+    <div class="card stat-card">
+      <div class="label">今日损耗率</div>
+      <div class="value" style="color:var(--yellow)">9.2%</div>
+      <div class="sub">警戒线 8%</div>
+    </div>
+    <div class="card stat-card">
+      <div class="label">今日损耗笔数</div>
+      <div class="value">6</div>
+      <div class="sub">累计 ¥386</div>
+    </div>
+    <div class="card stat-card">
+      <div class="label">当前状态</div>
+      <div class="value"><span class="status-tag status-warning">⚠ 预警</span></div>
+      <div class="sub">请关注损耗原因</div>
+    </div>
+  </div>
+
+  <div class="grid grid-2 mb-16">
+    <!-- 仪表盘 -->
+    <div class="card">
+      <h2>损耗率仪表盘</h2>
+      <div class="gauge-wrap">
+        <div class="gauge">
+          <div class="gauge-bg"></div>
+          <div class="gauge-fill" id="gaugeFill"></div>
+          <div class="gauge-value" id="gaugeValue">9.2%</div>
+        </div>
+      </div>
+      <div class="gauge-labels">
+        <span>0%</span><span style="color:var(--green)">正常&lt;8%</span>
+        <span style="color:var(--yellow)">预警8-12%</span><span style="color:var(--red)">严重&gt;12%</span>
+      </div>
+    </div>
+
+    <!-- 损耗记录表单 -->
+    <div class="card">
+      <h2>📝 记录损耗</h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>食材名称</label>
+          <input type="text" placeholder="如：五花肉" id="inputName">
+        </div>
+        <div class="form-group">
+          <label>数量</label>
+          <input type="number" placeholder="数量" id="inputQty">
+        </div>
+        <div class="form-group">
+          <label>单位</label>
+          <select id="inputUnit">
+            <option>斤</option><option>个</option><option>袋</option><option>箱</option><option>份</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>单价(元)</label>
+          <input type="number" placeholder="单价" id="inputCost">
+        </div>
+        <div class="form-group">
+          <label>损耗原因</label>
+          <select id="inputReason">
+            <option value="expired">过期</option>
+            <option value="spoilage">变质</option>
+            <option value="damage">破损</option>
+            <option value="overorder">过量采购</option>
+            <option value="preparation_waste">加工损耗</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>记录人</label>
+          <input type="text" placeholder="姓名" id="inputBy">
+        </div>
+        <div class="form-group full">
+          <label>备注</label>
+          <input type="text" placeholder="补充说明（可选）" id="inputNote">
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn" onclick="addLoss()">提交记录</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-3 mb-16">
+    <!-- 损耗排行榜 -->
+    <div class="card">
+      <h2>🏆 损耗排行榜 TOP5</h2>
+      <div class="bar-chart" id="leaderboardChart"></div>
+    </div>
+
+    <!-- 按原因分布 -->
+    <div class="card">
+      <h2>📊 按原因分布</h2>
+      <div class="pie-section">
+        <svg class="pie-chart" viewBox="0 0 36 36" id="pieReason"></svg>
+        <div class="pie-legend" id="pieLegend"></div>
+      </div>
+    </div>
+
+    <!-- 按类别分布 -->
+    <div class="card">
+      <h2>📦 按类别分布</h2>
+      <div class="pie-section">
+        <svg class="pie-chart" viewBox="0 0 36 36" id="pieCategory"></svg>
+        <div class="pie-legend" id="catLegend"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 趋势图 -->
+  <div class="card mb-16">
+    <h2>📈 7日损耗趋势 <span style="font-size:12px;color:var(--text-secondary)">环比 +15% | 同比 -8%</span></h2>
+    <div class="line-chart">
+      <svg id="trendChart" viewBox="0 0 700 180" preserveAspectRatio="none"></svg>
+    </div>
+  </div>
+
+  <!-- 历史记录 -->
+  <div class="card">
+    <h2>📋 历史记录</h2>
+    <table>
+      <thead>
+        <tr><th>日期</th><th>食材</th><th>类别</th><th>数量</th><th>原因</th><th>金额</th><th>记录人</th></tr>
+      </thead>
+      <tbody id="historyTable"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+// 模拟数据
+const today = new Date().toISOString().slice(0, 10);
+const reasons = { expired:'过期', spoilage:'变质', damage:'破损', overorder:'过量采购', preparation_waste:'加工损耗' };
+const reasonColors = { expired:'#ef4444', spoilage:'#f59e0b', damage:'#8b5cf6', overorder:'#06b6d4', preparation_waste:'#10b981' };
+
+const mockRecords = [
+  { date: today, name:'五花肉', category:'肉类', qty:5, unit:'斤', cost:90, reason:'expired', by:'张三' },
+  { date: today, name:'青菜', category:'蔬菜', qty:10, unit:'斤', cost:40, reason:'spoilage', by:'李四' },
+  { date: today, name:'鸡蛋', category:'蛋类', qty:30, unit:'个', cost:60, reason:'damage', by:'王五' },
+  { date: today, name:'大米', category:'粮油', qty:2, unit:'袋', cost:80, reason:'overorder', by:'张三' },
+  { date: today, name:'食用油', category:'粮油', qty:1, unit:'桶', cost:56, reason:'preparation_waste', by:'赵六' },
+  { date: today, name:'豆腐', category:'豆制品', qty:8, unit:'斤', cost:60, reason:'expired', by:'李四' },
+];
+
+const last7 = [];
+for (let i = 6; i >= 0; i--) {
+  const d = new Date(); d.setDate(d.getDate() - i);
+  last7.push({ date: d.toISOString().slice(5,10), loss: Math.floor(Math.random()*300+100) });
+}
+last7[6].loss = 386;
+
+// 排行榜
+function renderLeaderboard() {
+  const data = [
+    { name:'五花肉', loss:200 },
+    { name:'大米', loss:160 },
+    { name:'豆腐', loss:60 },
+    { name:'鸡蛋', loss:60 },
+    { name:'食用油', loss:56 },
+  ];
+  const max = Math.max(...data.map(d=>d.loss));
+  const el = document.getElementById('leaderboardChart');
+  el.innerHTML = data.map(d => `
+    <div class="bar-item">
+      <div class="bar-value">¥${d.loss}</div>
+      <div class="bar" style="height:${d.loss/max*100}%;background:${d.loss>100?'var(--red)':'var(--accent)'}"></div>
+      <div class="bar-label">${d.name}</div>
+    </div>
+  `).join('');
+}
+
+// 饼图
+function renderPie(svgId, legendId, data, colorMap) {
+  const svg = document.getElementById(svgId);
+  const legend = document.getElementById(legendId);
+  let offset = 25;
+  let html = '';
+  legend.innerHTML = '';
+  data.forEach(d => {
+    const color = colorMap ? colorMap[d.key] || '#64748b' : d.color;
+    html += `<circle cx="18" cy="18" r="15.9" fill="none" stroke="${color}" stroke-width="3.5"
+      stroke-dasharray="${d.pct} ${100-d.pct}" stroke-dashoffset="${offset}" />`;
+    offset -= d.pct;
+    legend.innerHTML += `<div class="pie-legend-item"><div class="pie-dot" style="background:${color}"></div>${d.label} ${d.pct}%</div>`;
+  });
+  svg.innerHTML = html;
+}
+
+function renderReasonPie() {
+  const grouped = {};
+  mockRecords.forEach(r => { grouped[r.reason] = (grouped[r.reason]||0) + r.cost; });
+  const total = Object.values(grouped).reduce((a,b)=>a+b,0);
+  const data = Object.entries(grouped).map(([k,v]) => ({
+    key: k, label: reasons[k], pct: Math.round(v/total*100)
+  })).sort((a,b) => b.pct - a.pct);
+  renderPie('pieReason', 'pieLegend', data, reasonColors);
+}
+
+function renderCategoryPie() {
+  const grouped = {};
+  const colors = {};
+  const palette = ['#f97316','#06b6d4','#8b5cf6','#10b981','#ef4444','#f59e0b'];
+  mockRecords.forEach(r => { grouped[r.category] = (grouped[r.category]||0) + r.cost; });
+  const total = Object.values(grouped).reduce((a,b)=>a+b,0);
+  let i = 0;
+  const data = Object.entries(grouped).map(([k,v]) => {
+    colors[k] = palette[i++ % palette.length];
+    return { key: k, label: k, pct: Math.round(v/total*100) };
+  });
+  renderPie('pieCategory', 'catLegend', data, colors);
+}
+
+// 趋势折线图
+function renderTrend() {
+  const svg = document.getElementById('trendChart');
+  const w = 700, h = 180, pad = 40;
+  const max = Math.max(...last7.map(d=>d.loss)) * 1.2;
+  const points = last7.map((d,i) => {
+    const x = pad + i * ((w - pad*2) / 6);
+    const y = h - pad - (d.loss / max) * (h - pad*2);
+    return `${x},${y}`;
+  });
+
+  let pathD = `M ${points.join(' L ')}`;
+  let areaD = pathD + ` L ${pad + 6*((w-pad*2)/6)},${h-pad} L ${pad},${h-pad} Z`;
+
+  let labels = last7.map((d,i) => {
+    const x = pad + i * ((w-pad*2)/6);
+    return `<text x="${x}" y="${h-8}" text-anchor="middle" class="axis-label">${d.date}</text>`;
+  }).join('');
+
+  let dots = last7.map((d,i) => {
+    const x = pad + i * ((w-pad*2)/6);
+    const y = h - pad - (d.loss/max)*(h-pad*2);
+    return `<circle cx="${x}" cy="${y}" r="4" fill="var(--accent)" stroke="#0f172a" stroke-width="2"/>
+            <text x="${x}" y="${y-10}" text-anchor="middle" fill="var(--text-primary)" font-size="11">¥${d.loss}</text>`;
+  }).join('');
+
+  svg.innerHTML = `
+    <defs><linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
+    </linearGradient></defs>
+    <path d="${areaD}" fill="url(#areaGrad)"/>
+    <path d="${pathD}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/>
+    ${dots}${labels}
+    <line x1="${pad}" y1="${h-pad}" x2="${w-pad}" y2="${h-pad}" stroke="var(--border)" stroke-width="1"/>
+  `;
+}
+
+// 仪表盘
+function renderGauge() {
+  const rate = 9.2;
+  const pct = Math.min(rate / 20 * 100, 100);
+  const fill = document.getElementById('gaugeFill');
+  const deg = pct * 1.8;
+  fill.style.borderColor = rate >= 12 ? 'var(--red)' : rate >= 8 ? 'var(--yellow)' : 'var(--green)';
+  fill.style.clipPath = `polygon(0 0, ${pct}% 0, ${pct}% 50%, 0 50%)`;
+  document.getElementById('gaugeValue').textContent = rate + '%';
+  document.getElementById('gaugeValue').style.color = rate >= 12 ? 'var(--red)' : rate >= 8 ? 'var(--yellow)' : 'var(--green)';
+}
+
+// 历史表格
+function renderHistory() {
+  const el = document.getElementById('historyTable');
+  el.innerHTML = mockRecords.map(r => `
+    <tr>
+      <td>${r.date}</td><td>${r.name}</td><td>${r.category}</td>
+      <td>${r.qty}${r.unit}</td><td>${reasons[r.reason]}</td>
+      <td style="color:var(--red)">¥${r.cost}</td><td>${r.by}</td>
+    </tr>
+  `).join('');
+}
+
+// 提交损耗
+function addLoss() {
+  const name = document.getElementById('inputName').value;
+  const qty = document.getElementById('inputQty').value;
+  const cost = document.getElementById('inputCost').value;
+  if (!name || !qty) { alert('请填写食材名称和数量'); return; }
+  const total = (parseFloat(qty) * parseFloat(cost || 0)).toFixed(0);
+  mockRecords.unshift({
+    date: today, name, category:'新增', qty: parseFloat(qty),
+    unit: document.getElementById('inputUnit').value,
+    cost: parseFloat(total),
+    reason: document.getElementById('inputReason').value,
+    by: document.getElementById('inputBy').value || '未填写',
+  });
+  alert(`已记录 ${name} 损耗 ¥${total}`);
+  renderHistory();
+  renderLeaderboard();
+}
+
+// 初始化
+renderLeaderboard();
+renderReasonPie();
+renderCategoryPie();
+renderTrend();
+renderGauge();
+renderHistory();
+</script>
+</body>
+</html>

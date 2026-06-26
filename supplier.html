@@ -1,0 +1,1778 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>供应商管理 - 餐饮AI店长</title>
+<style>
+/* ============================================================
+   全局样式 & CSS变量
+   ============================================================ */
+:root {
+  --bg-primary: #0f172a;
+  --bg-card: #1e293b;
+  --bg-card-hover: #273548;
+  --bg-input: #334155;
+  --accent: #f97316;
+  --accent-light: #fb923c;
+  --accent-dark: #ea580c;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --success: #10b981;
+  --info: #3b82f6;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --border: #334155;
+  --grade-a: #10b981;
+  --grade-b: #3b82f6;
+  --grade-c: #f59e0b;
+  --grade-d: #ef4444;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 4px 6px -1px rgba(0,0,0,0.3);
+  --transition: all 0.2s ease;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ============================================================
+   布局
+   ============================================================ */
+.app-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.header h1 {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.header h1 span { color: var(--accent); }
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.btn {
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+.btn-primary:hover { background: var(--accent-dark); }
+
+.btn-secondary {
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+.btn-secondary:hover { background: var(--bg-card-hover); }
+
+.btn-sm {
+  padding: 6px 14px;
+  font-size: 12px;
+}
+
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-danger:hover { background: #dc2626; }
+
+/* ============================================================
+   导航标签
+   ============================================================ */
+.nav-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 24px;
+  background: var(--bg-card);
+  padding: 4px;
+  border-radius: var(--radius);
+  width: fit-content;
+}
+
+.nav-tab {
+  padding: 10px 24px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: var(--transition);
+  border: none;
+  background: transparent;
+}
+
+.nav-tab:hover { color: var(--text-primary); background: var(--bg-input); }
+.nav-tab.active { background: var(--accent); color: #fff; }
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ============================================================
+   统计面板
+   ============================================================ */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 20px;
+  border: 1px solid var(--border);
+  transition: var(--transition);
+}
+
+.stat-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.stat-card .stat-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.stat-card .stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.stat-card .stat-icon {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.stat-card.accent .stat-value { color: var(--accent); }
+.stat-card.success .stat-value { color: var(--success); }
+.stat-card.warning .stat-value { color: var(--warning); }
+.stat-card.danger .stat-value { color: var(--danger); }
+
+/* ============================================================
+   供应商卡片列表
+   ============================================================ */
+.section-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-title .badge {
+  background: var(--accent);
+  color: #fff;
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 12px;
+}
+
+.supplier-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.supplier-card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 20px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative;
+}
+
+.supplier-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.supplier-card .card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.supplier-card .card-name {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.grade-badge {
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.grade-a { background: rgba(16,185,129,0.15); color: var(--grade-a); }
+.grade-b { background: rgba(59,130,246,0.15); color: var(--grade-b); }
+.grade-c { background: rgba(245,158,11,0.15); color: var(--grade-c); }
+.grade-d { background: rgba(239,68,68,0.15); color: var(--grade-d); }
+.grade-none { background: var(--bg-input); color: var(--text-muted); }
+
+.supplier-card .card-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.supplier-card .card-categories {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.category-tag {
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.supplier-card .card-footer {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.status-active { background: var(--success); }
+.status-inactive { background: var(--text-muted); }
+.status-blacklisted { background: var(--danger); }
+
+/* ============================================================
+   弹窗
+   ============================================================ */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.modal-overlay.active { display: flex; }
+
+.modal {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  width: 100%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+}
+
+.modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  background: var(--bg-card);
+  z-index: 10;
+}
+
+.modal-header h2 { font-size: 18px; font-weight: 600; }
+
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 24px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+.modal-close:hover { background: var(--bg-input); color: var(--text-primary); }
+
+.modal-body { padding: 24px; }
+
+/* ============================================================
+   表单
+   ============================================================ */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.form-group { margin-bottom: 16px; }
+.form-group.full-width { grid-column: 1 / -1; }
+
+.form-group label {
+  display: block;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 14px;
+  transition: var(--transition);
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(249,115,22,0.15);
+}
+
+.form-group textarea { resize: vertical; min-height: 80px; }
+
+/* ============================================================
+   表格
+   ============================================================ */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.data-table th {
+  text-align: left;
+  padding: 12px 16px;
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border);
+}
+
+.data-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+}
+
+.data-table tr:hover td { background: rgba(249,115,22,0.05); }
+
+.data-table th:first-child { border-radius: var(--radius-sm) 0 0 0; }
+.data-table th:last-child { border-radius: 0 var(--radius-sm) 0 0; }
+
+/* ============================================================
+   验收面板
+   ============================================================ */
+.acceptance-panel {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.acceptance-header {
+  padding: 16px 20px;
+  background: var(--bg-input);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.acceptance-header h3 { font-size: 15px; font-weight: 600; }
+
+.acceptance-items { padding: 0; }
+
+.acceptance-item {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: 1fr 120px 120px 100px 80px;
+  gap: 16px;
+  align-items: center;
+}
+
+.acceptance-item:last-child { border-bottom: none; }
+
+.acceptance-item .item-name {
+  font-weight: 500;
+}
+
+.acceptance-item .item-category {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.acceptance-item input {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 14px;
+  text-align: center;
+}
+
+.acceptance-item input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.variance-display {
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.variance-ok { color: var(--success); }
+.variance-warn { color: var(--warning); }
+.variance-danger { color: var(--danger); background: rgba(239,68,68,0.1); padding: 4px 8px; border-radius: 4px; }
+
+.acceptance-footer {
+  padding: 16px 20px;
+  background: var(--bg-input);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--border);
+}
+
+/* ============================================================
+   雷达图（纯CSS简易版）
+   ============================================================ */
+.radar-container {
+  width: 200px;
+  height: 200px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.radar-chart {
+  width: 100%;
+  height: 100%;
+}
+
+/* ============================================================
+   排名面板
+   ============================================================ */
+.ranking-list { margin-bottom: 24px; }
+
+.ranking-item {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+  transition: var(--transition);
+}
+
+.ranking-item:hover {
+  border-color: var(--accent);
+}
+
+.ranking-num {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 16px;
+  margin-right: 16px;
+  flex-shrink: 0;
+}
+
+.ranking-num.top1 { background: var(--accent); color: #fff; }
+.ranking-num.top2 { background: var(--bg-input); color: var(--accent); }
+.ranking-num.top3 { background: var(--bg-input); color: var(--text-secondary); }
+
+.ranking-info { flex: 1; }
+.ranking-name { font-weight: 600; font-size: 15px; }
+.ranking-meta { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+
+.ranking-scores {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+
+.score-item {
+  text-align: center;
+}
+
+.score-item .score-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.score-item .score-value {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.score-bar {
+  width: 100px;
+  height: 6px;
+  background: var(--bg-input);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.score-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.6s ease;
+}
+
+/* ============================================================
+   异常订单
+   ============================================================ */
+.abnormal-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--danger);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 12px;
+}
+
+.abnormal-card .abnormal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.abnormal-card .abnormal-title { font-weight: 600; font-size: 15px; }
+.abnormal-card .abnormal-reason { color: var(--danger); font-size: 13px; margin-bottom: 6px; }
+.abnormal-card .abnormal-meta { font-size: 12px; color: var(--text-muted); }
+
+/* ============================================================
+   预警横幅
+   ============================================================ */
+.alert-banner {
+  background: rgba(239,68,68,0.1);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius);
+  padding: 14px 20px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.alert-banner.warning-banner {
+  background: rgba(245,158,11,0.1);
+  border-color: var(--warning);
+}
+
+.alert-banner .alert-icon { font-size: 20px; }
+.alert-banner .alert-text { flex: 1; font-size: 14px; }
+.alert-banner .alert-count {
+  background: var(--danger);
+  color: #fff;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ============================================================
+   详情面板
+   ============================================================ */
+.detail-section {
+  margin-bottom: 24px;
+}
+
+.detail-section h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  color: var(--accent);
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.detail-field .field-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.detail-field .field-value {
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+/* 简易雷达图 - SVG */
+.score-radar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 16px;
+  background: var(--bg-input);
+  border-radius: var(--radius);
+}
+
+.radar-svg { width: 180px; height: 180px; }
+
+.radar-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+/* ============================================================
+   响应式
+   ============================================================ */
+@media (max-width: 768px) {
+  .app-container { padding: 16px; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .supplier-grid { grid-template-columns: 1fr; }
+  .form-grid { grid-template-columns: 1fr; }
+  .acceptance-item { grid-template-columns: 1fr 1fr; }
+  .ranking-scores { gap: 12px; }
+  .detail-grid { grid-template-columns: 1fr; }
+  .nav-tabs { flex-wrap: wrap; }
+}
+
+/* 动画 */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in { animation: fadeIn 0.3s ease; }
+
+/* 滚动条 */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* 拍照按钮 */
+.btn-photo {
+  background: var(--bg-input);
+  border: 1px dashed var(--border);
+  color: var(--text-secondary);
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: var(--transition);
+}
+.btn-photo:hover { border-color: var(--accent); color: var(--accent); }
+
+/* 空状态 */
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--text-muted);
+}
+.empty-state .empty-icon { font-size: 48px; margin-bottom: 16px; }
+.empty-state .empty-text { font-size: 15px; }
+</style>
+</head>
+<body>
+<div class="app-container">
+  <!-- ============================================================
+       头部
+       ============================================================ -->
+  <div class="header">
+    <h1>🥬 <span>供应商管理</span> · 采购验收</h1>
+    <div class="header-actions">
+      <button class="btn btn-secondary" onclick="showAlertSummary()">🔔 预警中心</button>
+      <button class="btn btn-primary" onclick="openAddSupplierModal()">＋ 新增供应商</button>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       预警横幅
+       ============================================================ -->
+  <div id="alertBanner"></div>
+
+  <!-- ============================================================
+       导航标签
+       ============================================================ -->
+  <div class="nav-tabs">
+    <button class="nav-tab active" data-tab="overview">📊 总览</button>
+    <button class="nav-tab" data-tab="suppliers">🏢 供应商</button>
+    <button class="nav-tab" data-tab="acceptance">📋 采购验收</button>
+    <button class="nav-tab" data-tab="ranking">🏆 评分排行</button>
+    <button class="nav-tab" data-tab="abnormal">⚠️ 异常记录</button>
+  </div>
+
+  <!-- ============================================================
+       TAB: 总览
+       ============================================================ -->
+  <div id="tab-overview" class="tab-panel active fade-in">
+    <div class="stats-grid" id="statsGrid"></div>
+    <div class="section-title">供应商一览 <span class="badge" id="supplierCount">0</span></div>
+    <div class="supplier-grid" id="supplierGrid"></div>
+  </div>
+
+  <!-- ============================================================
+       TAB: 供应商列表
+       ============================================================ -->
+  <div id="tab-suppliers" class="tab-panel fade-in">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div class="section-title" style="margin-bottom:0;">全部供应商 <span class="badge" id="allSupplierCount">0</span></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-sm btn-secondary filter-btn active" data-filter="all">全部</button>
+        <button class="btn btn-sm btn-secondary filter-btn" data-filter="active">活跃</button>
+        <button class="btn btn-sm btn-secondary filter-btn" data-filter="blacklisted">黑名单</button>
+      </div>
+    </div>
+    <div class="supplier-grid" id="allSupplierGrid"></div>
+  </div>
+
+  <!-- ============================================================
+       TAB: 采购验收
+       ============================================================ -->
+  <div id="tab-acceptance" class="tab-panel fade-in">
+    <div class="section-title">今日待验收 <span class="badge" id="pendingCount">0</span></div>
+    <div id="pendingAcceptance"></div>
+
+    <div class="section-title" style="margin-top:32px;">验收操作</div>
+    <div id="acceptanceOperation"></div>
+
+    <div class="section-title" style="margin-top:32px;">验收历史</div>
+    <div style="overflow-x:auto;">
+      <table class="data-table" id="acceptanceHistoryTable">
+        <thead>
+          <tr>
+            <th>采购单号</th>
+            <th>供应商</th>
+            <th>下单日期</th>
+            <th>验收状态</th>
+            <th>品质评分</th>
+            <th>数量差异</th>
+            <th>异常</th>
+            <th>验收人</th>
+          </tr>
+        </thead>
+        <tbody id="acceptanceHistoryBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       TAB: 评分排行
+       ============================================================ -->
+  <div id="tab-ranking" class="tab-panel fade-in">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div class="section-title" style="margin-bottom:0;">供应商评分排行</div>
+      <select id="rankingPeriod" class="form-group" style="padding:8px 14px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-primary);font-size:14px;">
+        <option value="2026-06">2026年6月</option>
+        <option value="2026-05">2026年5月</option>
+        <option value="2026-04">2026年4月</option>
+      </select>
+    </div>
+    <div class="ranking-list" id="rankingList"></div>
+  </div>
+
+  <!-- ============================================================
+       TAB: 异常记录
+       ============================================================ -->
+  <div id="tab-abnormal" class="tab-panel fade-in">
+    <div class="section-title">异常订单 <span class="badge" style="background:var(--danger);" id="abnormalCount">0</span></div>
+    <div id="abnormalList"></div>
+  </div>
+</div>
+
+<!-- ============================================================
+     供应商详情弹窗
+     ============================================================ -->
+<div class="modal-overlay" id="supplierDetailModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="detailModalTitle">供应商详情</h2>
+      <button class="modal-close" onclick="closeModal('supplierDetailModal')">&times;</button>
+    </div>
+    <div class="modal-body" id="supplierDetailBody"></div>
+  </div>
+</div>
+
+<!-- ============================================================
+     新增供应商弹窗
+     ============================================================ -->
+<div class="modal-overlay" id="addSupplierModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>新增供应商</h2>
+      <button class="modal-close" onclick="closeModal('addSupplierModal')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>供应商名称 *</label>
+          <input type="text" id="newSupplierName" placeholder="例：鲜达蔬菜配送">
+        </div>
+        <div class="form-group">
+          <label>联系人</label>
+          <input type="text" id="newSupplierContact" placeholder="例：张三">
+        </div>
+        <div class="form-group">
+          <label>联系电话</label>
+          <input type="text" id="newSupplierPhone" placeholder="例：13800138000">
+        </div>
+        <div class="form-group">
+          <label>主营品类</label>
+          <input type="text" id="newSupplierCategories" placeholder="逗号分隔，如：蔬菜,水果,肉类">
+        </div>
+        <div class="form-group">
+          <label>合作开始日期</label>
+          <input type="date" id="newSupplierCoopStart">
+        </div>
+        <div class="form-group">
+          <label>合同到期日</label>
+          <input type="date" id="newSupplierContractEnd">
+        </div>
+        <div class="form-group">
+          <label>资质到期日</label>
+          <input type="date" id="newSupplierQualExpiry">
+        </div>
+        <div class="form-group">
+          <label>地址</label>
+          <input type="text" id="newSupplierAddress" placeholder="供应商地址">
+        </div>
+        <div class="form-group full-width">
+          <label>备注</label>
+          <textarea id="newSupplierNotes" placeholder="备注信息..."></textarea>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px;">
+        <button class="btn btn-secondary" onclick="closeModal('addSupplierModal')">取消</button>
+        <button class="btn btn-primary" onclick="addNewSupplier()">确认添加</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     预警弹窗
+     ============================================================ -->
+<div class="modal-overlay" id="alertModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>🔔 预警中心</h2>
+      <button class="modal-close" onclick="closeModal('alertModal')">&times;</button>
+    </div>
+    <div class="modal-body" id="alertModalBody"></div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// 模拟数据
+// ============================================================
+const today = new Date().toISOString().split('T')[0];
+
+const suppliers = [
+  {
+    id: 's1', name: '鲜达蔬菜配送', contact_person: '张三', phone: '13800138001',
+    main_categories: ['蔬菜', '水果'], status: 'active',
+    qual_expiry_date: new Date(Date.now() + 15*86400000).toISOString().split('T')[0],
+    contract_end_date: '2026-12-31', cooperation_start: '2025-01-01',
+    address: '北京市朝阳区XX路100号', score: 4.6, grade: 'A'
+  },
+  {
+    id: 's2', name: '优质肉类供应', contact_person: '李四', phone: '13800138002',
+    main_categories: ['猪肉', '牛肉', '鸡肉'], status: 'active',
+    qual_expiry_date: new Date(Date.now() + 60*86400000).toISOString().split('T')[0],
+    contract_end_date: '2026-06-30', cooperation_start: '2025-03-01',
+    address: '北京市海淀区YY路200号', score: 4.1, grade: 'B'
+  },
+  {
+    id: 's3', name: '海鲜直达', contact_person: '王五', phone: '13800138003',
+    main_categories: ['鱼', '虾', '蟹'], status: 'active',
+    qual_expiry_date: new Date(Date.now() + 3*86400000).toISOString().split('T')[0],
+    contract_end_date: '2027-03-15', cooperation_start: '2024-06-01',
+    address: '北京市丰台区ZZ路300号', score: 3.2, grade: 'C'
+  },
+  {
+    id: 's4', name: '粮油世家', contact_person: '赵六', phone: '13800138004',
+    main_categories: ['大米', '面粉', '食用油'], status: 'active',
+    qual_expiry_date: new Date(Date.now() + 180*86400000).toISOString().split('T')[0],
+    contract_end_date: '2027-06-30', cooperation_start: '2024-01-01',
+    address: '北京市大兴区AA路400号', score: 4.8, grade: 'A'
+  },
+  {
+    id: 's5', name: '调味坊', contact_person: '孙七', phone: '13800138005',
+    main_categories: ['酱油', '醋', '调料'], status: 'blacklisted',
+    qual_expiry_date: new Date(Date.now() - 5*86400000).toISOString().split('T')[0],
+    contract_end_date: '2025-12-31', cooperation_start: '2023-06-01',
+    address: '北京市通州区BB路500号', score: 1.9, grade: 'D'
+  },
+  {
+    id: 's6', name: '乳制品通', contact_person: '周八', phone: '13800138006',
+    main_categories: ['牛奶', '酸奶', '奶酪'], status: 'active',
+    qual_expiry_date: new Date(Date.now() + 90*86400000).toISOString().split('T')[0],
+    contract_end_date: '2027-01-15', cooperation_start: '2025-06-01',
+    address: '北京市昌平区CC路600号', score: 3.8, grade: 'B'
+  },
+];
+
+const orders = [
+  {
+    id: 'o1', purchase_order_no: 'PO-2026-06-23-001', supplier_id: 's1',
+    supplier_name: '鲜达蔬菜配送', order_date: today, expected_date: today,
+    acceptance_status: 'pending', total_amount: 800,
+    items: [
+      { name: '大白菜', category: '蔬菜', ordered_qty: 50, ordered_unit: '斤', received_qty: 0, quality_score: 0 },
+      { name: '西红柿', category: '蔬菜', ordered_qty: 30, ordered_unit: '斤', received_qty: 0, quality_score: 0 },
+      { name: '土豆', category: '蔬菜', ordered_qty: 40, ordered_unit: '斤', received_qty: 0, quality_score: 0 },
+    ],
+    inspector: '', quality_score: null, quantity_variance_pct: null, abnormal_flag: false
+  },
+  {
+    id: 'o2', purchase_order_no: 'PO-2026-06-23-002', supplier_id: 's2',
+    supplier_name: '优质肉类供应', order_date: today, expected_date: today,
+    acceptance_status: 'pending', total_amount: 2500,
+    items: [
+      { name: '五花肉', category: '猪肉', ordered_qty: 80, ordered_unit: '斤', received_qty: 0, quality_score: 0 },
+      { name: '牛腱子', category: '牛肉', ordered_qty: 40, ordered_unit: '斤', received_qty: 0, quality_score: 0 },
+    ],
+    inspector: '', quality_score: null, quantity_variance_pct: null, abnormal_flag: false
+  },
+];
+
+const acceptanceHistory = [
+  {
+    id: 'h1', purchase_order_no: 'PO-2026-06-22-001', supplier_id: 's1',
+    supplier_name: '鲜达蔬菜配送', order_date: '2026-06-22',
+    acceptance_status: 'accepted', quality_score: 4.5,
+    quantity_variance_pct: 2.0, abnormal_flag: false, inspector: '店长小明',
+    items: [
+      { name: '大白菜', ordered_qty: 50, received_qty: 49, variance_pct: 2.0, item_abnormal: false },
+      { name: '西红柿', ordered_qty: 30, received_qty: 30, variance_pct: 0, item_abnormal: false },
+    ]
+  },
+  {
+    id: 'h2', purchase_order_no: 'PO-2026-06-22-002', supplier_id: 's2',
+    supplier_name: '优质肉类供应', order_date: '2026-06-22',
+    acceptance_status: 'partial', quality_score: 3.8,
+    quantity_variance_pct: 8.5, abnormal_flag: true, abnormal_reason: '异常品项: 五花肉; 总数量差异 8.5%', inspector: '厨师长',
+    items: [
+      { name: '五花肉', ordered_qty: 100, received_qty: 88, variance_pct: 12.0, item_abnormal: true },
+      { name: '牛腱子', ordered_qty: 40, received_qty: 38, variance_pct: 5.0, item_abnormal: true },
+    ]
+  },
+  {
+    id: 'h3', purchase_order_no: 'PO-2026-06-21-001', supplier_id: 's4',
+    supplier_name: '粮油世家', order_date: '2026-06-21',
+    acceptance_status: 'accepted', quality_score: 4.8,
+    quantity_variance_pct: 0.5, abnormal_flag: false, inspector: '店长小明',
+    items: [
+      { name: '东北大米', ordered_qty: 200, received_qty: 199, variance_pct: 0.5, item_abnormal: false },
+    ]
+  },
+  {
+    id: 'h4', purchase_order_no: 'PO-2026-06-21-002', supplier_id: 's3',
+    supplier_name: '海鲜直达', order_date: '2026-06-21',
+    acceptance_status: 'partial', quality_score: 3.0,
+    quantity_variance_pct: 15.0, abnormal_flag: true, abnormal_reason: '异常品项: 基围虾, 大闸蟹; 总数量差异 15%', inspector: '厨师长',
+    items: [
+      { name: '基围虾', ordered_qty: 20, received_qty: 15, variance_pct: 25.0, item_abnormal: true },
+      { name: '大闸蟹', ordered_qty: 30, received_qty: 28, variance_pct: 6.7, item_abnormal: true },
+    ]
+  },
+];
+
+const rankings = [
+  { rank: 1, supplier_name: '粮油世家', overall_score: 4.8, grade: 'A', price_score: 4.5, quality_score: 5.0, delivery_score: 4.9 },
+  { rank: 2, supplier_name: '鲜达蔬菜配送', overall_score: 4.6, grade: 'A', price_score: 4.2, quality_score: 4.8, delivery_score: 4.7 },
+  { rank: 3, supplier_name: '乳制品通', overall_score: 3.8, grade: 'B', price_score: 3.5, quality_score: 4.0, delivery_score: 3.9 },
+  { rank: 4, supplier_name: '优质肉类供应', overall_score: 3.5, grade: 'B', price_score: 3.8, quality_score: 3.0, delivery_score: 3.7 },
+  { rank: 5, supplier_name: '海鲜直达', overall_score: 3.2, grade: 'C', price_score: 3.0, quality_score: 3.5, delivery_score: 3.0 },
+  { rank: 6, supplier_name: '调味坊', overall_score: 1.9, grade: 'D', price_score: 2.0, quality_score: 1.5, delivery_score: 2.2 },
+];
+
+// ============================================================
+// 渲染函数
+// ============================================================
+
+function getGradeClass(grade) {
+  if (!grade) return 'grade-none';
+  return 'grade-' + grade.toLowerCase();
+}
+
+function getStatusDot(status) {
+  const map = { active: 'status-active', inactive: 'status-inactive', blacklisted: 'status-blacklisted' };
+  return map[status] || 'status-inactive';
+}
+
+function getStatusLabel(status) {
+  const map = { active: '活跃', inactive: '停用', blacklisted: '黑名单' };
+  return map[status] || status;
+}
+
+function getVarianceClass(pct) {
+  if (pct === null || pct === undefined) return 'variance-ok';
+  if (pct >= 5) return 'variance-danger';
+  if (pct >= 3) return 'variance-warn';
+  return 'variance-ok';
+}
+
+function getAcceptanceStatusLabel(status) {
+  const map = {
+    pending: '<span style="color:var(--text-muted)">⏳ 待验收</span>',
+    accepted: '<span style="color:var(--success)">✅ 已通过</span>',
+    rejected: '<span style="color:var(--danger)">❌ 已拒收</span>',
+    partial: '<span style="color:var(--warning)">⚠️ 部分通过</span>',
+  };
+  return map[status] || status;
+}
+
+// 统计面板
+function renderStats() {
+  const total = suppliers.length;
+  const active = suppliers.filter(s => s.status === 'active').length;
+  const blacklisted = suppliers.filter(s => s.status === 'blacklisted').length;
+  const expiring = suppliers.filter(s => {
+    const d = new Date(s.qual_expiry_date);
+    const now = new Date();
+    return (d - now) / 86400000 <= 30 && s.status === 'active';
+  }).length;
+
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card accent">
+      <div class="stat-icon">🏢</div>
+      <div class="stat-label">供应商总数</div>
+      <div class="stat-value">${total}</div>
+    </div>
+    <div class="stat-card success">
+      <div class="stat-icon">✅</div>
+      <div class="stat-label">活跃供应商</div>
+      <div class="stat-value">${active}</div>
+    </div>
+    <div class="stat-card danger">
+      <div class="stat-icon">🚫</div>
+      <div class="stat-label">黑名单</div>
+      <div class="stat-value">${blacklisted}</div>
+    </div>
+    <div class="stat-card warning">
+      <div class="stat-icon">⏰</div>
+      <div class="stat-label">资质即将到期</div>
+      <div class="stat-value">${expiring}</div>
+    </div>
+  `;
+}
+
+// 供应商卡片
+function renderSupplierCard(s) {
+  return `
+    <div class="supplier-card" onclick="showSupplierDetail('${s.id}')">
+      <div class="card-header">
+        <div class="card-name">
+          <span class="status-dot ${getStatusDot(s.status)}" style="margin-right:8px;"></span>
+          ${s.name}
+        </div>
+        <span class="grade-badge ${getGradeClass(s.grade)}">${s.grade || '未评'}</span>
+      </div>
+      <div class="card-meta">👤 ${s.contact_person || '-'} · 📞 ${s.phone || '-'}</div>
+      <div class="card-meta">📅 合同到期: ${s.contract_end_date || '-'}</div>
+      ${s.score ? `<div class="card-meta">⭐ 综合评分: <strong style="color:var(--accent)">${s.score}</strong></div>` : ''}
+      <div class="card-categories">
+        ${s.main_categories.map(c => `<span class="category-tag">${c}</span>`).join('')}
+      </div>
+      <div class="card-footer">
+        <span>${getStatusLabel(s.status)}</span>
+        <span>资质到期: ${s.qual_expiry_date || '-'}</span>
+      </div>
+    </div>
+  `;
+}
+
+function renderSupplierGrid() {
+  const grid = document.getElementById('supplierGrid');
+  grid.innerHTML = suppliers.map(renderSupplierCard).join('');
+  document.getElementById('supplierCount').textContent = suppliers.length;
+}
+
+function renderAllSupplierGrid(filter = 'all') {
+  const filtered = filter === 'all' ? suppliers : suppliers.filter(s => s.status === filter);
+  const grid = document.getElementById('allSupplierGrid');
+  grid.innerHTML = filtered.length ? filtered.map(renderSupplierCard).join('') :
+    '<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-text">暂无供应商</div></div>';
+  document.getElementById('allSupplierCount').textContent = filtered.length;
+}
+
+// 预警横幅
+function renderAlertBanner() {
+  const expiring = suppliers.filter(s => {
+    const d = new Date(s.qual_expiry_date);
+    const now = new Date();
+    return (d - now) / 86400000 <= 30 && s.status === 'active';
+  });
+  const abnormalOrders = acceptanceHistory.filter(o => o.abnormal_flag);
+  const lowScore = suppliers.filter(s => s.grade === 'D' && s.status === 'active');
+
+  const totalCount = expiring.length + abnormalOrders.length + lowScore.length;
+  if (totalCount === 0) {
+    document.getElementById('alertBanner').innerHTML = '';
+    return;
+  }
+
+  const parts = [];
+  if (abnormalOrders.length) parts.push(`${abnormalOrders.length}个异常订单`);
+  if (expiring.length) parts.push(`${expiring.length}个供应商资质即将到期`);
+  if (lowScore.length) parts.push(`${lowScore.length}个D级供应商`);
+
+  const bannerClass = abnormalOrders.length ? '' : 'warning-banner';
+  document.getElementById('alertBanner').innerHTML = `
+    <div class="alert-banner ${bannerClass}">
+      <span class="alert-icon">${abnormalOrders.length ? '🚨' : '⚠️'}</span>
+      <span class="alert-text">需要关注：${parts.join('，')}</span>
+      <span class="alert-count">${totalCount}</span>
+    </div>
+  `;
+}
+
+// 待验收列表
+function renderPendingAcceptance() {
+  const pending = orders.filter(o => o.acceptance_status === 'pending');
+  document.getElementById('pendingCount').textContent = pending.length;
+
+  if (!pending.length) {
+    document.getElementById('pendingAcceptance').innerHTML =
+      '<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-text">今日无待验收订单</div></div>';
+    return;
+  }
+
+  document.getElementById('pendingAcceptance').innerHTML = pending.map(order => `
+    <div class="acceptance-panel">
+      <div class="acceptance-header">
+        <div>
+          <h3>${order.purchase_order_no}</h3>
+          <div style="font-size:13px;color:var(--text-secondary);margin-top:4px;">
+            ${order.supplier_name} · 金额 ¥${order.total_amount?.toLocaleString() || '0'}
+          </div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="startAcceptance('${order.id}')">开始验收</button>
+      </div>
+      <div style="padding:16px 20px;font-size:14px;">
+        <div style="margin-bottom:8px;color:var(--text-secondary);">品项明细：</div>
+        ${order.items.map(item => `
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);">
+            <span>${item.name}</span>
+            <span style="color:var(--text-secondary);">预到 ${item.ordered_qty} ${item.ordered_unit}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+// 验收操作区
+let activeAcceptance = null;
+
+function startAcceptance(orderId) {
+  const order = orders.find(o => o.id === orderId);
+  if (!order) return;
+  activeAcceptance = order;
+
+  const container = document.getElementById('acceptanceOperation');
+  container.innerHTML = `
+    <div class="acceptance-panel" id="acceptanceForm">
+      <div class="acceptance-header">
+        <div>
+          <h3>验收：${order.purchase_order_no}</h3>
+          <div style="font-size:13px;color:var(--text-secondary);margin-top:4px;">
+            ${order.supplier_name} · 验收人:
+            <input type="text" id="inspectorName" placeholder="输入验收人姓名" style="width:120px;padding:4px 8px;margin-left:4px;background:var(--bg-card);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);font-size:13px;">
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn-photo" onclick="simulatePhoto()">📷 拍照</button>
+        </div>
+      </div>
+      <div class="acceptance-items">
+        <div class="acceptance-item" style="background:var(--bg-input);font-size:12px;color:var(--text-muted);font-weight:600;">
+          <div>品项</div>
+          <div style="text-align:center;">预到数量</div>
+          <div style="text-align:center;">实到数量</div>
+          <div style="text-align:center;">品质评分</div>
+          <div style="text-align:center;">差异</div>
+        </div>
+        ${order.items.map((item, idx) => `
+          <div class="acceptance-item" id="item-row-${idx}">
+            <div>
+              <div class="item-name">${item.name}</div>
+              <div class="item-category">${item.category}</div>
+            </div>
+            <div style="text-align:center;color:var(--text-secondary);">
+              ${item.ordered_qty} ${item.ordered_unit}
+            </div>
+            <div>
+              <input type="number" id="received-${idx}" placeholder="0"
+                oninput="calcVariance(${idx}, ${item.ordered_qty})">
+            </div>
+            <div>
+              <input type="number" id="quality-${idx}" placeholder="1-5" min="1" max="5" step="0.5">
+            </div>
+            <div class="variance-display variance-ok" id="variance-${idx}">-</div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="acceptance-footer">
+        <div style="font-size:13px;color:var(--text-secondary);">
+          总差异: <strong id="totalVariance">-</strong> ·
+          状态: <strong id="acceptanceResult">待提交</strong>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-secondary btn-sm" onclick="cancelAcceptance()">取消</button>
+          <button class="btn btn-primary btn-sm" onclick="submitAcceptance()">提交验收</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function calcVariance(idx, orderedQty) {
+  const received = parseFloat(document.getElementById(`received-${idx}`).value) || 0;
+  const variance = orderedQty > 0 ? Math.abs(received - orderedQty) / orderedQty * 100 : 0;
+  const el = document.getElementById(`variance-${idx}`);
+  el.textContent = variance.toFixed(1) + '%';
+  el.className = 'variance-display ' + (variance >= 5 ? 'variance-danger' : variance >= 3 ? 'variance-warn' : 'variance-ok');
+
+  // 计算总差异
+  if (activeAcceptance) {
+    let totalOrdered = 0, totalReceived = 0;
+    activeAcceptance.items.forEach((item, i) => {
+      totalOrdered += item.ordered_qty;
+      const val = parseFloat(document.getElementById(`received-${i}`)?.value) || 0;
+      totalReceived += val;
+    });
+    const totalVar = totalOrdered > 0 ? Math.abs(totalReceived - totalOrdered) / totalOrdered * 100 : 0;
+    document.getElementById('totalVariance').textContent = totalVar.toFixed(1) + '%';
+    document.getElementById('totalVariance').style.color = totalVar >= 5 ? 'var(--danger)' : totalVar >= 3 ? 'var(--warning)' : 'var(--success)';
+  }
+}
+
+function simulatePhoto() {
+  alert('📷 拍照功能（演示模式）：已模拟拍摄验收照片');
+}
+
+function cancelAcceptance() {
+  activeAcceptance = null;
+  document.getElementById('acceptanceOperation').innerHTML = '';
+}
+
+function submitAcceptance() {
+  if (!activeAcceptance) return;
+  const inspector = document.getElementById('inspectorName')?.value;
+  if (!inspector) { alert('请输入验收人姓名'); return; }
+
+  let totalOrdered = 0, totalReceived = 0;
+  let hasVariance = false;
+
+  activeAcceptance.items.forEach((item, idx) => {
+    const received = parseFloat(document.getElementById(`received-${idx}`).value) || 0;
+    totalOrdered += item.ordered_qty;
+    totalReceived += received;
+    if (totalOrdered > 0 && Math.abs(received - item.ordered_qty) / item.ordered_qty * 100 >= 5) {
+      hasVariance = true;
+    }
+  });
+
+  const status = totalReceived === 0 ? 'rejected' :
+    totalReceived < totalOrdered * 0.95 ? 'partial' : 'accepted';
+
+  // 更新订单状态
+  const orderIdx = orders.findIndex(o => o.id === activeAcceptance.id);
+  if (orderIdx >= 0) {
+    orders[orderIdx].acceptance_status = status;
+    orders[orderIdx].inspector = inspector;
+    orders[orderIdx].quantity_variance_pct = totalOrdered > 0 ?
+      Math.abs(totalReceived - totalOrdered) / totalOrdered * 100 : 0;
+    orders[orderIdx].abnormal_flag = hasVariance || orders[orderIdx].quantity_variance_pct >= 5;
+
+    // 移到历史
+    acceptanceHistory.unshift({
+      ...orders[orderIdx],
+      supplier_name: activeAcceptance.supplier_name,
+    });
+    orders.splice(orderIdx, 1);
+  }
+
+  activeAcceptance = null;
+  document.getElementById('acceptanceOperation').innerHTML =
+    `<div style="padding:20px;background:var(--bg-card);border-radius:var(--radius);border:1px solid var(--success);text-align:center;">
+      <div style="font-size:24px;margin-bottom:8px;">✅</div>
+      <div style="font-size:15px;color:var(--success);font-weight:600;">验收已提交</div>
+      <div style="font-size:13px;color:var(--text-secondary);margin-top:4px;">状态：${status === 'accepted' ? '通过' : status === 'partial' ? '部分通过' : '拒收'}</div>
+    </div>`;
+
+  renderPendingAcceptance();
+  renderAcceptanceHistory();
+  renderAlertBanner();
+}
+
+// 验收历史
+function renderAcceptanceHistory() {
+  const tbody = document.getElementById('acceptanceHistoryBody');
+  tbody.innerHTML = acceptanceHistory.map(o => `
+    <tr>
+      <td style="font-weight:500;">${o.purchase_order_no}</td>
+      <td>${o.supplier_name}</td>
+      <td>${o.order_date}</td>
+      <td>${getAcceptanceStatusLabel(o.acceptance_status)}</td>
+      <td>${o.quality_score || '-'}</td>
+      <td><span class="${getVarianceClass(o.quantity_variance_pct)}">${o.quantity_variance_pct !== null ? o.quantity_variance_pct + '%' : '-'}</span></td>
+      <td>${o.abnormal_flag ? '<span style="color:var(--danger);font-weight:600;">⚠ 异常</span>' : '<span style="color:var(--success);">正常</span>'}</td>
+      <td>${o.inspector}</td>
+    </tr>
+  `).join('');
+}
+
+// 排名
+function renderRanking() {
+  const list = document.getElementById('rankingList');
+  list.innerHTML = rankings.map(r => {
+    const numClass = r.rank === 1 ? 'top1' : r.rank === 2 ? 'top2' : r.rank === 3 ? 'top3' : '';
+    const scoreColor = r.grade === 'A' ? 'var(--grade-a)' : r.grade === 'B' ? 'var(--grade-b)' :
+      r.grade === 'C' ? 'var(--grade-c)' : 'var(--grade-d)';
+
+    return `
+      <div class="ranking-item">
+        <div class="ranking-num ${numClass}">${r.rank}</div>
+        <div class="ranking-info">
+          <div class="ranking-name">${r.supplier_name}</div>
+          <div class="ranking-meta">
+            <span class="grade-badge ${getGradeClass(r.grade)}" style="margin-right:8px;">${r.grade}级</span>
+            综合 ${r.overall_score} 分
+          </div>
+        </div>
+        <div class="ranking-scores">
+          <div class="score-item">
+            <div class="score-label">价格</div>
+            <div class="score-value" style="color:var(--accent);">${r.price_score}</div>
+            <div class="score-bar"><div class="score-bar-fill" style="width:${r.price_score/5*100}%;background:var(--accent);"></div></div>
+          </div>
+          <div class="score-item">
+            <div class="score-label">质量</div>
+            <div class="score-value" style="color:var(--info);">${r.quality_score}</div>
+            <div class="score-bar"><div class="score-bar-fill" style="width:${r.quality_score/5*100}%;background:var(--info);"></div></div>
+          </div>
+          <div class="score-item">
+            <div class="score-label">配送</div>
+            <div class="score-value" style="color:var(--success);">${r.delivery_score}</div>
+            <div class="score-bar"><div class="score-bar-fill" style="width:${r.delivery_score/5*100}%;background:var(--success);"></div></div>
+          </div>
+          <div class="score-item">
+            <div class="score-label">综合</div>
+            <div class="score-value" style="color:${scoreColor};font-size:22px;">${r.overall_score}</div>
+            <div class="score-bar"><div class="score-bar-fill" style="width:${r.overall_score/5*100}%;background:${scoreColor};"></div></div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// 异常订单
+function renderAbnormalOrders() {
+  const abnormal = acceptanceHistory.filter(o => o.abnormal_flag);
+  document.getElementById('abnormalCount').textContent = abnormal.length;
+
+  if (!abnormal.length) {
+    document.getElementById('abnormalList').innerHTML =
+      '<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-text">暂无异常订单</div></div>';
+    return;
+  }
+
+  document.getElementById('abnormalList').innerHTML = abnormal.map(o => `
+    <div class="abnormal-card">
+      <div class="abnormal-header">
+        <div class="abnormal-title">${o.purchase_order_no} · ${o.supplier_name}</div>
+        <span style="color:var(--danger);font-size:13px;font-weight:600;">差异 ${o.quantity_variance_pct}%</span>
+      </div>
+      <div class="abnormal-reason">⚠️ ${o.abnormal_reason || '数量差异超标'}</div>
+      <div class="abnormal-meta">
+        📅 ${o.order_date} · 👤 验收人: ${o.inspector} ·
+        品项: ${o.items.map(i => i.name).join('、')}
+      </div>
+    </div>
+  `).join('');
+}
+
+// 供应商详情弹窗
+function showSupplierDetail(supplierId) {
+  const s = suppliers.find(x => x.id === supplierId);
+  if (!s) return;
+
+  document.getElementById('detailModalTitle').textContent = s.name;
+
+  // 构造简易雷达图 SVG
+  const rankData = rankings.find(r => r.supplier_name === s.name);
+  const ps = rankData ? rankData.price_score : 0;
+  const qs = rankData ? rankData.quality_score : 0;
+  const ds = rankData ? rankData.delivery_score : 0;
+
+  // 雷达图三角（简化版，三维度）
+  const cx = 90, cy = 90, r = 70;
+  function polarToCart(angle, radius) {
+    const rad = (angle - 90) * Math.PI / 180;
+    return { x: cx + radius * Math.cos(rad), y: cy + radius * Math.sin(rad) };
+  }
+
+  const angles = [0, 120, 240];
+  const values = [ps / 5, qs / 5, ds / 5];
+  const points = angles.map((a, i) => polarToCart(a, r * values[i]));
+  const gridPoints = [0.2, 0.4, 0.6, 0.8, 1.0];
+
+  let gridLines = '';
+  gridPoints.forEach(pct => {
+    const pts = angles.map(a => {
+      const p = polarToCart(a, r * pct);
+      return `${p.x},${p.y}`;
+    }).join(' ');
+    gridLines += `<polygon points="${pts}" fill="none" stroke="#334155" stroke-width="0.5"/>`;
+  });
+
+  // 轴线
+  let axisLines = angles.map(a => {
+    const p = polarToCart(a, r);
+    return `<line x1="${cx}" y1="${cy}" x2="${p.x}" y2="${p.y}" stroke="#334155" stroke-width="0.5"/>`;
+  }).join('');
+
+  // 数据多边形
+  const dataPoints = points.map(p => `${p.x},${p.y}`).join(' ');
+  const dataPolygon = `<polygon points="${dataPoints}" fill="rgba(249,115,22,0.2)" stroke="#f97316" stroke-width="2"/>`;
+  const dataDots = points.map(p => `<circle cx="${p.x}" cy="${p.y}" r="4" fill="#f97316"/>`).join('');
+
+  // 标签
+  const labels = [
+    { ...polarToCart(0, r + 18), text: `价格 ${ps}` },
+    { ...polarToCart(120, r + 18), text: `质量 ${qs}` },
+    { ...polarToCart(240, r + 18), text: `配送 ${ds}` },
+  ];
+  const labelText = labels.map(l =>
+    `<text x="${l.x}" y="${l.y}" text-anchor="middle" dominant-baseline="middle" fill="#94a3b8" font-size="11">${l.text}</text>`
+  ).join('');
+
+  const radarSvg = `
+    <svg class="radar-svg" viewBox="0 0 180 180">
+      ${gridLines}${axisLines}${dataPolygon}${dataDots}${labelText}
+    </svg>
+  `;
+
+  // 验收记录
+  const orderHist = acceptanceHistory.filter(o => o.supplier_id === s.id);
+
+  const body = document.getElementById('supplierDetailBody');
+  body.innerHTML = `
+    <div class="detail-section">
+      <h3>基本信息</h3>
+      <div class="detail-grid">
+        <div class="detail-field">
+          <div class="field-label">联系人</div>
+          <div class="field-value">${s.contact_person || '-'}</div>
+        </div>
+        <div class="detail-field">
+          <div class="field-label">联系电话</div>
+          <div class="field-value">${s.phone || '-'}</div>
+        </div>
+        <div class="detail-field">
+          <div class="field-label">主营品类</div>
+          <div class="field-value">${s.main_categories.join('、') || '-'}</div>
+        </div>
+        <div class="detail-field">
+          <div class="field-label">状态</div>
+          <div class="field-value"><span class="status-dot ${getStatusDot(s.status)}"></span> ${getStatusLabel(s.status)}</div>
+        </div>
+        <div class="detail-field">
+          <div class="field-label">合作开始</div>
+          <div class="field-value">${s.cooperation_start || '-'}</div>
+        </div>
+        <div class="detail-field">
+          <div class="field-label">合同到期</div>
+          <div class="field-value">${s.contract_end_date || '-'}</div>
+        </div>
+        <div class="detail-field">
+          <div class="field-label">资质到期</div>
+          <div class="field-value" style="color:${isExpiringSoon(s.qual_expiry_date) ? 'var(--warning)' : 'inherit'}">${s.qual_expiry_date || '-'}${isExpiringSoon(s.qual_expiry_date) ? ' ⚠️' : ''}</div>
+        </div>
+        <div class="detail-field">
+          <div class="field-label">地址</div>
+          <div class="field-value">${s.address || '-'}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <h3>评分雷达图</h3>
+      <div class="score-radar">
+        ${rankData ? radarSvg : '<div style="color:var(--text-muted);padding:40px;">暂无评分数据</div>'}
+        ${rankData ? `
+        <div class="radar-legend">
+          <div class="legend-item"><span class="legend-dot" style="background:var(--accent)"></span>价格 ${ps}</div>
+          <div class="legend-item"><span class="legend-dot" style="background:var(--info)"></span>质量 ${qs}</div>
+          <div class="legend-item"><span class="legend-dot" style="background:var(--success)"></span>配送 ${ds}</div>
+          <div class="legend-item" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
+            <span class="legend-dot" style="background:var(--grade-${s.grade?.toLowerCase() || 'none'})"></span>
+            <strong>${s.grade || '未评'}级 · ${rankData.overall_score}分</strong>
+          </div>
+        </div>` : ''}
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <h3>历史验收记录 (${orderHist.length})</h3>
+      ${orderHist.length ? `
+      <table class="data-table">
+        <thead>
+          <tr><th>采购单号</th><th>日期</th><th>状态</th><th>品质</th><th>差异</th><th>异常</th></tr>
+        </thead>
+        <tbody>
+          ${orderHist.map(o => `
+            <tr>
+              <td>${o.purchase_order_no}</td>
+              <td>${o.order_date}</td>
+              <td>${getAcceptanceStatusLabel(o.acceptance_status)}</td>
+              <td>${o.quality_score || '-'}</td>
+              <td><span class="${getVarianceClass(o.quantity_variance_pct)}">${o.quantity_variance_pct !== null ? o.quantity_variance_pct + '%' : '-'}</span></td>
+              <td>${o.abnormal_flag ? '⚠️' : '✅'}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>` : '<div style="color:var(--text-muted);text-align:center;padding:24px;">暂无验收记录</div>'}
+    </div>
+  `;
+
+  openModal('supplierDetailModal');
+}
+
+function isExpiringSoon(dateStr) {
+  if (!dateStr) return false;
+  const d = new Date(dateStr);
+  const now = new Date();
+  return (d - now) / 86400000 <= 30;
+}
+
+// 新增供应商
+function openAddSupplierModal() { openModal('addSupplierModal'); }
+
+function addNewSupplier() {
+  const name = document.getElementById('newSupplierName').value.trim();
+  if (!name) { alert('请输入供应商名称'); return; }
+
+  const newS = {
+    id: 's' + (suppliers.length + 1),
+    name: name,
+    contact_person: document.getElementById('newSupplierContact').value.trim(),
+    phone: document.getElementById('newSupplierPhone').value.trim(),
+    main_categories: document.getElementById('newSupplierCategories').value.split(',').map(s => s.trim()).filter(Boolean),
+    cooperation_start: document.getElementById('newSupplierCoopStart').value || null,
+    contract_end_date: document.getElementById('newSupplierContractEnd').value || null,
+    qual_expiry_date: document.getElementById('newSupplierQualExpiry').value || null,
+    address: document.getElementById('newSupplierAddress').value.trim(),
+    status: 'active',
+    score: null,
+    grade: null,
+  };
+
+  suppliers.push(newS);
+  closeModal('addSupplierModal');
+
+  // 重置表单
+  ['newSupplierName','newSupplierContact','newSupplierPhone','newSupplierCategories',
+   'newSupplierCoopStart','newSupplierContractEnd','newSupplierQualExpiry','newSupplierAddress','newSupplierNotes']
+    .forEach(id => document.getElementById(id).value = '');
+
+  renderAll();
+}
+
+// 预警弹窗
+function showAlertSummary() {
+  const expiring = suppliers.filter(s => isExpiringSoon(s.qual_expiry_date) && s.status === 'active');
+  const abnormal = acceptanceHistory.filter(o => o.abnormal_flag);
+  const lowScore = suppliers.filter(s => s.grade === 'D');
+
+  const body = document.getElementById('alertModalBody');
+  body.innerHTML = `
+    <div class="detail-section">
+      <h3 style="color:var(--danger);">🚨 异常订单 (${abnormal.length})</h3>
+      ${abnormal.length ? abnormal.map(o => `
+        <div class="abnormal-card" style="margin-bottom:8px;">
+          <div class="abnormal-title">${o.purchase_order_no} · ${o.supplier_name}</div>
+          <div class="abnormal-reason">${o.abnormal_reason || '数量差异超标'}</div>
+        </div>
+      `).join('') : '<div style="color:var(--text-muted);padding:12px;">无异常订单</div>'}
+    </div>
+    <div class="detail-section">
+      <h3 style="color:var(--warning);">⏰ 资质即将到期 (${expiring.length})</h3>
+      ${expiring.length ? expiring.map(s => `
+        <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
+          <span>${s.name}</span>
+          <span style="color:var(--warning);">${s.qual_expiry_date} (${getDaysLeft(s.qual_expiry_date)}天)</span>
+        </div>
+      `).join('') : '<div style="color:var(--text-muted);padding:12px;">无即将到期资质</div>'}
+    </div>
+    <div class="detail-section">
+      <h3 style="color:var(--danger);">📉 低评分供应商 (${lowScore.length})</h3>
+      ${lowScore.length ? lowScore.map(s => `
+        <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
+          <span>${s.name}</span>
+          <span class="grade-badge grade-d">D级 · ${s.score}分</span>
+        </div>
+      `).join('') : '<div style="color:var(--text-muted);padding:12px;">无低评分供应商</div>'}
+    </div>
+  `;
+
+  openModal('alertModal');
+}
+
+function getDaysLeft(dateStr) {
+  const d = new Date(dateStr);
+  const now = new Date();
+  return Math.ceil((d - now) / 86400000);
+}
+
+// 弹窗控制
+function openModal(id) { document.getElementById(id).classList.add('active'); }
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+// 点击遮罩关闭
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('active');
+  });
+});
+
+// ============================================================
+// 标签切换
+// ============================================================
+document.querySelectorAll('.nav-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+// 筛选按钮
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    btn.style.background = btn.classList.contains('active') ? 'var(--accent)' : '';
+    btn.style.color = btn.classList.contains('active') ? '#fff' : '';
+    renderAllSupplierGrid(btn.dataset.filter);
+  });
+});
+
+// ============================================================
+// 初始化
+// ============================================================
+function renderAll() {
+  renderStats();
+  renderSupplierGrid();
+  renderAllSupplierGrid();
+  renderAlertBanner();
+  renderPendingAcceptance();
+  renderAcceptanceHistory();
+  renderRanking();
+  renderAbnormalOrders();
+}
+
+renderAll();
+</script>
+</body>
+</html>

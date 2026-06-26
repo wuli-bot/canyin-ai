@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>员工管理基础版</title>
+<style>
+:root {
+  --bg-primary: #0f172a; --bg-card: #1e293b; --accent: #f97316;
+  --yellow: #f59e0b; --red: #ef4444; --green: #10b981;
+  --text-primary: #e2e8f0; --text-secondary: #94a3b8; --border: #334155;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg-primary); color: var(--text-primary); min-height:100vh; padding:20px; }
+.container { max-width:1400px; margin:0 auto; }
+h1 { font-size:24px; margin-bottom:20px; display:flex; align-items:center; gap:10px; }
+h1 .badge { background:var(--accent); color:#fff; font-size:12px; padding:2px 8px; border-radius:10px; }
+h2 { font-size:16px; margin-bottom:14px; }
+.grid { display:grid; gap:16px; }
+.grid-3 { grid-template-columns:repeat(3,1fr); }
+.grid-2 { grid-template-columns:repeat(2,1fr); }
+.card { background:var(--bg-card); border-radius:12px; padding:20px; border:1px solid var(--border); }
+.stat-card { text-align:center; }
+.stat-card .label { font-size:13px; color:var(--text-secondary); margin-bottom:6px; }
+.stat-card .value { font-size:28px; font-weight:700; }
+.stat-card .sub { font-size:12px; color:var(--text-secondary); margin-top:4px; }
+.mb-16 { margin-bottom:16px; }
+.mt-10 { margin-top:10px; }
+
+/* 员工卡片 */
+.staff-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; }
+.staff-card { background:#0f172a; border-radius:10px; padding:14px; border:1px solid var(--border); transition:border-color .2s; }
+.staff-card:hover { border-color:var(--accent); }
+.staff-name { font-size:15px; font-weight:600; margin-bottom:4px; }
+.staff-role { font-size:12px; color:var(--accent); margin-bottom:8px; }
+.staff-info { font-size:12px; color:var(--text-secondary); line-height:1.8; }
+.staff-tag { display:inline-block; font-size:11px; padding:1px 6px; border-radius:8px; margin-left:4px; }
+.tag-ok { background:rgba(16,185,129,.15); color:var(--green); }
+.tag-warn { background:rgba(245,158,11,.15); color:var(--yellow); }
+.tag-exp { background:rgba(239,68,68,.15); color:var(--red); }
+
+/* 排班日历 */
+.week-grid { display:grid; grid-template-columns:80px repeat(7,1fr); gap:2px; font-size:12px; }
+.week-header { background:var(--accent); color:#fff; padding:8px 4px; text-align:center; font-weight:600; border-radius:4px; }
+.week-name { padding:8px 4px; color:var(--text-secondary); display:flex; align-items:center; font-weight:500; }
+.week-cell { background:#0f172a; padding:6px 4px; text-align:center; border-radius:4px; min-height:36px; display:flex; align-items:center; justify-content:center; }
+.shift-morning { background:rgba(6,182,212,.15); color:#06b6d4; }
+.shift-afternoon { background:rgba(139,92,246,.15); color:#8b5cf6; }
+.shift-full { background:rgba(249,115,22,.15); color:var(--accent); }
+.shift-rest { background:rgba(100,116,139,.1); color:var(--text-secondary); }
+
+/* 打卡 */
+.checkin-panel { display:flex; gap:20px; align-items:center; flex-wrap:wrap; }
+.checkin-btn { padding:14px 32px; border-radius:12px; border:none; font-size:16px; font-weight:600; cursor:pointer; transition:transform .1s; }
+.checkin-btn:active { transform:scale(.96); }
+.btn-in { background:var(--green); color:#fff; }
+.btn-out { background:var(--red); color:#fff; }
+.checkin-info { font-size:13px; color:var(--text-secondary); }
+.checkin-time { font-size:24px; font-weight:700; color:var(--accent); font-variant-numeric:tabular-nums; }
+
+/* 培训进度 */
+.training-list { display:flex; flex-direction:column; gap:12px; }
+.training-item { background:#0f172a; border-radius:8px; padding:12px; }
+.training-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+.training-name { font-size:14px; font-weight:500; }
+.training-pct { font-size:13px; color:var(--accent); font-weight:600; }
+.progress-bar { height:6px; background:#334155; border-radius:3px; overflow:hidden; }
+.progress-fill { height:100%; border-radius:3px; background:var(--accent); transition:width .4s ease; }
+.progress-fill.done { background:var(--green); }
+.checklist-items { margin-top:8px; display:flex; flex-wrap:wrap; gap:6px; }
+.check-item { font-size:11px; padding:2px 8px; border-radius:10px; background:rgba(100,116,139,.15); color:var(--text-secondary); }
+.check-item.completed { background:rgba(16,185,129,.15); color:var(--green); text-decoration:line-through; }
+
+/* 任务面板 */
+.task-section { margin-bottom:14px; }
+.task-section-title { font-size:13px; color:var(--text-secondary); margin-bottom:8px; font-weight:500; display:flex; align-items:center; gap:6px; }
+.task-list { display:flex; flex-direction:column; gap:6px; }
+.task-item { display:flex; align-items:center; gap:10px; background:#0f172a; padding:10px 12px; border-radius:8px; cursor:pointer; transition:background .2s; }
+.task-item:hover { background:rgba(249,115,22,.06); }
+.task-item.done { opacity:.5; }
+.task-check { width:18px; height:18px; border-radius:50%; border:2px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:10px; flex-shrink:0; }
+.task-item.done .task-check { background:var(--green); border-color:var(--green); color:#fff; }
+.task-text { font-size:13px; flex:1; }
+.task-item.done .task-text { text-decoration:line-through; color:var(--text-secondary); }
+.task-assignee { font-size:11px; color:var(--text-secondary); }
+.priority-high { color:var(--red); }
+.priority-mid { color:var(--yellow); }
+.priority-low { color:var(--text-secondary); }
+
+/* 工时柱状图 */
+.hours-chart { display:flex; align-items:flex-end; gap:10px; height:140px; padding-top:10px; }
+.hours-bar { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; height:100%; justify-content:flex-end; }
+.hours-bar .bar { width:100%; max-width:40px; border-radius:4px 4px 0 0; background:var(--accent); min-height:4px; }
+.hours-bar .bar-label { font-size:11px; color:var(--text-secondary); }
+.hours-bar .bar-value { font-size:11px; color:var(--text-primary); font-weight:600; }
+
+@media(max-width:900px) {
+  .grid-3 { grid-template-columns:1fr; }
+  .grid-2 { grid-template-columns:1fr; }
+  .week-grid { grid-template-columns:60px repeat(7,1fr); font-size:10px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>👥 员工管理 <span class="badge">P2-2</span></h1>
+
+  <!-- 总览 -->
+  <div class="grid grid-3 mb-16">
+    <div class="card stat-card"><div class="label">总人数</div><div class="value">8</div><div class="sub">在岗员工</div></div>
+    <div class="card stat-card"><div class="label">今日在岗</div><div class="value" style="color:var(--green)">6</div><div class="sub">已签到 5 人</div></div>
+    <div class="card stat-card"><div class="label">今日休息</div><div class="value" style="color:var(--text-secondary)">2</div><div class="sub">明日排班已确认</div></div>
+  </div>
+
+  <!-- 员工列表 -->
+  <div class="card mb-16">
+    <h2>👤 员工列表</h2>
+    <div class="staff-grid" id="staffGrid"></div>
+  </div>
+
+  <div class="grid grid-2 mb-16">
+    <!-- 排班日历 -->
+    <div class="card">
+      <h2>📅 本周排班</h2>
+      <div class="week-grid" id="weekGrid"></div>
+    </div>
+
+    <!-- 打卡面板 -->
+    <div class="card">
+      <h2>⏰ 打卡面板</h2>
+      <div class="checkin-panel">
+        <div>
+          <button class="checkin-btn btn-in" onclick="doCheckin()">签到</button>
+        </div>
+        <div>
+          <button class="checkin-btn btn-out" onclick="doCheckout()">签退</button>
+        </div>
+        <div class="checkin-info">
+          <div class="checkin-time" id="clockTime">--:--:--</div>
+          <div id="checkinStatus">当前状态：未签到</div>
+        </div>
+      </div>
+      <div class="mt-10" style="font-size:12px;color:var(--text-secondary)">
+        <div>今日签到：张三 08:02 | 李四 07:55 | 王五 08:10</div>
+        <div>今日签退：--</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-2 mb-16">
+    <!-- 培训进度 -->
+    <div class="card">
+      <h2>📚 新员工培训进度（张三）</h2>
+      <div class="training-list" id="trainingList"></div>
+    </div>
+
+    <!-- 工时统计 -->
+    <div class="card">
+      <h2>📊 本月工时统计</h2>
+      <div class="hours-chart" id="hoursChart"></div>
+    </div>
+  </div>
+
+  <!-- 今日任务 -->
+  <div class="card">
+    <h2>✅ 今日任务</h2>
+    <div id="taskPanel"></div>
+  </div>
+</div>
+
+<script>
+// 模拟数据
+const staffData = [
+  { name:'张三', role:'厨师', hours:176, certDays:45 },
+  { name:'李四', role:'帮厨', hours:160, certDays:120 },
+  { name:'王五', role:'收银', hours:152, certDays:15 },
+  { name:'赵六', role:'保洁', hours:144, certDays:200 },
+  { name:'小明', role:'帮厨', hours:168, certDays:8 },
+  { name:'小红', role:'厨师', hours:180, certDays:90 },
+  { name:'老王', role:'店长', hours:192, certDays:300 },
+  { name:'小芳', role:'收银', hours:136, certDays:60 },
+];
+
+const weekDays = ['周一','周二','周三','周四','周五','周六','周日'];
+const shiftMap = {
+  morning: { label:'早班', cls:'shift-morning' },
+  afternoon: { label:'中班', cls:'shift-afternoon' },
+  full: { label:'全天', cls:'shift-full' },
+  rest: { label:'休', cls:'shift-rest' },
+};
+const weekSchedule = [
+  ['full','full','full','full','full','morning','rest'],
+  ['full','full','full','full','full','full','rest'],
+  ['morning','morning','afternoon','morning','full','full','rest'],
+  ['full','full','full','rest','full','full','morning'],
+  ['afternoon','afternoon','full','full','full','rest','rest'],
+  ['full','full','full','full','full','full','full'],
+  ['rest','full','full','full','full','full','full'],
+  ['full','afternoon','full','full','rest','full','full'],
+];
+
+const trainingData = [
+  { name:'食品安全基础', progress:100, items:['食品储存温度','交叉污染预防','个人卫生规范','过敏原管理'] },
+  { name:'操作流程', progress:80, items:['备料标准','出餐标准','设备操作','清洁消毒','废弃物处理'] },
+  { name:'服务标准', progress:33, items:['接待话术','投诉处理','收银规范'] },
+  { name:'设备使用', progress:0, items:['厨房设备','冷藏管理','清洁设备'] },
+  { name:'应急处理', progress:0, items:['火灾应急','安全事故'] },
+];
+
+const tasksData = {
+  opening: [
+    { name:'检查食材新鲜度', assignee:'张三', done:true, priority:2 },
+    { name:'开启设备预热', assignee:'小红', done:true, priority:1 },
+    { name:'准备零钱', assignee:'王五', done:false, priority:1 },
+    { name:'清洁台面', assignee:'李四', done:false, priority:2 },
+  ],
+  closing: [
+    { name:'清洁灶台', assignee:'张三', done:false, priority:2 },
+    { name:'盘点收银', assignee:'王五', done:false, priority:1 },
+    { name:'关闭设备', assignee:'小红', done:false, priority:1 },
+    { name:'垃圾清理', assignee:'赵六', done:false, priority:2 },
+  ],
+  daily: [
+    { name:'午高峰支援', assignee:'李四', done:true, priority:3 },
+    { name:'外卖打包', assignee:'小明', done:false, priority:2 },
+    { name:'大堂巡视', assignee:'老王', done:true, priority:1 },
+    { name:'卫生间清洁', assignee:'赵六', done:false, priority:2 },
+  ],
+};
+
+// 渲染员工卡片
+function renderStaff() {
+  const el = document.getElementById('staffGrid');
+  el.innerHTML = staffData.map(s => {
+    let certTag = '';
+    if (s.certDays <= 7) certTag = '<span class="staff-tag tag-exp">即将过期</span>';
+    else if (s.certDays <= 30) certTag = '<span class="staff-tag tag-warn">30天内</span>';
+    else certTag = '<span class="staff-tag tag-ok">正常</span>';
+    return `<div class="staff-card">
+      <div class="staff-name">${s.name}</div>
+      <div class="staff-role">${s.role}</div>
+      <div class="staff-info">
+        健康证${certTag}<br>
+        本月工时 <strong>${s.hours}h</strong>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// 渲染排班日历
+function renderWeek() {
+  const el = document.getElementById('weekGrid');
+  let html = '<div class="week-header"></div>';
+  const todayIdx = new Date().getDay();
+  const mondayIdx = todayIdx === 0 ? 6 : todayIdx - 1;
+  weekDays.forEach((d,i) => {
+    const isToday = i === mondayIdx;
+    html += `<div class="week-header" style="${isToday?'outline:2px solid var(--green)':''}">${d}${isToday?' (今)':''}</div>`;
+  });
+  staffData.forEach((s,si) => {
+    html += `<div class="week-name">${s.name}</div>`;
+    weekSchedule[si].forEach(shift => {
+      const info = shiftMap[shift];
+      html += `<div class="week-cell ${info.cls}">${info.label}</div>`;
+    });
+  });
+  el.innerHTML = html;
+}
+
+// 渲染培训
+function renderTraining() {
+  const el = document.getElementById('trainingList');
+  el.innerHTML = trainingData.map(t => {
+    const itemsHtml = t.items.map((item,i) => {
+      const completed = t.items.length > 0 && (i / t.items.length * 100) < t.progress;
+      return `<span class="check-item ${completed?'completed':''}">${item}</span>`;
+    }).join('');
+    return `<div class="training-item">
+      <div class="training-header">
+        <span class="training-name">${t.name}</span>
+        <span class="training-pct">${t.progress}%</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill ${t.progress===100?'done':''}" style="width:${t.progress}%"></div></div>
+      <div class="checklist-items">${itemsHtml}</div>
+    </div>`;
+  }).join('');
+}
+
+// 渲染工时图
+function renderHours() {
+  const el = document.getElementById('hoursChart');
+  const maxH = Math.max(...staffData.map(s=>s.hours));
+  el.innerHTML = staffData.map(s => `
+    <div class="hours-bar">
+      <div class="bar-value">${s.hours}h</div>
+      <div class="bar" style="height:${s.hours/maxH*100}%"></div>
+      <div class="bar-label">${s.name}</div>
+    </div>
+  `).join('');
+}
+
+// 渲染任务
+function renderTasks() {
+  const el = document.getElementById('taskPanel');
+  const sections = [
+    { key:'opening', title:'🌅 开档任务', icon:'🌅' },
+    { key:'daily', title:'📋 日常任务', icon:'📋' },
+    { key:'closing', title:'🌙 收档任务', icon:'🌙' },
+  ];
+  el.innerHTML = sections.map(sec => {
+    const tasks = tasksData[sec.key];
+    const items = tasks.map((t,i) => {
+      const pCls = t.priority>=2?'priority-mid':'priority-low';
+      return `<div class="task-item ${t.done?'done':''}" onclick="toggleTask('${sec.key}',${i})">
+        <div class="task-check">${t.done?'✓':''}</div>
+        <span class="task-text">${t.name}</span>
+        <span class="task-assignee ${pCls}">${t.assignee}</span>
+      </div>`;
+    }).join('');
+    const done = tasks.filter(t=>t.done).length;
+    return `<div class="task-section">
+      <div class="task-section-title">${sec.title} <span style="font-size:11px;color:var(--text-secondary)">(${done}/${tasks.length})</span></div>
+      <div class="task-list">${items}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleTask(section, idx) {
+  tasksData[section][idx].done = !tasksData[section][idx].done;
+  renderTasks();
+}
+
+// 打卡
+function doCheckin() {
+  const now = new Date();
+  const t = now.toTimeString().slice(0,8);
+  document.getElementById('checkinStatus').textContent = '签到时间：' + t;
+  alert('签到成功！' + t);
+}
+function doCheckout() {
+  const now = new Date();
+  const t = now.toTimeString().slice(0,8);
+  document.getElementById('checkinStatus').textContent = '签退时间：' + t;
+  alert('签退成功！' + t);
+}
+
+// 时钟
+function updateClock() {
+  document.getElementById('clockTime').textContent = new Date().toTimeString().slice(0,8);
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// 初始化
+renderStaff();
+renderWeek();
+renderTraining();
+renderHours();
+renderTasks();
+</script>
+</body>
+</html>

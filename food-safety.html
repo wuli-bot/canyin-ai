@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🛡️ 食安管理 · 餐饮AI店长</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    min-height: 100vh;
+    padding: 24px;
+  }
+  /* ---- header ---- */
+  .page-header {
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom: 28px;
+  }
+  .page-header h1 { font-size:1.6rem; display:flex; align-items:center; gap:10px; }
+  .page-header h1 span.icon { font-size:1.8rem; }
+  .btn-feishu {
+    background: #f97316; color:#fff; border:none; border-radius:8px;
+    padding: 10px 22px; font-size:.95rem; cursor:pointer; font-weight:600;
+    transition: background .2s;
+  }
+  .btn-feishu:hover { background: #ea580c; }
+
+  /* ---- tabs ---- */
+  .tabs { display:flex; gap:4px; margin-bottom:24px; }
+  .tab {
+    padding: 10px 20px; border-radius:8px 8px 0 0; cursor:pointer;
+    background:#1e293b; color:#94a3b8; font-weight:600; border:none; font-size:.9rem;
+    transition: all .2s;
+  }
+  .tab.active { background:#f97316; color:#fff; }
+
+  /* ---- cards ---- */
+  .card { background:#1e293b; border-radius:12px; padding:20px; margin-bottom:20px; }
+  .card h2 { font-size:1.1rem; margin-bottom:16px; color:#f97316; }
+
+  /* ---- summary grid ---- */
+  .summary-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px; }
+  .stat-card {
+    background:#1e293b; border-radius:12px; padding:20px; text-align:center;
+    border-left: 4px solid;
+    transition: transform .15s;
+  }
+  .stat-card:hover { transform: translateY(-2px); }
+  .stat-card .num  { font-size:2.2rem; font-weight:700; }
+  .stat-card .lbl  { font-size:.85rem; color:#94a3b8; margin-top:4px; }
+  .stat-normal   { border-color:#10b981; } .stat-normal .num   { color:#10b981; }
+  .stat-warning  { border-color:#f59e0b; } .stat-warning .num  { color:#f59e0b; }
+  .stat-critical { border-color:#ef4444; } .stat-critical .num { color:#ef4444; }
+  .stat-expired  { border-color:#7f1d1d; } .stat-expired .num  { color:#dc2626; }
+
+  /* ---- filter bar ---- */
+  .filter-bar { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+  .filter-btn {
+    padding:6px 14px; border-radius:6px; border:1px solid #334155;
+    background:transparent; color:#94a3b8; cursor:pointer; font-size:.8rem;
+  }
+  .filter-btn.active { background:#f97316; color:#fff; border-color:#f97316; }
+
+  /* ---- table ---- */
+  table { width:100%; border-collapse:collapse; }
+  th, td { padding:10px 12px; text-align:left; font-size:.88rem; }
+  th { color:#94a3b8; border-bottom:1px solid #334155; font-weight:600; }
+  td { border-bottom:1px solid #1e293b; }
+  tr:hover td { background:#253247; }
+  .badge {
+    display:inline-block; padding:3px 10px; border-radius:999px; font-size:.75rem; font-weight:600;
+  }
+  .badge-normal   { background:#065f46; color:#6ee7b7; }
+  .badge-warning  { background:#78350f; color:#fcd34d; }
+  .badge-critical { background:#7f1d1d; color:#fca5a5; }
+  .badge-expired  { background:#450a0a; color:#f87171; }
+
+  /* ---- alert list ---- */
+  .alert-item {
+    display:flex; align-items:center; gap:12px; padding:12px 16px;
+    border-radius:8px; margin-bottom:8px;
+  }
+  .alert-critical { background:rgba(239,68,68,.12); border-left:3px solid #ef4444; }
+  .alert-warning  { background:rgba(245,158,11,.12); border-left:3px solid #f59e0b; }
+  .alert-item .alert-icon { font-size:1.3rem; }
+  .alert-item .alert-text { flex:1; }
+  .alert-item .alert-text strong { color:#e2e8f0; }
+  .alert-item .alert-text small { color:#94a3b8; display:block; margin-top:2px; }
+  .alert-item .alert-days { font-weight:700; font-size:1rem; }
+
+  /* ---- checklist ---- */
+  .checklist-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+  .checklist-header .date-badge {
+    background:#0f172a; padding:6px 14px; border-radius:6px; font-size:.85rem; color:#94a3b8;
+  }
+  .check-type-switch { display:flex; gap:4px; margin-bottom:16px; }
+  .check-type-btn {
+    padding:8px 16px; border-radius:6px; border:1px solid #334155;
+    background:transparent; color:#94a3b8; cursor:pointer; font-size:.85rem;
+  }
+  .check-type-btn.active { background:#f97316; color:#fff; border-color:#f97316; }
+  .check-item {
+    display:flex; align-items:flex-start; gap:12px; padding:14px;
+    background:#0f172a; border-radius:8px; margin-bottom:8px;
+    transition: background .15s;
+  }
+  .check-item:hover { background:#172033; }
+  .check-item.checked { opacity:.55; }
+  .check-item input[type=checkbox] {
+    width:20px; height:20px; accent-color:#f97316; cursor:pointer; margin-top:2px;
+    flex-shrink:0;
+  }
+  .check-item .item-content { flex:1; }
+  .check-item .item-label { font-size:.9rem; cursor:pointer; }
+  .check-item .item-label .critical-tag {
+    font-size:.7rem; background:#7f1d1d; color:#fca5a5; padding:1px 6px;
+    border-radius:3px; margin-left:6px; vertical-align:middle;
+  }
+  .check-item textarea {
+    width:100%; margin-top:8px; background:#1e293b; border:1px solid #334155;
+    border-radius:6px; color:#e2e8f0; padding:8px; font-size:.82rem; resize:vertical;
+    min-height:32px;
+  }
+  .check-item textarea:focus { outline:none; border-color:#f97316; }
+  .check-progress {
+    background:#0f172a; border-radius:8px; padding:14px; margin-bottom:16px;
+  }
+  .progress-bar-outer {
+    height:8px; background:#334155; border-radius:4px; overflow:hidden; margin-top:8px;
+  }
+  .progress-bar-inner {
+    height:100%; background: linear-gradient(90deg,#f97316,#fb923c);
+    border-radius:4px; transition: width .3s;
+  }
+  .submit-checklist {
+    width:100%; padding:12px; border-radius:8px; border:none;
+    background:#f97316; color:#fff; font-size:1rem; font-weight:600;
+    cursor:pointer; margin-top:12px; transition: background .2s;
+  }
+  .submit-checklist:hover { background:#ea580c; }
+  .submit-checklist:disabled { background:#334155; cursor:not-allowed; }
+
+  /* ---- history ---- */
+  .history-item {
+    display:flex; align-items:center; gap:12px; padding:12px;
+    background:#0f172a; border-radius:8px; margin-bottom:8px;
+  }
+  .history-item .h-icon { font-size:1.3rem; }
+  .history-item .h-info { flex:1; }
+  .history-item .h-info .h-title { font-weight:600; font-size:.9rem; }
+  .history-item .h-info .h-meta { font-size:.78rem; color:#94a3b8; margin-top:2px; }
+  .history-item .h-status { font-weight:700; font-size:.85rem; }
+  .h-complete { color:#10b981; }
+  .h-incomplete { color:#f59e0b; }
+
+  /* ---- section visibility ---- */
+  .section { display:none; }
+  .section.active { display:block; }
+
+  /* ---- toast ---- */
+  .toast {
+    position:fixed; bottom:30px; right:30px; padding:14px 24px;
+    background:#10b981; color:#fff; border-radius:8px; font-weight:600;
+    box-shadow: 0 8px 24px rgba(0,0,0,.4); transform:translateY(100px);
+    opacity:0; transition: all .3s; z-index:999;
+  }
+  .toast.show { transform:translateY(0); opacity:1; }
+  .toast.error { background:#ef4444; }
+
+  /* ---- modal ---- */
+  .modal-overlay {
+    position:fixed; inset:0; background:rgba(0,0,0,.6); display:none;
+    justify-content:center; align-items:center; z-index:1000;
+  }
+  .modal-overlay.show { display:flex; }
+  .modal {
+    background:#1e293b; border-radius:12px; padding:28px; max-width:520px; width:90%;
+    max-height:80vh; overflow-y:auto;
+  }
+  .modal h3 { color:#f97316; margin-bottom:16px; }
+  .modal pre {
+    background:#0f172a; padding:14px; border-radius:8px; overflow-x:auto;
+    font-size:.8rem; color:#94a3b8; line-height:1.5;
+  }
+  .modal-close {
+    margin-top:16px; padding:10px 24px; border:none; border-radius:8px;
+    background:#f97316; color:#fff; cursor:pointer; font-weight:600;
+  }
+</style>
+</head>
+<body>
+
+<!-- ======== Header ======== -->
+<div class="page-header">
+  <h1><span class="icon">🛡️</span> 食安管理 · 餐饮AI店长</h1>
+  <button class="btn-feishu" onclick="pushFeishu()">📤 飞书推送</button>
+</div>
+
+<!-- ======== Tabs ======== -->
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('expiry')">📦 效期管理</button>
+  <button class="tab" onclick="switchTab('safety')">📋 食安自查</button>
+</div>
+
+<!-- ============================================================ -->
+<!--                       效期管理 Tab                             -->
+<!-- ============================================================ -->
+<div id="section-expiry" class="section active">
+
+  <!-- 概览卡片 -->
+  <div class="summary-grid" id="summary-grid"></div>
+
+  <!-- 库存列表 -->
+  <div class="card">
+    <h2>📋 库存明细</h2>
+    <div class="filter-bar" id="filter-bar"></div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>食材名称</th><th>分类</th><th>批次号</th>
+            <th>到期日</th><th>剩余天数</th><th>存储位置</th><th>状态</th><th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="inventory-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 预警列表 -->
+  <div class="card">
+    <h2>⚠️ 效期预警</h2>
+    <div id="alert-list"></div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!--                       食安自查 Tab                             -->
+<!-- ============================================================ -->
+<div id="section-safety" class="section">
+
+  <!-- 今日状态 -->
+  <div class="card">
+    <div class="checklist-header">
+      <h2>📋 食安自查</h2>
+      <span class="date-badge" id="today-date"></span>
+    </div>
+    <div class="check-type-switch">
+      <button class="check-type-btn active" onclick="switchCheckType('morning_open')">🌅 开店前检查</button>
+      <button class="check-type-btn" onclick="switchCheckType('evening_close')">🌙 收档后检查</button>
+    </div>
+
+    <!-- 进度 -->
+    <div class="check-progress">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:.9rem;font-weight:600">检查进度</span>
+        <span id="progress-text" style="color:#f97316;font-weight:700">0 / 0</span>
+      </div>
+      <div class="progress-bar-outer">
+        <div class="progress-bar-inner" id="progress-bar" style="width:0%"></div>
+      </div>
+    </div>
+
+    <!-- 检查项 -->
+    <div id="checklist-items"></div>
+
+    <!-- 提交按钮 -->
+    <button class="submit-checklist" id="submit-btn" onclick="submitChecklist()">✅ 提交自查结果</button>
+  </div>
+
+  <!-- 历史检查记录 -->
+  <div class="card">
+    <h2>📅 历史检查记录</h2>
+    <div id="history-list"></div>
+  </div>
+</div>
+
+<!-- ======== Toast ======== -->
+<div class="toast" id="toast"></div>
+
+<!-- ======== Modal (飞书预览) ======== -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3>📤 飞书消息预览</h3>
+    <pre id="modal-body"></pre>
+    <button class="modal-close" onclick="closeModal()">关闭</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  模拟数据
+// ============================================================
+const today = new Date();
+const fmt = d => d.toISOString().slice(0,10);
+const addDays = (d, n) => { const r = new Date(d); r.setDate(r.getDate()+n); return r; };
+
+const inventory = [
+  { id:'a1', ingredient_name:'鸡胸肉',    category:'肉类', batch_no:'B20260625', expiry_date:fmt(addDays(today,7)),  storage_location:'冷藏', status:'normal'   },
+  { id:'a2', ingredient_name:'三文鱼',    category:'肉类', batch_no:'B20260627', expiry_date:fmt(addDays(today,2)),  storage_location:'冷藏', status:'warning'  },
+  { id:'a3', ingredient_name:'牛腱肉',    category:'肉类', batch_no:'B20260628', expiry_date:fmt(addDays(today,0)),  storage_location:'冷冻', status:'critical' },
+  { id:'a4', ingredient_name:'西兰花',    category:'蔬菜', batch_no:'B20260626', expiry_date:fmt(addDays(today,1)),  storage_location:'冷藏', status:'critical' },
+  { id:'a5', ingredient_name:'生菜',      category:'蔬菜', batch_no:'B20260620', expiry_date:fmt(addDays(today,-1)), storage_location:'冷藏', status:'expired'  },
+  { id:'a6', ingredient_name:'鸡蛋',      category:'蛋类', batch_no:'B20260622', expiry_date:fmt(addDays(today,-3)), storage_location:'常温', status:'expired'  },
+  { id:'a7', ingredient_name:'豆腐',      category:'豆制品', batch_no:'B20260628', expiry_date:fmt(addDays(today,3)), storage_location:'冷藏', status:'warning' },
+  { id:'a8', ingredient_name:'酱油',      category:'调料', batch_no:'B20260601', expiry_date:fmt(addDays(today,30)), storage_location:'常温', status:'normal'   },
+  { id:'a9', ingredient_name:'虾仁',      category:'冻品', batch_no:'B20260625', expiry_date:fmt(addDays(today,5)),  storage_location:'冷冻', status:'normal'   },
+  { id:'a10',ingredient_name:'五花肉',    category:'肉类', batch_no:'B20260627', expiry_date:fmt(addDays(today,0)),  storage_location:'冷藏', status:'critical' },
+  { id:'a11',ingredient_name:'土豆',      category:'蔬菜', batch_no:'B20260626', expiry_date:fmt(addDays(today,4)),  storage_location:'常温', status:'normal'   },
+  { id:'a12',ingredient_name:'鲜牛奶',    category:'乳制品', batch_no:'B20260628', expiry_date:fmt(addDays(today,2)), storage_location:'冷藏', status:'warning' },
+];
+
+// 计算剩余天数
+inventory.forEach(it => {
+  const exp = new Date(it.expiry_date);
+  it.remaining_days = Math.round((exp - today)/(86400000));
+});
+
+const historyRecords = [
+  { date: fmt(addDays(today,-1)), type:'morning_open',  inspector:'张店长', completed:true,  total:12, checked:12 },
+  { date: fmt(addDays(today,-1)), type:'evening_close', inspector:'李厨师', completed:false, total:8,  checked:5  },
+  { date: fmt(addDays(today,-2)), type:'morning_open',  inspector:'张店长', completed:true,  total:12, checked:12 },
+  { date: fmt(addDays(today,-2)), type:'evening_close', inspector:'王助理', completed:true,  total:8,  checked:8  },
+];
+
+// ============================================================
+//  效期分类
+// ============================================================
+function classify(days) {
+  if (days < 0) return 'expired';
+  if (days <= 1) return 'critical';
+  if (days <= 3) return 'warning';
+  return 'normal';
+}
+
+function statusLabel(s) {
+  return {normal:'正常',warning:'预警',critical:'临界',expired:'已过期',disposed:'已处置'}[s] || s;
+}
+function badgeClass(s) { return 'badge badge-'+s; }
+
+// ============================================================
+//  渲染：概览卡片
+// ============================================================
+function renderSummary() {
+  const counts = { normal:0, warning:0, critical:0, expired:0 };
+  inventory.forEach(it => { counts[classify(it.remaining_days)]++; });
+  const grid = document.getElementById('summary-grid');
+  grid.innerHTML = [
+    { cls:'stat-normal',   lbl:'正常', num:counts.normal   },
+    { cls:'stat-warning',  lbl:'预警（≤3天）', num:counts.warning  },
+    { cls:'stat-critical', lbl:'临界（≤1天）', num:counts.critical },
+    { cls:'stat-expired',  lbl:'已过期', num:counts.expired  },
+  ].map(c => `<div class="stat-card ${c.cls}"><div class="num">${c.num}</div><div class="lbl">${c.lbl}</div></div>`).join('');
+}
+
+// ============================================================
+//  渲染：库存列表
+// ============================================================
+let currentFilter = 'all';
+function renderFilters() {
+  const bar = document.getElementById('filter-bar');
+  const filters = [
+    { key:'all',      lbl:'全部' },
+    { key:'normal',   lbl:'🟢 正常' },
+    { key:'warning',  lbl:'🟡 预警' },
+    { key:'critical', lbl:'🔴 临界' },
+    { key:'expired',  lbl:'⚫ 已过期' },
+  ];
+  bar.innerHTML = filters.map(f =>
+    `<button class="filter-btn ${currentFilter===f.key?'active':''}" onclick="setFilter('${f.key}')">${f.lbl}</button>`
+  ).join('');
+}
+function setFilter(f) { currentFilter = f; renderFilters(); renderInventory(); }
+
+function renderInventory() {
+  const tbody = document.getElementById('inventory-body');
+  let list = inventory.map(it => ({ ...it, computed_status: classify(it.remaining_days) }));
+  if (currentFilter !== 'all') list = list.filter(it => it.computed_status === currentFilter);
+  list.sort((a,b) => a.remaining_days - b.remaining_days);
+  tbody.innerHTML = list.map(it => `
+    <tr>
+      <td><strong>${it.ingredient_name}</strong></td>
+      <td>${it.category}</td>
+      <td>${it.batch_no}</td>
+      <td>${it.expiry_date}</td>
+      <td style="font-weight:700;color:${it.remaining_days<0?'#ef4444':it.remaining_days<=1?'#f59e0b':'#10b981'}">${it.remaining_days} 天</td>
+      <td>${it.storage_location}</td>
+      <td><span class="${badgeClass(it.computed_status)}">${statusLabel(it.computed_status)}</span></td>
+      <td>${it.computed_status==='expired' ? `<button class="filter-btn active" style="font-size:.75rem" onclick="disposeItem('${it.id}')">报废</button>` : '-'}</td>
+    </tr>
+  `).join('');
+}
+
+function disposeItem(id) {
+  const it = inventory.find(i => i.id === id);
+  if (it) { it.status = 'disposed'; showToast(`✅ ${it.ingredient_name} 已标记报废`); renderAll(); }
+}
+
+// ============================================================
+//  渲染：预警列表
+// ============================================================
+function renderAlerts() {
+  const alerts = inventory
+    .map(it => ({ ...it, computed_status: classify(it.remaining_days) }))
+    .filter(it => it.computed_status === 'critical' || it.computed_status === 'expired' || it.computed_status === 'warning')
+    .sort((a,b) => a.remaining_days - b.remaining_days);
+
+  const el = document.getElementById('alert-list');
+  if (!alerts.length) { el.innerHTML = '<p style="color:#94a3b8;text-align:center;padding:20px">✅ 暂无预警</p>'; return; }
+  el.innerHTML = alerts.map(it => {
+    const lvl = it.computed_status === 'expired' ? 'critical' : it.computed_status === 'critical' ? 'critical' : 'warning';
+    const icon = it.computed_status === 'expired' ? '🔴' : it.computed_status === 'critical' ? '🟡' : '⚠️';
+    const dayText = it.remaining_days < 0 ? `已过期 ${Math.abs(it.remaining_days)} 天` : `剩余 ${it.remaining_days} 天`;
+    return `
+      <div class="alert-item alert-${lvl}">
+        <span class="alert-icon">${icon}</span>
+        <div class="alert-text">
+          <strong>${it.ingredient_name}</strong>
+          <small>批次 ${it.batch_no} · ${it.category} · ${it.storage_location}</small>
+        </div>
+        <span class="alert-days" style="color:${it.remaining_days<0?'#ef4444':'#f59e0b'}">${dayText}</span>
+      </div>`;
+  }).join('');
+}
+
+// ============================================================
+//  自查清单
+// ============================================================
+const templates = {
+  morning_open: [
+    {id:1, item:'冰箱温度检查（冷藏0-4℃ / 冷冻-18℃以下）', critical:true},
+    {id:2, item:'食材外观检查（变色 / 异味 / 发霉）', critical:true},
+    {id:3, item:'效期标签核查', critical:true},
+    {id:4, item:'操作台清洁消毒', critical:true},
+    {id:5, item:'餐具消毒检查', critical:true},
+    {id:6, item:'手部卫生检查', critical:true},
+    {id:7, item:'工作服 / 帽 / 口罩穿戴', critical:false},
+    {id:8, item:'灭蝇灯 / 防虫设施检查', critical:false},
+    {id:9, item:'垃圾分类与清理', critical:false},
+    {id:10, item:'水龙头 / 下水道通畅', critical:false},
+    {id:11, item:'通风设备运行正常', critical:false},
+    {id:12, item:'进货验收（当日到货食材）', critical:true},
+  ],
+  evening_close: [
+    {id:1, item:'剩余食材密封标记', critical:true},
+    {id:2, item:'冰箱整理（先进先出）', critical:true},
+    {id:3, item:'操作台清洁消毒', critical:true},
+    {id:4, item:'地面清洁', critical:false},
+    {id:5, item:'垃圾清理', critical:false},
+    {id:6, item:'设备关闭检查', critical:true},
+    {id:7, item:'门窗锁闭', critical:false},
+    {id:8, item:'当日损耗记录', critical:true},
+  ]
+};
+
+let currentCheckType = 'morning_open';
+let checkState = {}; // { id: { checked, notes } }
+
+function switchCheckType(type) {
+  currentCheckType = type;
+  checkState = {};
+  document.querySelectorAll('.check-type-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  renderChecklist();
+}
+
+function renderChecklist() {
+  const tpl = templates[currentCheckType];
+  const container = document.getElementById('checklist-items');
+  container.innerHTML = tpl.map(t => {
+    const st = checkState[t.id] || { checked:false, notes:'' };
+    return `
+      <div class="check-item ${st.checked?'checked':''}" id="ci-${t.id}">
+        <input type="checkbox" ${st.checked?'checked':''} onchange="toggleCheck(${t.id}, this.checked)">
+        <div class="item-content">
+          <label class="item-label" for="cb-${t.id}">
+            ${t.item}
+            ${t.critical ? '<span class="critical-tag">关键项</span>' : ''}
+          </label>
+          <textarea placeholder="备注（可选）" onchange="updateNote(${t.id}, this.value)">${st.notes}</textarea>
+        </div>
+      </div>`;
+  }).join('');
+  updateProgress();
+}
+
+function toggleCheck(id, val) {
+  if (!checkState[id]) checkState[id] = { checked:false, notes:'' };
+  checkState[id].checked = val;
+  renderChecklist();
+}
+function updateNote(id, val) {
+  if (!checkState[id]) checkState[id] = { checked:false, notes:'' };
+  checkState[id].notes = val;
+}
+
+function updateProgress() {
+  const tpl = templates[currentCheckType];
+  const done = tpl.filter(t => checkState[t.id]?.checked).length;
+  const total = tpl.length;
+  document.getElementById('progress-text').textContent = `${done} / ${total}`;
+  document.getElementById('progress-bar').style.width = `${(done/total*100).toFixed(0)}%`;
+}
+
+function submitChecklist() {
+  const tpl = templates[currentCheckType];
+  const total = tpl.length;
+  const done = tpl.filter(t => checkState[t.id]?.checked).length;
+  const incomplete = tpl.filter(t => !checkState[t.id]?.checked);
+
+  if (done === total) {
+    showToast(`✅ ${currentCheckType==='morning_open'?'开店':'收档'}自查全部完成！`);
+  } else {
+    const critical = incomplete.filter(t => t.critical);
+    let msg = `⚠️ 还有 ${incomplete.length} 项未完成`;
+    if (critical.length) msg += `（含 ${critical.length} 项关键项）`;
+    showToast(msg, true);
+  }
+}
+
+// ============================================================
+//  历史检查记录
+// ============================================================
+function renderHistory() {
+  const el = document.getElementById('history-list');
+  el.innerHTML = historyRecords.map(h => `
+    <div class="history-item">
+      <span class="h-icon">${h.type==='morning_open'?'🌅':'🌙'}</span>
+      <div class="h-info">
+        <div class="h-title">${h.type==='morning_open'?'开店前检查':'收档后检查'}</div>
+        <div class="h-meta">${h.date} · 检查人: ${h.inspector} · ${h.checked}/${h.total} 项</div>
+      </div>
+      <span class="h-status ${h.completed?'h-complete':'h-incomplete'}">${h.completed?'✅ 已完成':'⚠️ 未完成'}</span>
+    </div>
+  `).join('');
+}
+
+// ============================================================
+//  Tab 切换
+// ============================================================
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('section-'+tab).classList.add('active');
+}
+
+// ============================================================
+//  Toast
+// ============================================================
+function showToast(msg, isError) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isError ? ' error' : '');
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+// ============================================================
+//  飞书推送
+// ============================================================
+function pushFeishu() {
+  const counts = { normal:0, warning:0, critical:0, expired:0 };
+  inventory.forEach(it => counts[classify(it.remaining_days)]++);
+  const alerts = inventory.filter(it => classify(it.remaining_days) !== 'normal')
+    .map(it => `  - ${classify(it.remaining_days)==='expired'?'🔴已过期':'⚠️即将过期'} ${it.ingredient_name} (${it.batch_no}) 剩余${it.remaining_days}天`);
+  const msg = {
+    msg_type: "interactive",
+    card: {
+      header: { title: { tag:"plain_text", content:`🛡️ 食安日报 · ${fmt(today)}` }, template:"orange" },
+      elements: [
+        { tag:"div", text:{ tag:"lark_md",
+          content:`**📦 库存概况**\n正常 ${counts.normal} 预警 ${counts.warning} 临界 ${counts.critical} 过期 ${counts.expired} 合计 ${inventory.length}`
+        }},
+        ...(alerts.length ? [{tag:"hr"},{tag:"div",text:{tag:"lark_md",content:"**⚠️ 效期预警明细**\n"+alerts.join("\n")}}] : []),
+      ]
+    }
+  };
+  document.getElementById('modal-body').textContent = JSON.stringify(msg, null, 2);
+  document.getElementById('modal').classList.add('show');
+}
+function closeModal() { document.getElementById('modal').classList.remove('show'); }
+
+// ============================================================
+//  渲染入口
+// ============================================================
+function renderAll() {
+  renderSummary();
+  renderFilters();
+  renderInventory();
+  renderAlerts();
+  renderChecklist();
+  renderHistory();
+  document.getElementById('today-date').textContent = '📅 ' + fmt(today);
+}
+renderAll();
+</script>
+</body>
+</html>

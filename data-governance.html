@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数据治理与决策置信度 - 餐饮AI店长</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #0f172a;
+  color: #e2e8f0;
+  min-height: 100vh;
+  padding: 24px;
+}
+.container { max-width: 1400px; margin: 0 auto; }
+h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; color: #f97316; }
+.subtitle { color: #94a3b8; font-size: 14px; margin-bottom: 24px; }
+
+/* 统计卡片 */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.stat-card {
+  background: #1e293b;
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid #334155;
+}
+.stat-card .label { color: #94a3b8; font-size: 13px; margin-bottom: 8px; }
+.stat-card .value { font-size: 32px; font-weight: 700; }
+
+/* 仪表盘 */
+.gauge-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-bottom: 24px;
+}
+@media (max-width: 768px) { .gauge-grid { grid-template-columns: 1fr; } }
+.gauge-card {
+  background: #1e293b;
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  border: 1px solid #334155;
+}
+.gauge-card .gauge-title { font-size: 14px; color: #94a3b8; margin-bottom: 16px; }
+.gauge-svg { width: 160px; height: 100px; margin: 0 auto; }
+.gauge-card .gauge-value { font-size: 28px; font-weight: 700; margin-top: 8px; }
+
+/* 双栏布局 */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+@media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+
+.panel {
+  background: #1e293b;
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid #334155;
+}
+.panel-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.panel-title .icon { font-size: 20px; }
+
+/* 置信度分布 */
+.confidence-bars { display: flex; flex-direction: column; gap: 12px; }
+.conf-bar-item { }
+.conf-bar-header { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 13px; }
+.conf-bar-track {
+  height: 24px;
+  background: #0f172a;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.conf-bar-fill {
+  height: 100%;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  padding-left: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  transition: width 0.8s ease;
+}
+.conf-bar-fill.high { background: linear-gradient(90deg, #10b981, #059669); }
+.conf-bar-fill.medium { background: linear-gradient(90deg, #f59e0b, #d97706); }
+.conf-bar-fill.low { background: linear-gradient(90deg, #ef4444, #dc2626); }
+
+/* 待确认列表 */
+.pending-list { display: flex; flex-direction: column; gap: 10px; max-height: 400px; overflow-y: auto; }
+.pending-item {
+  background: #0f172a;
+  border-radius: 8px;
+  padding: 14px;
+  border: 1px solid #334155;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.pending-item.critical { border-color: #ef4444; background: rgba(239,68,68,0.05); }
+.pending-info h4 { font-size: 14px; margin-bottom: 4px; }
+.pending-info p { font-size: 12px; color: #94a3b8; }
+.pending-actions { display: flex; gap: 8px; }
+.btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: none;
+  font-size: 12px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+.btn-confirm { background: #10b981; color: white; }
+.btn-confirm:hover { background: #059669; }
+.btn-reject { background: #ef4444; color: white; }
+.btn-reject:hover { background: #dc2626; }
+.btn-sm { padding: 4px 10px; font-size: 11px; }
+
+/* 问题列表 */
+.issue-list { display: flex; flex-direction: column; gap: 8px; max-height: 400px; overflow-y: auto; }
+.issue-item {
+  background: #0f172a;
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.issue-severity {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+.issue-severity.critical { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,0.5); }
+.issue-severity.warning { background: #f59e0b; }
+.issue-severity.info { background: #3b82f6; }
+.issue-content h4 { font-size: 13px; margin-bottom: 2px; }
+.issue-content p { font-size: 12px; color: #94a3b8; }
+.issue-module { font-size: 11px; color: #64748b; margin-top: 4px; }
+
+/* 趋势图 */
+.trend-chart {
+  width: 100%;
+  height: 200px;
+  position: relative;
+}
+.trend-chart svg { width: 100%; height: 100%; }
+
+/* 徽章 */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+}
+.badge.high { background: rgba(16,185,129,0.15); color: #10b981; }
+.badge.medium { background: rgba(245,158,11,0.15); color: #f59e0b; }
+.badge.low { background: rgba(239,68,68,0.15); color: #ef4444; }
+
+/* 全宽 */
+.full-width { margin-bottom: 24px; }
+
+/* 滚动条 */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>📊 数据治理与决策置信度</h1>
+  <p class="subtitle">餐饮AI店长 · 数据质量监控 · 决策可信度管理 · P1-2</p>
+
+  <!-- 数据质量总览仪表盘 -->
+  <div class="gauge-grid" id="gaugeGrid"></div>
+
+  <!-- 双栏：置信度分布 + 待确认决策 -->
+  <div class="two-col">
+    <div class="panel">
+      <div class="panel-title"><span class="icon">🎯</span> 置信度分布</div>
+      <div class="confidence-bars" id="confidenceBars"></div>
+      <div style="margin-top:20px;">
+        <div style="display:flex;justify-content:space-between;font-size:13px;color:#94a3b8;margin-bottom:8px;">
+          <span>人工复核统计</span>
+        </div>
+        <div id="reviewStats" style="font-size:13px;"></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-title"><span class="icon">⚠️</span> 待人工确认决策</div>
+      <div class="pending-list" id="pendingList"></div>
+    </div>
+  </div>
+
+  <!-- 双栏：质量问题 + 模块质量 -->
+  <div class="two-col">
+    <div class="panel">
+      <div class="panel-title"><span class="icon">🔍</span> 数据质量问题</div>
+      <div class="issue-list" id="issueList"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title"><span class="icon">📈</span> 各模块质量趋势</div>
+      <div class="trend-chart" id="trendChart"></div>
+    </div>
+  </div>
+
+  <!-- 决策日志列表 -->
+  <div class="panel full-width">
+    <div class="panel-title"><span class="icon">📋</span> 决策置信度日志（最近10条）</div>
+    <div id="decisionLogs" style="overflow-x:auto;"></div>
+  </div>
+</div>
+
+<script>
+// ──────────────────────────────────────────────
+// 模拟数据
+// ──────────────────────────────────────────────
+const today = new Date();
+const fmt = d => d.toISOString().split('T')[0];
+const addDays = (d, n) => { const r = new Date(d); r.setDate(r.getDate()+n); return r; };
+
+// 数据质量指标
+const qualityMetrics = [
+  { module: '库存管理', completeness: 92, accuracy: 88, timeliness: 95,
+    issues: [{type:'missing', description:'3个SKU缺少安全库存阈值', severity:'warning'}] },
+  { module: '定价引擎', completeness: 78, accuracy: 82, timeliness: 70,
+    issues: [
+      {type:'outdated', description:' competitor_price表3天未更新', severity:'critical'},
+      {type:'missing', description:'部分菜品缺少成本数据', severity:'warning'},
+    ]},
+  { module: '菜单优化', completeness: 85, accuracy: 90, timeliness: 88,
+    issues: [{type:'inconsistent', description:'销量数据与POS系统不一致', severity:'warning'}] },
+  { module: '损耗管理', completeness: 65, accuracy: 72, timeliness: 60,
+    issues: [
+      {type:'missing', description:'废弃记录缺失率35%', severity:'critical'},
+      {type:'outdated', description:'盘点数据滞后2天', severity:'critical'},
+    ]},
+];
+
+// 决策日志
+const decisions = [
+  { id:'d1', module:'定价引擎', type:'pricing', confidence:92, level:'high',
+    content:'建议将「招牌红烧肉」价格从38元调整为42元', data_volume:45, sources:['销售数据','成本数据','竞品价格'],
+    reviewed: true, confirmed: true, reviewer:'张店长', review_date: fmt(addDays(today,-1)) },
+  { id:'d2', module:'库存管理', type:'understocking', confidence:85, level:'high',
+    content:'鸡蛋库存不足，建议今日补货20箱', data_volume:30, sources:['库存数据','销售预测'],
+    reviewed: true, confirmed: true, reviewer:'张店长', review_date: fmt(addDays(today,-1)) },
+  { id:'d3', module:'菜单优化', type:'menu_adjustment', confidence:72, level:'medium',
+    content:'建议下架「凉拌黄瓜」（月销量<10份）', data_volume:15, sources:['销售数据'],
+    reviewed: true, confirmed: false, reviewer:'李副店长', review_date: fmt(addDays(today,-2)) },
+  { id:'d4', module:'定价引擎', type:'pricing', confidence:55, level:'low',
+    content:'建议「酸菜鱼」涨价15%', data_volume:8, sources:['成本数据'],
+    reviewed: false, confirmed: null, reviewer: '', review_date: '' },
+  { id:'d5', module:'损耗管理', type:'disposal', confidence:45, level:'low',
+    content:'建议调整蔬菜类采购量减少20%', data_volume:5, sources:['损耗记录'],
+    reviewed: false, confirmed: null, reviewer: '', review_date: '' },
+  { id:'d6', module:'库存管理', type:'understocking', confidence:88, level:'high',
+    content:'五花肉安全库存预警，建议提前备货', data_volume:35, sources:['库存数据','销售数据','季节因子'],
+    reviewed: true, confirmed: true, reviewer:'张店长', review_date: fmt(today) },
+  { id:'d7', module:'菜单优化', type:'menu_adjustment', confidence:63, level:'medium',
+    content:'建议增加「低卡轻食」品类', data_volume:12, sources:['销售数据','趋势数据'],
+    reviewed: false, confirmed: null, reviewer: '', review_date: '' },
+  { id:'d8', module:'定价引擎', type:'pricing', confidence:42, level:'low',
+    content:'建议工作日午市套餐降价10%', data_volume:6, sources:['销售数据'],
+    reviewed: false, confirmed: null, reviewer: '', review_date: '' },
+  { id:'d9', module:'损耗管理', type:'disposal', confidence:78, level:'medium',
+    content:'建议调整海鲜类备货策略', data_volume:20, sources:['损耗数据','供应商数据'],
+    reviewed: false, confirmed: null, reviewer: '', review_date: '' },
+  { id:'d10', module:'库存管理', type:'understocking', confidence:95, level:'high',
+    content:'大米库存紧急，仅剩1天用量', data_volume:50, sources:['库存数据','销售预测','供应商数据'],
+    reviewed: true, confirmed: true, reviewer:'张店长', review_date: fmt(today) },
+];
+
+// 趋势数据（7天）
+const trends = {};
+['库存管理','定价引擎','菜单优化','损耗管理'].forEach(m => {
+  trends[m] = [];
+  const base = qualityMetrics.find(q => q.module === m);
+  for (let i = 6; i >= 0; i--) {
+    const noise = () => Math.round((Math.random()-0.5)*10);
+    trends[m].push({
+      date: fmt(addDays(today, -i)),
+      score: Math.min(100, Math.max(40, Math.round((base.completeness+base.accuracy+base.timeliness)/3 + noise())))
+    });
+  }
+});
+
+// ──────────────────────────────────────────────
+// 渲染
+// ──────────────────────────────────────────────
+
+function renderGauges() {
+  const grid = document.getElementById('gaugeGrid');
+  const avg = (key) => {
+    const vals = qualityMetrics.map(q => q[key]);
+    return Math.round(vals.reduce((a,b)=>a+b,0)/vals.length);
+  };
+  const completeness = avg('completeness');
+  const accuracy = avg('accuracy');
+  const timeliness = avg('timeliness');
+  const overall = Math.round((completeness+accuracy+timeliness)/3);
+
+  grid.innerHTML = `
+    <div class="stat-card">
+      <div class="label">📦 数据完整性</div>
+      <div class="value" style="color:${gaugeColor(completeness)}">${completeness}%</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">🎯 数据准确性</div>
+      <div class="value" style="color:${gaugeColor(accuracy)}">${accuracy}%</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">⏱️ 数据时效性</div>
+      <div class="value" style="color:${gaugeColor(timeliness)}">${timeliness}%</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">📊 整体评分</div>
+      <div class="value" style="color:${gaugeColor(overall)}">${overall}%</div>
+    </div>
+  `;
+}
+
+function gaugeColor(v) {
+  if (v >= 80) return '#10b981';
+  if (v >= 60) return '#f59e0b';
+  return '#ef4444';
+}
+
+function renderConfidence() {
+  const container = document.getElementById('confidenceBars');
+  const total = decisions.length;
+  const high = decisions.filter(d => d.level === 'high').length;
+  const medium = decisions.filter(d => d.level === 'medium').length;
+  const low = decisions.filter(d => d.level === 'low').length;
+  const pct = v => total ? Math.round(v/total*100) : 0;
+
+  container.innerHTML = `
+    <div class="conf-bar-item">
+      <div class="conf-bar-header">
+        <span>🟢 高置信度 (>80%)</span>
+        <span>${high} 条 (${pct(high)}%)</span>
+      </div>
+      <div class="conf-bar-track">
+        <div class="conf-bar-fill high" style="width:${pct(high)}%">${high > 0 ? high : ''}</div>
+      </div>
+    </div>
+    <div class="conf-bar-item">
+      <div class="conf-bar-header">
+        <span>🟡 中置信度 (60-80%)</span>
+        <span>${medium} 条 (${pct(medium)}%)</span>
+      </div>
+      <div class="conf-bar-track">
+        <div class="conf-bar-fill medium" style="width:${pct(medium)}%">${medium > 0 ? medium : ''}</div>
+      </div>
+    </div>
+    <div class="conf-bar-item">
+      <div class="conf-bar-header">
+        <span>🔴 低置信度 (<60%)</span>
+        <span>${low} 条 (${pct(low)}%)</span>
+      </div>
+      <div class="conf-bar-track">
+        <div class="conf-bar-fill low" style="width:${pct(low)}%">${low > 0 ? low : ''}</div>
+      </div>
+    </div>
+  `;
+
+  // 复核统计
+  const confirmed = decisions.filter(d => d.confirmed === true).length;
+  const rejected = decisions.filter(d => d.confirmed === false).length;
+  const pending = decisions.filter(d => d.confirmed === null && d.level === 'low').length;
+  document.getElementById('reviewStats').innerHTML = `
+    <div style="display:flex;gap:24px;">
+      <span style="color:#10b981">✅ 已确认: ${confirmed}</span>
+      <span style="color:#ef4444">❌ 已驳回: ${rejected}</span>
+      <span style="color:#f59e0b">⏳ 待确认: ${pending}</span>
+    </div>
+  `;
+}
+
+function renderPending() {
+  const list = document.getElementById('pendingList');
+  const pending = decisions.filter(d => d.confirmed === null);
+  if (pending.length === 0) {
+    list.innerHTML = '<div style="text-align:center;color:#64748b;padding:20px">✅ 暂无待确认决策</div>';
+    return;
+  }
+  list.innerHTML = pending.map(d => `
+    <div class="pending-item ${d.confidence < 50 ? 'critical' : ''}">
+      <div class="pending-info">
+        <h4>${d.content}</h4>
+        <p>
+          <span class="badge ${d.level}">${d.confidence}%</span>
+          ${d.module} · ${decisionTypeLabel(d.type)} · 数据量${d.data_volume}条
+        </p>
+      </div>
+      <div class="pending-actions">
+        <button class="btn btn-confirm btn-sm" onclick="handleReview('${d.id}', true)">确认</button>
+        <button class="btn btn-reject btn-sm" onclick="handleReview('${d.id}', false)">驳回</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderIssues() {
+  const list = document.getElementById('issueList');
+  const allIssues = [];
+  qualityMetrics.forEach(q => {
+    (q.issues || []).forEach(issue => {
+      allIssues.push({ ...issue, module: q.module });
+    });
+  });
+  // 按严重度排序
+  const order = { critical: 0, warning: 1, info: 2 };
+  allIssues.sort((a,b) => (order[a.severity]||9) - (order[b.severity]||9));
+
+  list.innerHTML = allIssues.map(issue => `
+    <div class="issue-item">
+      <div class="issue-severity ${issue.severity}"></div>
+      <div class="issue-content">
+        <h4>${issue.description}</h4>
+        <div class="issue-module">${issue.module} · ${severityLabel(issue.severity)}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderTrend() {
+  const chart = document.getElementById('trendChart');
+  const modules = Object.keys(trends);
+  const colors = ['#10b981','#f97316','#3b82f6','#f59e0b'];
+  const width = 500, height = 180;
+  const padding = { top: 10, right: 10, bottom: 25, left: 30 };
+  const chartW = width - padding.left - padding.right;
+  const chartH = height - padding.top - padding.bottom;
+
+  let svg = `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">`;
+
+  // Y轴网格
+  for (let i = 0; i <= 4; i++) {
+    const y = padding.top + (chartH / 4) * i;
+    const val = 100 - (i * 25);
+    svg += `<line x1="${padding.left}" y1="${y}" x2="${width-padding.right}" y2="${y}" stroke="#334155" stroke-width="0.5"/>`;
+    svg += `<text x="${padding.left-5}" y="${y+4}" fill="#64748b" font-size="10" text-anchor="end">${val}</text>`;
+  }
+
+  // X轴日期
+  const dates = trends[modules[0]].map(t => t.date.slice(5));
+  dates.forEach((d, i) => {
+    const x = padding.left + (chartW / (dates.length-1)) * i;
+    svg += `<text x="${x}" y="${height-5}" fill="#64748b" font-size="9" text-anchor="middle">${d}</text>`;
+  });
+
+  // 折线
+  modules.forEach((mod, mi) => {
+    const points = trends[mod].map((t, i) => {
+      const x = padding.left + (chartW / (trends[mod].length-1)) * i;
+      const y = padding.top + chartH - (t.score / 100) * chartH;
+      return `${x},${y}`;
+    });
+    svg += `<polyline points="${points.join(' ')}" fill="none" stroke="${colors[mi]}" stroke-width="2" stroke-linecap="round"/>`;
+    // 最后一个点标记
+    const last = points[points.length-1].split(',');
+    svg += `<circle cx="${last[0]}" cy="${last[1]}" r="3" fill="${colors[mi]}"/>`;
+  });
+
+  // 图例
+  modules.forEach((mod, i) => {
+    const x = padding.left + i * 100;
+    svg += `<rect x="${x}" y="${height-18}" width="8" height="8" rx="2" fill="${colors[i]}"/>`;
+    svg += `<text x="${x+12}" y="${height-10}" fill="#94a3b8" font-size="9">${mod}</text>`;
+  });
+
+  svg += '</svg>';
+  chart.innerHTML = svg;
+}
+
+function renderDecisionLogs() {
+  const container = document.getElementById('decisionLogs');
+  const recent = decisions.slice(0, 10);
+  let html = `<table style="width:100%;border-collapse:collapse;font-size:13px;">
+    <thead><tr style="border-bottom:1px solid #334155;">
+      <th style="text-align:left;padding:8px;color:#94a3b8">模块</th>
+      <th style="text-align:left;padding:8px;color:#94a3b8">决策内容</th>
+      <th style="text-align:center;padding:8px;color:#94a3b8">置信度</th>
+      <th style="text-align:center;padding:8px;color:#94a3b8">数据量</th>
+      <th style="text-align:center;padding:8px;color:#94a3b8">复核状态</th>
+    </tr></thead><tbody>`;
+  recent.forEach(d => {
+    const reviewBadge = d.confirmed === null ?
+      '<span style="color:#f59e0b">待确认</span>' :
+      (d.confirmed ? '<span style="color:#10b981">已确认</span>' : '<span style="color:#ef4444">已驳回</span>');
+    html += `<tr style="border-bottom:1px solid #1e293b;">
+      <td style="padding:8px">${d.module}</td>
+      <td style="padding:8px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.content}</td>
+      <td style="padding:8px;text-align:center"><span class="badge ${d.level}">${d.confidence}%</span></td>
+      <td style="padding:8px;text-align:center">${d.data_volume}条</td>
+      <td style="padding:8px;text-align:center">${reviewBadge}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+// ──────────────────────────────────────────────
+// 工具函数
+// ──────────────────────────────────────────────
+function decisionTypeLabel(t) {
+  return { pricing:'定价', disposal:'报废', understocking:'缺货预警', menu_adjustment:'菜单调整' }[t] || t;
+}
+function severityLabel(s) {
+  return { critical:'🔴 严重', warning:'🟡 警告', info:'🔵 提示' }[s] || s;
+}
+function handleReview(id, confirmed) {
+  const d = decisions.find(x => x.id === id);
+  if (d) {
+    d.confirmed = confirmed;
+    d.reviewed = true;
+    d.reviewer = '当前用户';
+    d.review_date = fmt(today);
+    renderPending();
+    renderConfidence();
+    renderDecisionLogs();
+  }
+}
+
+// ──────────────────────────────────────────────
+// 初始化
+// ──────────────────────────────────────────────
+renderGauges();
+renderConfidence();
+renderPending();
+renderIssues();
+renderTrend();
+renderDecisionLogs();
+</script>
+</body>
+</html>
