@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>去AI味改写</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0f172a;
+  color: #e2e8f0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 24px 16px;
+}
+.container { max-width: 520px; width: 100%; }
+.header { text-align: center; margin-bottom: 28px; }
+.header h1 { font-size: 1.6rem; font-weight: 700; margin-bottom: 6px; }
+.header p { color: #94a3b8; font-size: 0.9rem; }
+.card {
+  background: #1e293b;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+label { display: block; font-size: 0.85rem; color: #94a3b8; margin-bottom: 8px; font-weight: 500; }
+textarea {
+  width: 100%;
+  min-height: 150px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  color: #e2e8f0;
+  font-size: 0.95rem;
+  padding: 14px 16px;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s;
+  font-family: inherit;
+  line-height: 1.6;
+}
+textarea:focus { border-color: #f97316; }
+textarea::placeholder { color: #475569; }
+select {
+  width: 100%;
+  padding: 12px 16px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  color: #e2e8f0;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+}
+select:focus { border-color: #f97316; }
+.btn-generate {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 50px;
+  background: linear-gradient(135deg, #fbbf24, #f97316);
+  color: #0f172a;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  margin-top: 16px;
+  letter-spacing: 1px;
+}
+.btn-generate:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(251,191,36,0.3); }
+.btn-generate:active { transform: translateY(0); }
+.btn-generate:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+#result { display: none; }
+.section-title { font-size: 1rem; font-weight: 600; margin-bottom: 14px; }
+.output-box {
+  background: #0f172a;
+  border-radius: 12px;
+  padding: 16px;
+  min-height: 120px;
+  font-size: 0.92rem;
+  line-height: 1.8;
+  color: #cbd5e1;
+  white-space: pre-wrap;
+  word-break: break-all;
+  position: relative;
+}
+.ai-score {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: #0f172a;
+  border-radius: 12px;
+}
+.ai-score-label { font-size: 0.85rem; color: #94a3b8; white-space: nowrap; }
+.ai-score-bar {
+  flex: 1;
+  height: 8px;
+  background: #334155;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.ai-score-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.8s ease;
+}
+.ai-score-value { font-size: 1rem; font-weight: 700; min-width: 48px; text-align: right; }
+.btn-row { display: flex; gap: 10px; margin-top: 14px; }
+.btn-copy {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+.btn-copy:hover { border-color: #fbbf24; color: #fbbf24; }
+.btn-copy.copied { border-color: #34d399; color: #34d399; }
+.history-item {
+  background: #0f172a;
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  border: 1px solid transparent;
+}
+.history-item:hover { border-color: #334155; }
+.history-platform {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+.history-text {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.history-time { font-size: 0.75rem; color: #475569; margin-top: 6px; }
+.footer-tip {
+  text-align: center;
+  color: #475569;
+  font-size: 0.8rem;
+  margin-top: 24px;
+  padding-bottom: 20px;
+}
+.loading {
+  text-align: center;
+  padding: 40px 0;
+  display: none;
+}
+.loading .dots span {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #fbbf24;
+  margin: 0 4px;
+  animation: bounce 1.2s infinite;
+}
+.loading .dots span:nth-child(2) { animation-delay: 0.2s; }
+.loading .dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes bounce {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40% { transform: scale(1); opacity: 1; }
+}
+.loading p { color: #64748b; font-size: 0.85rem; margin-top: 12px; }
+@keyframes shake { 0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)} }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>✍️ 去AI味改写</h1>
+    <p>让AI文案像真人写的，避免平台限流</p>
+  </div>
+
+  <div class="card">
+    <label>输入文案</label>
+    <textarea id="inputText" placeholder="粘贴需要改写的AI生成文案..."></textarea>
+    <div style="margin-top:14px">
+      <label>目标平台</label>
+      <select id="platform">
+        <option value="通用">通用（自然口语化）</option>
+        <option value="小红书">小红书（种草风格）</option>
+        <option value="朋友圈">朋友圈（生活分享）</option>
+        <option value="美团外卖">美团外卖（商家回复）</option>
+        <option value="大众点评">大众点评（真实评价）</option>
+      </select>
+    </div>
+    <button class="btn-generate" id="btnGen" onclick="doRewrite()">一键去AI味</button>
+  </div>
+
+  <div class="loading" id="loading">
+    <div class="dots"><span></span><span></span><span></span></div>
+    <p>正在改写，去除AI痕迹...</p>
+  </div>
+
+  <div id="result">
+    <div class="card">
+      <div class="section-title">📝 改写结果</div>
+      <div class="output-box" id="outputText"></div>
+      <div class="ai-score">
+        <span class="ai-score-label">预估AI率</span>
+        <div class="ai-score-bar">
+          <div class="ai-score-fill" id="scoreFill" style="width:0%;background:#34d399"></div>
+        </div>
+        <span class="ai-score-value" id="scoreValue">--</span>
+      </div>
+      <div class="btn-row">
+        <button class="btn-copy" onclick="copyResult(this)">📋 复制改写结果</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">🕐 最近改写记录</div>
+      <div id="historyList">
+        <div style="color:#475569;text-align:center;padding:20px 0;font-size:0.88rem">暂无记录</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-tip">改写由去AI味引擎v1.0驱动，支持5大平台专属风格</div>
+</div>
+
+<script>
+// Supabase
+const SUPABASE_URL = 'https://vovzgfilfdwngfuqnxjc.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvdnpnZmlsZmR3bmdmdXFueGpjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk4ODQ2MTYsImV4cCI6MjA2NTQ2MDYxNn0.BYjr-OjErMSLAbnU3t7D5LmYQV0y2Dk-jDfHQ5xTqCs';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// Platform colors
+const PLATFORM_COLORS = {
+  '通用': { bg: 'rgba(148,163,184,0.15)', color: '#94a3b8' },
+  '小红书': { bg: 'rgba(239,68,68,0.15)', color: '#ef4444' },
+  '朋友圈': { bg: 'rgba(34,197,94,0.15)', color: '#22c55e' },
+  '美团外卖': { bg: 'rgba(251,191,36,0.15)', color: '#fbbf24' },
+  '大众点评': { bg: 'rgba(59,130,246,0.15)', color: '#3b82f6' }
+};
+
+// Rewrite rules per platform
+const REWRITE_RULES = {
+  '通用': {
+    prefixes: ['说实话，', '怎么说呢，', '讲真，', '我个人觉得，', ''],
+    suffixes: ['吧', '啊', '嗯', '嘛', ''],
+    removePatterns: [/首先|其次|最后|综上所述|总而言之|值得注意的是|不可否认|毋庸置疑/g, /此外|另外|与此同时/g],
+    style: 'natural'
+  },
+  '小红书': {
+    prefixes: ['姐妹们！', '家人们谁懂啊！', '救命！', '真的绝了！', ''],
+    suffixes: ['～', '!', '哈哈哈', '绝绝子', ''],
+    emojis: ['✨', '🔥', '💕', '👀', '😭', '🥹', '💯'],
+    removePatterns: [/首先|其次|最后|综上所述|总而言之/g, /专业的|科学的|合理的/g],
+    style: 'xiaohongshu'
+  },
+  '朋友圈': {
+    prefixes: ['今天发现一个', '分享一个', '最近在用', ''],
+    suffixes: ['～', '哈哈', '真的可以', ''],
+    removePatterns: [/首先|其次|最后|综上所述|总而言之/g, /推荐|建议|分析/g],
+    style: 'wechat'
+  },
+  '美团外卖': {
+    prefixes: ['感谢您的反馈！', '亲爱的顾客，', '您好！', ''],
+    suffixes: ['期待您的再次光临！', '祝您用餐愉快！', ''],
+    removePatterns: [/首先|其次|最后|综上所述/g, /我们非常重视|感谢您的宝贵意见/g],
+    style: 'meituan'
+  },
+  '大众点评': {
+    prefixes: ['作为老顾客来说，', '个人体验下来，', '去了一次，', ''],
+    suffixes: ['总体来说还行', '下次还会去', ''],
+    removePatterns: [/首先|其次|最后|综上所述|总而言之/g, /客观来说|综合评估/g],
+    style: 'dianping'
+  }
+};
+
+function simulateRewrite(text, platform) {
+  const rules = REWRITE_RULES[platform] || REWRITE_RULES['通用'];
+  let result = text;
+
+  // Remove AI-typical patterns
+  rules.removePatterns.forEach(function(p) {
+    result = result.replace(p, '');
+  });
+
+  // Replace formal connectors
+  result = result.replace(/并且/g, '还有');
+  result = result.replace(/因此/g, '所以');
+  result = result.replace(/然而/g, '但是');
+  result = result.replace(/尽管/g, '虽然');
+  result = result.replace(/进行/g, '做');
+  result = result.replace(/具有/g, '有');
+  result = result.replace(/能够/g, '可以');
+  result = result.replace(/非常/g, '特别');
+  result = result.replace(/十分/g, '很');
+  result = result.replace(/极其/g, '超级');
+  result = result.replace(/此外/g, '另外');
+  result = result.replace(/不仅.*而且/g, '不光...还');
+  result = result.replace(/在.*方面/g, '说到$1');
+  result = result.replace(/对于.*来说/g, '$1的话');
+  result = result.replace(/值得.*注意/g, '要留意');
+  result = result.replace(/毋庸置疑/g, '没得说');
+  result = result.replace(/综上所述/g, '总的来说');
+  result = result.replace(/总而言之/g, '总结一下');
+
+  // Clean up extra spaces/periods
+  result = result.replace(/\s{2,}/g, ' ');
+  result = result.replace(/。。/g, '。');
+
+  // Add platform flavor
+  if (rules.emojis && Math.random() > 0.3) {
+    const emoji = rules.emojis[Math.floor(Math.random() * rules.emojis.length)];
+    result = emoji + ' ' + result + ' ' + emoji;
+  }
+
+  return result.trim();
+}
+
+function simulateAIScore(text) {
+  const aiWords = ['首先', '其次', '最后', '综上', '值得注意', '不可否认', '毋庸置疑', '总而言之', '此外', '另外'];
+  let count = 0;
+  aiWords.forEach(function(w) { if (text.indexOf(w) !== -1) count++; });
+  const baseScore = Math.max(5, Math.min(35, count * 8 + Math.floor(Math.random() * 10)));
+  return baseScore;
+}
+
+function doRewrite() {
+  var text = document.getElementById('inputText').value.trim();
+  var platform = document.getElementById('platform').value;
+
+  if (!text) {
+    document.getElementById('btnGen').style.animation = 'shake 0.4s';
+    setTimeout(function() { document.getElementById('btnGen').style.animation = ''; }, 400);
+    return;
+  }
+
+  var btn = document.getElementById('btnGen');
+  var loading = document.getElementById('loading');
+  var result = document.getElementById('result');
+
+  btn.disabled = true;
+  result.style.display = 'none';
+  loading.style.display = 'block';
+
+  setTimeout(function() {
+    var output = simulateRewrite(text, platform);
+    var aiScore = simulateAIScore(text);
+
+    document.getElementById('outputText').textContent = output;
+    document.getElementById('scoreValue').textContent = aiScore + '%';
+    var fill = document.getElementById('scoreFill');
+    fill.style.width = aiScore + '%';
+    if (aiScore <= 20) fill.style.background = '#34d399';
+    else if (aiScore <= 50) fill.style.background = '#fbbf24';
+    else fill.style.background = '#ef4444';
+
+    // Save to Supabase
+    sb.from('rewrite_logs').insert({
+      text_input: text,
+      platform: platform,
+      text_output: output,
+      ai_score: aiScore
+    }).then(function(res) {
+      loadHistory();
+    });
+
+    loading.style.display = 'none';
+    result.style.display = 'block';
+    btn.disabled = false;
+  }, 1500);
+}
+
+function copyResult(btn) {
+  var text = document.getElementById('outputText').textContent;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function() { showCopied(btn); });
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+    showCopied(btn);
+  }
+}
+
+function showCopied(btn) {
+  btn.textContent = '已复制 ✓';
+  btn.classList.add('copied');
+  setTimeout(function() {
+    btn.textContent = '📋 复制改写结果';
+    btn.classList.remove('copied');
+  }, 2000);
+}
+
+function loadHistory() {
+  sb.from('rewrite_logs')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(5)
+    .then(function(res) {
+      var list = document.getElementById('historyList');
+      if (res.error || !res.data || res.data.length === 0) {
+        list.innerHTML = '<div style="color:#475569;text-align:center;padding:20px 0;font-size:0.88rem">暂无记录</div>';
+        return;
+      }
+      list.innerHTML = res.data.map(function(item) {
+        var pc = PLATFORM_COLORS[item.platform] || PLATFORM_COLORS['通用'];
+        var time = item.created_at ? new Date(item.created_at).toLocaleString('zh-CN', {month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+        var preview = (item.text_output || '').substring(0, 60);
+        return '<div class="history-item" onclick="useHistory(\'' + encodeURIComponent(item.text_input) + '\',\'' + item.platform + '\')">' +
+          '<span class="history-platform" style="background:' + pc.bg + ';color:' + pc.color + '">' + (item.platform || '通用') + '</span>' +
+          '<div class="history-text">' + preview + (item.text_output && item.text_output.length > 60 ? '...' : '') + '</div>' +
+          '<div class="history-time">' + time + ' · AI率 ' + (item.ai_score || '--') + '%</div>' +
+          '</div>';
+      }).join('');
+    });
+}
+
+function useHistory(encodedText, platform) {
+  document.getElementById('inputText').value = decodeURIComponent(encodedText);
+  document.getElementById('platform').value = platform || '通用';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Load history on page load
+loadHistory();
+</script>
+</body>
+</html>

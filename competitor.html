@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>竞品监控雷达</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0f172a;
+  color: #e2e8f0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 24px 16px;
+}
+.container { max-width: 520px; width: 100%; }
+.header { text-align: center; margin-bottom: 28px; }
+.header h1 { font-size: 1.6rem; font-weight: 700; margin-bottom: 6px; }
+.header p { color: #94a3b8; font-size: 0.9rem; }
+.card {
+  background: #1e293b;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.section-title { font-size: 1rem; font-weight: 600; margin-bottom: 14px; }
+
+/* Status bar */
+.status-bar {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.status-item {
+  background: #1e293b;
+  border-radius: 12px;
+  padding: 14px 10px;
+  text-align: center;
+}
+.status-value { font-size: 1.4rem; font-weight: 700; color: #fbbf24; }
+.status-label { font-size: 0.72rem; color: #64748b; margin-top: 4px; }
+
+/* Competitor card */
+.comp-card {
+  background: #0f172a;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  border: 1px solid #1e293b;
+  transition: border-color 0.2s;
+}
+.comp-card:hover { border-color: #334155; }
+.comp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+.comp-name { font-size: 1rem; font-weight: 600; color: #e2e8f0; }
+.comp-platform {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+.comp-info {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.comp-detail {
+  font-size: 0.82rem;
+  color: #94a3b8;
+}
+.comp-detail strong { color: #e2e8f0; font-weight: 600; }
+.comp-actions {
+  display: flex;
+  gap: 8px;
+}
+.comp-btn {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+.comp-btn:hover { border-color: #fbbf24; color: #fbbf24; }
+.comp-btn.primary { background: linear-gradient(135deg, #fbbf24, #f97316); color: #0f172a; border: none; font-weight: 600; }
+
+/* Alert panel */
+.alert-section { margin-bottom: 14px; }
+.alert-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  cursor: pointer;
+}
+.alert-toggle span:first-child { font-size: 0.9rem; font-weight: 600; }
+.alert-toggle .arrow { font-size: 0.75rem; color: #64748b; transition: transform 0.3s; }
+.alert-toggle.open .arrow { transform: rotate(180deg); }
+.alert-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+.alert-content.open { max-height: 600px; }
+.alert-item {
+  padding: 10px 12px;
+  background: #0f172a;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: #cbd5e1;
+  border-left: 3px solid;
+}
+.alert-item.red { border-left-color: #ef4444; }
+.alert-item.yellow { border-left-color: #fbbf24; }
+.alert-item.green { border-left-color: #22c55e; }
+.alert-time { font-size: 0.72rem; color: #475569; margin-top: 4px; }
+
+/* Comparison table */
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+.compare-table th {
+  background: #0f172a;
+  padding: 10px 8px;
+  text-align: left;
+  color: #94a3b8;
+  font-weight: 500;
+  font-size: 0.78rem;
+}
+.compare-table td {
+  padding: 10px 8px;
+  border-bottom: 1px solid #1e293b;
+  color: #e2e8f0;
+}
+.compare-table tr:last-child td { border-bottom: none; }
+.compare-table .mine { color: #fbbf24; font-weight: 600; }
+
+/* Modal */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(4px);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.active { display: flex; }
+.modal-box {
+  background: #1e293b;
+  border-radius: 20px;
+  padding: 24px;
+  max-width: 420px;
+  width: 90%;
+  position: relative;
+  animation: modalIn 0.3s ease;
+}
+@keyframes modalIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.modal-close {
+  position: absolute;
+  top: 12px; right: 16px;
+  background: none; border: none;
+  color: #94a3b8; font-size: 1.5rem;
+  cursor: pointer;
+}
+.modal-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 16px; color: #e2e8f0; }
+.form-group { margin-bottom: 14px; }
+.form-group label { display: block; font-size: 0.82rem; color: #94a3b8; margin-bottom: 6px; }
+.form-input {
+  width: 100%;
+  padding: 10px 14px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  color: #e2e8f0;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.form-input:focus { border-color: #f97316; }
+select.form-input {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394a3b8' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+}
+.btn-generate {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 50px;
+  background: linear-gradient(135deg, #fbbf24, #f97316);
+  color: #0f172a;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  letter-spacing: 1px;
+}
+.btn-generate:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(251,191,36,0.3); }
+.btn-generate:active { transform: translateY(0); }
+.btn-generate:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.btn-secondary {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #334155;
+  border-radius: 50px;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-top: 10px;
+}
+.btn-secondary:hover { border-color: #fbbf24; color: #fbbf24; }
+
+.btn-copy {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 8px 16px;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-copy:hover { border-color: #fbbf24; color: #fbbf24; }
+.btn-copy.copied { border-color: #34d399; color: #34d399; }
+
+.empty-state {
+  text-align: center;
+  padding: 30px 0;
+  color: #475569;
+  font-size: 0.88rem;
+}
+
+.loading {
+  text-align: center;
+  padding: 30px 0;
+  display: none;
+}
+.loading .dots span {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #fbbf24;
+  margin: 0 4px;
+  animation: bounce 1.2s infinite;
+}
+.loading .dots span:nth-child(2) { animation-delay: 0.2s; }
+.loading .dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes bounce {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40% { transform: scale(1); opacity: 1; }
+}
+.loading p { color: #64748b; font-size: 0.85rem; margin-top: 12px; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🔍 竞品监控雷达</h1>
+    <p>监控周边竞品，掌握市场动态</p>
+  </div>
+
+  <!-- Status bar -->
+  <div class="status-bar">
+    <div class="status-item">
+      <div class="status-value" id="statTime">--</div>
+      <div class="status-label">上次采集</div>
+    </div>
+    <div class="status-item">
+      <div class="status-value" id="statCount">0</div>
+      <div class="status-label">监控店铺</div>
+    </div>
+    <div class="status-item">
+      <div class="status-value" id="statAlert">0</div>
+      <div class="status-label">未读预警</div>
+    </div>
+  </div>
+
+  <!-- Competitor list -->
+  <div class="card">
+    <div class="section-title">🏪 竞品店铺</div>
+    <div id="compList">
+      <div class="empty-state">暂无竞品数据，点击下方按钮录入</div>
+    </div>
+    <button class="btn-generate" onclick="openAddModal()" style="margin-top:14px">+ 录入竞品店铺</button>
+  </div>
+
+  <!-- Alert panel -->
+  <div class="card">
+    <div class="section-title">🚨 预警面板</div>
+    
+    <div class="alert-section">
+      <div class="alert-toggle" onclick="toggleAlert(this)">
+        <span>🔴 价格预警</span>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="alert-content" id="priceAlerts">
+        <div class="empty-state" style="padding:10px 0">暂无价格预警</div>
+      </div>
+    </div>
+
+    <div class="alert-section">
+      <div class="alert-toggle" onclick="toggleAlert(this)">
+        <span>🟡 营销预警</span>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="alert-content" id="mktAlerts">
+        <div class="empty-state" style="padding:10px 0">暂无营销预警</div>
+      </div>
+    </div>
+
+    <div class="alert-section">
+      <div class="alert-toggle" onclick="toggleAlert(this)">
+        <span>🟢 机会发现</span>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="alert-content" id="oppAlerts">
+        <div class="empty-state" style="padding:10px 0">暂无机会发现</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Comparison -->
+  <div class="card">
+    <div class="section-title">📊 竞品对比</div>
+    <div style="overflow-x:auto">
+      <table class="compare-table" id="compareTable">
+        <thead>
+          <tr>
+            <th>维度</th>
+            <th>我方</th>
+            <th>竞品</th>
+          </tr>
+        </thead>
+        <tbody id="compareBody">
+          <tr><td colspan="3" style="text-align:center;color:#475569;padding:20px">录入竞品后可查看对比数据</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-bottom:24px">
+    <button class="btn-generate" onclick="generateReport()" style="width:auto;padding:14px 32px">📄 生成竞品日报</button>
+  </div>
+</div>
+
+<!-- Add competitor modal -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeAddModal()">&times;</button>
+    <div class="modal-title">录入竞品店铺</div>
+    <div class="form-group">
+      <label>店铺名称</label>
+      <input class="form-input" id="fName" placeholder="例：张亮麻辣烫(万达店)">
+    </div>
+    <div class="form-group">
+      <label>平台</label>
+      <select class="form-input" id="fPlatform">
+        <option value="美团">美团</option>
+        <option value="饿了么">饿了么</option>
+        <option value="大众点评">大众点评</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>距离 (km)</label>
+      <input class="form-input" id="fDistance" type="number" step="0.1" placeholder="例：1.5">
+    </div>
+    <div class="form-group">
+      <label>评分</label>
+      <input class="form-input" id="fRating" type="number" step="0.1" max="5" placeholder="例：4.6">
+    </div>
+    <div class="form-group">
+      <label>核心菜品及价格</label>
+      <input class="form-input" id="fProducts" placeholder="例：招牌麻辣烫 ¥22，酸辣粉 ¥15">
+    </div>
+    <div class="form-group">
+      <label>满减活动</label>
+      <input class="form-input" id="fPromo" placeholder="例：满30减12，满50减20">
+    </div>
+    <div class="form-group">
+      <label>月销量（估算）</label>
+      <input class="form-input" id="fMonthly" type="number" placeholder="例：3000">
+    </div>
+    <button class="btn-generate" onclick="saveCompetitor()">保存竞品</button>
+  </div>
+</div>
+
+<!-- Report modal -->
+<div class="modal-overlay" id="reportModal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeReportModal()">&times;</button>
+    <div class="modal-title">📄 竞品日报</div>
+    <div id="reportContent" style="font-size:0.88rem;line-height:1.8;color:#cbd5e1;max-height:400px;overflow-y:auto"></div>
+    <button class="btn-copy" onclick="copyReport(this)" style="margin-top:14px;width:100%;text-align:center">📋 复制日报</button>
+  </div>
+</div>
+
+<script>
+// Supabase
+const SUPABASE_URL = 'https://vovzgfilfdwngfuqnxjc.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvdnpnZmlsZmR3bmdmdXFueGpjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk4ODQ2MTYsImV4cCI6MjA2NTQ2MDYxNn0.BYjr-OjErMSLAbnU3t7D5LmYQV0y2Dk-jDfHQ5xTqCs';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const PLATFORM_COLORS = {
+  '美团': { bg: 'rgba(251,191,36,0.15)', color: '#fbbf24' },
+  '饿了么': { bg: 'rgba(59,130,246,0.15)', color: '#3b82f6' },
+  '大众点评': { bg: 'rgba(34,197,94,0.15)', color: '#22c55e' }
+};
+
+var competitors = [];
+
+function openAddModal() {
+  document.getElementById('addModal').classList.add('active');
+}
+function closeAddModal() {
+  document.getElementById('addModal').classList.remove('active');
+}
+function closeReportModal() {
+  document.getElementById('reportModal').classList.remove('active');
+}
+
+function toggleAlert(el) {
+  el.classList.toggle('open');
+  var content = el.nextElementSibling;
+  content.classList.toggle('open');
+}
+
+function saveCompetitor() {
+  var name = document.getElementById('fName').value.trim();
+  var platform = document.getElementById('fPlatform').value;
+  var distance = document.getElementById('fDistance').value;
+  var rating = document.getElementById('fRating').value;
+  var products = document.getElementById('fProducts').value.trim();
+  var promo = document.getElementById('fPromo').value.trim();
+  var monthly = document.getElementById('fMonthly').value;
+
+  if (!name) { alert('请输入店铺名称'); return; }
+
+  var data = {
+    name: name,
+    platform: platform,
+    distance: parseFloat(distance) || 0,
+    rating: parseFloat(rating) || 0,
+    products: products,
+    promo: promo,
+    monthly_sales: parseInt(monthly) || 0
+  };
+
+  sb.from('competitors').insert(data).then(function(res) {
+    if (res.error) {
+      // If table doesn't exist, store locally
+      var local = JSON.parse(localStorage.getItem('competitors') || '[]');
+      data.created_at = new Date().toISOString();
+      local.push(data);
+      localStorage.setItem('competitors', JSON.stringify(local));
+    }
+    closeAddModal();
+    clearForm();
+    loadCompetitors();
+    generateAlerts();
+  });
+}
+
+function clearForm() {
+  ['fName','fDistance','fRating','fProducts','fPromo','fMonthly'].forEach(function(id) {
+    document.getElementById(id).value = '';
+  });
+}
+
+function loadCompetitors() {
+  // Try Supabase first, fallback to localStorage
+  sb.from('competitors').select('*').order('created_at', { ascending: false }).then(function(res) {
+    var data = [];
+    if (!res.error && res.data && res.data.length > 0) {
+      data = res.data;
+    } else {
+      data = JSON.parse(localStorage.getItem('competitors') || '[]');
+    }
+    competitors = data;
+    renderCompetitors();
+    updateStats();
+    renderComparison();
+  });
+}
+
+function renderCompetitors() {
+  var list = document.getElementById('compList');
+  if (competitors.length === 0) {
+    list.innerHTML = '<div class="empty-state">暂无竞品数据，点击下方按钮录入</div>';
+    return;
+  }
+  list.innerHTML = competitors.map(function(c, i) {
+    var pc = PLATFORM_COLORS[c.platform] || { bg: 'rgba(148,163,184,0.15)', color: '#94a3b8' };
+    return '<div class="comp-card">' +
+      '<div class="comp-header">' +
+        '<div class="comp-name">' + (c.name || '未命名') + '</div>' +
+        '<span class="comp-platform" style="background:' + pc.bg + ';color:' + pc.color + '">' + (c.platform || '--') + '</span>' +
+      '</div>' +
+      '<div class="comp-info">' +
+        '<div class="comp-detail">距离: <strong>' + (c.distance || '--') + 'km</strong></div>' +
+        '<div class="comp-detail">评分: <strong>' + (c.rating || '--') + '</strong></div>' +
+        '<div class="comp-detail">菜品: <strong>' + (c.products || '--') + '</strong></div>' +
+        '<div class="comp-detail">满减: <strong>' + (c.promo || '无') + '</strong></div>' +
+      '</div>' +
+      '<div class="comp-actions">' +
+        '<button class="comp-btn" onclick="viewDetail(' + i + ')">查看详情</button>' +
+        '<button class="comp-btn" onclick="deleteComp(' + i + ')">删除</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function updateStats() {
+  document.getElementById('statCount').textContent = competitors.length;
+  var now = new Date();
+  document.getElementById('statTime').textContent = now.getHours() + ':' + String(now.getMinutes()).padStart(2,'0');
+}
+
+function renderComparison() {
+  var body = document.getElementById('compareBody');
+  if (competitors.length === 0) {
+    body.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#475569;padding:20px">录入竞品后可查看对比数据</td></tr>';
+    return;
+  }
+  var rows = [
+    { dim: '平均价格', my: '待设置', comp: calcAvgPrice() },
+    { dim: '满减力度', my: '待设置', comp: calcPromoLevel() },
+    { dim: '平均评分', my: '待设置', comp: calcAvgRating() },
+    { dim: '月销量', my: '待设置', comp: calcAvgMonthly() }
+  ];
+  body.innerHTML = rows.map(function(r) {
+    return '<tr><td>' + r.dim + '</td><td class="mine">' + r.my + '</td><td>' + r.comp + '</td></tr>';
+  }).join('');
+}
+
+function calcAvgPrice() {
+  if (competitors.length === 0) return '--';
+  return '竞品' + competitors.length + '家已录入';
+}
+function calcPromoLevel() {
+  var promos = competitors.filter(function(c) { return c.promo; });
+  return promos.length > 0 ? promos.length + '家有活动' : '无活动';
+}
+function calcAvgRating() {
+  var ratings = competitors.filter(function(c) { return c.rating; }).map(function(c) { return c.rating; });
+  if (ratings.length === 0) return '--';
+  return (ratings.reduce(function(a,b) { return a+b; }, 0) / ratings.length).toFixed(1);
+}
+function calcAvgMonthly() {
+  var sales = competitors.filter(function(c) { return c.monthly_sales; }).map(function(c) { return c.monthly_sales; });
+  if (sales.length === 0) return '--';
+  return Math.round(sales.reduce(function(a,b) { return a+b; }, 0) / sales.length) + '单/月';
+}
+
+function generateAlerts() {
+  var priceAlerts = [];
+  var mktAlerts = [];
+  var oppAlerts = [];
+
+  competitors.forEach(function(c) {
+    // Price alerts: if promo is aggressive
+    if (c.promo && c.promo.length > 5) {
+      mktAlerts.push({
+        text: c.name + ' 正在执行 "' + c.promo + '" 满减活动，力度较大',
+        time: '刚刚'
+      });
+    }
+    // Opportunity: low rating competitors
+    if (c.rating && c.rating < 4.0) {
+      oppAlerts.push({
+        text: c.name + ' 评分仅 ' + c.rating + '，可在服务/品质上形成差异化优势',
+        time: '刚刚'
+      });
+    }
+    // Opportunity: far competitors
+    if (c.distance && c.distance > 2) {
+      oppAlerts.push({
+        text: c.name + ' 距离较远(' + c.distance + 'km)，你的区位优势明显',
+        time: '刚刚'
+      });
+    }
+  });
+
+  // Render alerts
+  renderAlertList('priceAlerts', priceAlerts, 'red');
+  renderAlertList('mktAlerts', mktAlerts, 'yellow');
+  renderAlertList('oppAlerts', oppAlerts, 'green');
+
+  document.getElementById('statAlert').textContent = priceAlerts.length + mktAlerts.length + oppAlerts.length;
+
+  // Save alerts to Supabase
+  if (priceAlerts.length + mktAlerts.length + oppAlerts.length > 0) {
+    var alertData = {
+      price_count: priceAlerts.length,
+      mkt_count: mktAlerts.length,
+      opp_count: oppAlerts.length,
+      details: JSON.stringify({ price: priceAlerts, mkt: mktAlerts, opp: oppAlerts })
+    };
+    sb.from('competitor_alerts').insert(alertData);
+  }
+}
+
+function renderAlertList(elId, alerts, colorClass) {
+  var el = document.getElementById(elId);
+  if (alerts.length === 0) {
+    el.innerHTML = '<div class="empty-state" style="padding:10px 0">暂无' + (colorClass === 'red' ? '价格' : colorClass === 'yellow' ? '营销' : '机会') + '预警</div>';
+    return;
+  }
+  el.innerHTML = alerts.map(function(a) {
+    return '<div class="alert-item ' + colorClass + '">' + a.text + '<div class="alert-time">' + a.time + '</div></div>';
+  }).join('');
+}
+
+function viewDetail(index) {
+  var c = competitors[index];
+  if (!c) return;
+  alert('店铺: ' + c.name + '\n平台: ' + c.platform + '\n距离: ' + (c.distance || '--') + 'km\n评分: ' + (c.rating || '--') + '\n菜品: ' + (c.products || '--') + '\n满减: ' + (c.promo || '无') + '\n月销: ' + (c.monthly_sales || '--') + '单');
+}
+
+function deleteComp(index) {
+  if (!confirm('确定删除该竞品？')) return;
+  var c = competitors[index];
+  // Try delete from Supabase
+  if (c.id) {
+    sb.from('competitors').delete().eq('id', c.id);
+  }
+  // Also remove from localStorage
+  var local = JSON.parse(localStorage.getItem('competitors') || '[]');
+  local.splice(index, 1);
+  localStorage.setItem('competitors', JSON.stringify(local));
+  
+  competitors.splice(index, 1);
+  renderCompetitors();
+  updateStats();
+  renderComparison();
+  generateAlerts();
+}
+
+function generateReport() {
+  if (competitors.length === 0) {
+    alert('请先录入竞品店铺');
+    return;
+  }
+  var today = new Date().toLocaleDateString('zh-CN');
+  var report = '📊 竞品监控日报 - ' + today + '\n\n';
+  report += '📌 监控概况\n';
+  report += '监控店铺数：' + competitors.length + '家\n';
+  report += '平台分布：' + getPlatformSummary() + '\n\n';
+  
+  report += '🏪 竞品详情\n';
+  competitors.forEach(function(c, i) {
+    report += (i+1) + '. ' + c.name + '（' + c.platform + '）\n';
+    report += '   距离: ' + (c.distance || '--') + 'km | 评分: ' + (c.rating || '--') + '\n';
+    report += '   菜品: ' + (c.products || '--') + '\n';
+    report += '   满减: ' + (c.promo || '无') + '\n';
+    report += '   月销: ' + (c.monthly_sales || '--') + '单\n\n';
+  });
+
+  report += '💡 建议\n';
+  report += '- 关注竞品满减力度变化，及时调整自身活动策略\n';
+  report += '- 对比竞品差评，找出自身可提升的服务点\n';
+  report += '- 利用区位优势，强化周边3km配送效率\n';
+
+  document.getElementById('reportContent').textContent = report;
+  document.getElementById('reportModal').classList.add('active');
+}
+
+function getPlatformSummary() {
+  var map = {};
+  competitors.forEach(function(c) {
+    map[c.platform] = (map[c.platform] || 0) + 1;
+  });
+  return Object.keys(map).map(function(k) { return k + map[k] + '家'; }).join('、');
+}
+
+function copyReport(btn) {
+  var text = document.getElementById('reportContent').textContent;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function() { showCopied(btn); });
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+    showCopied(btn);
+  }
+}
+
+function showCopied(btn) {
+  btn.textContent = '已复制 ✓';
+  btn.classList.add('copied');
+  setTimeout(function() {
+    btn.textContent = '📋 复制日报';
+    btn.classList.remove('copied');
+  }, 2000);
+}
+
+// Load data on page init
+loadCompetitors();
+</script>
+</body>
+</html>

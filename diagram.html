@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>经营图表生成器 — 餐饮AI店长</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --bg: #0f172a; --surface: #1e293b; --border: #334155;
+  --text: #e2e8f0; --text-muted: #94a3b8;
+  --primary: #f97316; --primary-dim: rgba(249,115,22,0.15);
+  --green: #10b981; --blue: #3b82f6; --purple: #8b5cf6;
+}
+body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+.header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+.header a { color: var(--text-muted); text-decoration: none; font-size: 14px; }
+.header a:hover { color: var(--primary); }
+.header h1 { font-size: 18px; font-weight: 600; }
+.header .badge { background: var(--primary-dim); color: var(--primary); padding: 2px 8px; border-radius: 10px; font-size: 12px; }
+.container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+/* 控制面板 */
+.controls { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+.controls h2 { font-size: 15px; color: var(--text-muted); margin-bottom: 16px; }
+.control-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; }
+.control-group { display: flex; flex-direction: column; gap: 6px; }
+.control-group label { font-size: 12px; color: var(--text-muted); }
+.control-group select, .control-group input {
+  background: var(--bg); border: 1px solid var(--border); color: var(--text);
+  padding: 8px 12px; border-radius: 8px; font-size: 13px; outline: none;
+}
+.control-group select:focus, .control-group input:focus { border-color: var(--primary); }
+.btn {
+  padding: 8px 20px; border-radius: 8px; border: none; font-size: 13px;
+  font-weight: 600; cursor: pointer; transition: all 0.2s;
+}
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:hover { background: #ea580c; transform: translateY(-1px); }
+.btn-secondary { background: var(--border); color: var(--text); }
+
+/* 数据输入 */
+.data-input { margin-bottom: 24px; }
+.data-input textarea {
+  width: 100%; min-height: 120px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px; color: var(--text); font-family: 'SF Mono', monospace;
+  font-size: 13px; resize: vertical; outline: none;
+}
+.data-input textarea:focus { border-color: var(--primary); }
+.data-presets { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.preset-btn {
+  background: var(--surface); border: 1px solid var(--border); color: var(--text-muted);
+  padding: 6px 14px; border-radius: 20px; font-size: 12px; cursor: pointer; transition: all 0.2s;
+}
+.preset-btn:hover, .preset-btn.active { border-color: var(--primary); color: var(--primary); }
+
+/* 图表展示 */
+.chart-display {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: 24px; text-align: center; min-height: 300px;
+  display: flex; align-items: center; justify-content: center;
+}
+.chart-display svg { max-width: 100%; height: auto; }
+
+/* 多图表布局 */
+.charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 24px; }
+@media (max-width: 768px) { .charts-grid { grid-template-columns: 1fr; } }
+.chart-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: 16px; overflow: hidden;
+}
+.chart-card h3 { font-size: 14px; color: var(--text-muted); margin-bottom: 12px; }
+.chart-card svg { width: 100%; height: auto; }
+
+/* 导出区 */
+.export-bar { margin-top: 16px; display: flex; gap: 8px; justify-content: flex-end; }
+.export-btn {
+  background: var(--bg); border: 1px solid var(--border); color: var(--text-muted);
+  padding: 6px 14px; border-radius: 6px; font-size: 12px; cursor: pointer;
+}
+.export-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+/* 统计面板 */
+.stats-row { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+.stat-card {
+  flex: 1; min-width: 140px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px 16px;
+}
+.stat-card .label { font-size: 12px; color: var(--text-muted); }
+.stat-card .value { font-size: 22px; font-weight: 700; color: var(--text); margin-top: 4px; }
+.stat-card .change { font-size: 12px; margin-top: 2px; }
+.stat-card .change.up { color: var(--green); }
+.stat-card .change.down { color: #ef4444; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <a href="portal.html">← 返回门户</a>
+  <h1>📊 经营图表生成器</h1>
+  <span class="badge">P0</span>
+</div>
+
+<div class="container">
+  <!-- 统计卡片 -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="label">今日营收</div>
+      <div class="value">¥2,100</div>
+      <div class="change up">↑ 12.3% vs 昨日</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">今日成本</div>
+      <div class="value">¥850</div>
+      <div class="change down">↑ 3.2%</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">今日利润</div>
+      <div class="value">¥1,250</div>
+      <div class="change up">↑ 18.7%</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">订单数</div>
+      <div class="value">67</div>
+      <div class="change up">↑ 8 单</div>
+    </div>
+  </div>
+
+  <!-- 控制面板 -->
+  <div class="controls">
+    <h2>图表配置</h2>
+    <div class="control-row">
+      <div class="control-group">
+        <label>图表类型</label>
+        <select id="chartType">
+          <option value="bar">柱状图</option>
+          <option value="line">折线图</option>
+          <option value="pie">饼图（环形）</option>
+          <option value="multi_bar">分组柱状图</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>标题</label>
+        <input type="text" id="chartTitle" placeholder="图表标题" style="width:180px;">
+      </div>
+      <div class="control-group">
+        <label>主题</label>
+        <select id="chartTheme">
+          <option value="dark">深色</option>
+          <option value="light">浅色</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>&nbsp;</label>
+        <button class="btn btn-primary" onclick="generateChart()">生成图表</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 数据输入 -->
+  <div class="data-input">
+    <textarea id="dataInput" placeholder='输入 JSON 数据，如：[{"label":"周一","value":1280}, ...]'></textarea>
+    <div class="data-presets">
+      <button class="preset-btn active" onclick="loadPreset('weekly_revenue')">📈 周营收数据</button>
+      <button class="preset-btn" onclick="loadPreset('cost_structure')">🥧 成本结构</button>
+      <button class="preset-btn" onclick="loadPreset('multi_metric')">📊 多指标对比</button>
+      <button class="preset-btn" onclick="loadPreset('trend_7days')">📉 7日趋势</button>
+    </div>
+  </div>
+
+  <!-- 主图表展示 -->
+  <div class="chart-display" id="mainChart">
+    <span style="color:var(--text-muted)">点击「生成图表」或选择预设数据</span>
+  </div>
+  <div class="export-bar">
+    <button class="export-btn" onclick="copySVG()">📋 复制SVG</button>
+    <button class="export-btn" onclick="downloadSVG()">⬇️ 下载SVG</button>
+  </div>
+
+  <!-- 四图预览 -->
+  <div class="charts-grid" id="chartsGrid" style="display:none;">
+    <div class="chart-card">
+      <h3>柱状图</h3>
+      <div id="previewBar"></div>
+    </div>
+    <div class="chart-card">
+      <h3>折线图</h3>
+      <div id="previewLine"></div>
+    </div>
+    <div class="chart-card">
+      <h3>饼图</h3>
+      <div id="previewPie"></div>
+    </div>
+    <div class="chart-card">
+      <h3>分组柱状图</h3>
+      <div id="previewMultiBar"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== 内嵌 SVG 图表生成引擎（从 generator.py 移植的 JS 版） =====
+const COLORS = ['#f97316','#3b82f6','#10b981','#8b5cf6','#ef4444','#f59e0b','#06b6d4','#ec4899'];
+const PRIMARY = '#f97316', SECONDARY = '#334155';
+const TEXT_COLOR = '#e2e8f0', TEXT_MUTED = '#94a3b8', GRID = '#334155';
+const W = 800, H = 400;
+const PAD = {top:50,right:30,bottom:60,left:70};
+const FONT = "system-ui, -apple-system, sans-serif";
+
+function niceMax(v){if(v<=0)return 100;let m=Math.pow(10,Math.floor(Math.log10(v))),n=v/m;if(n<=1)return m;if(n<=2)return 2*m;if(n<=5)return 5*m;return 10*m}
+function fmtNum(v){if(v>=10000)return(v/10000).toFixed(1)+'w';if(v>=1000)return(v/1000).toFixed(1)+'k';return String(Math.round(v))}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function svgOpen(){return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" font-family="${FONT}">`}
+
+function barChart(data,title='',yLabel=''){
+  if(!data.length)return emptySvg(title);
+  let cw=W-PAD.left-PAD.right, ch=H-PAD.top-PAD.bottom;
+  let vals=data.map(d=>d.value||0), maxV=niceMax(Math.max(...vals));
+  let n=data.length, gap=Math.max(4,cw*0.05/n), bw=Math.min((cw-gap*(n+1))/n,60);
+  let totalBW=n*bw+(n+1)*gap, startX=PAD.left+(cw-totalBW)/2+gap;
+  let s=svgOpen();
+  if(title)s+=`<text x="${W/2}" y="28" font-size="16" font-weight="600" fill="${TEXT_COLOR}" text-anchor="middle">${esc(title)}</text>`;
+  for(let i=0;i<=5;i++){let y=PAD.top+ch-(ch*i/5),v=Math.round(maxV*i/5);
+    s+=`<line x1="${PAD.left}" y1="${y}" x2="${PAD.left+cw}" y2="${y}" stroke="${GRID}" stroke-width="0.5" stroke-dasharray="4,4"/>`;
+    s+=`<text x="${PAD.left-10}" y="${y+4}" font-size="11" fill="${TEXT_MUTED}" text-anchor="end">${fmtNum(v)}</text>`}
+  if(yLabel)s+=`<text x="16" y="${PAD.top+ch/2}" font-size="11" fill="${TEXT_MUTED}" text-anchor="middle" transform="rotate(-90,16,${PAD.top+ch/2})">${esc(yLabel)}</text>`;
+  for(let i=0;i<n;i++){let v=vals[i],bh=(v/maxV)*ch,x=startX+i*(bw+gap),y=PAD.top+ch-bh;
+    s+=`<defs><linearGradient id="bg${i}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${PRIMARY}"/><stop offset="100%" stop-color="${PRIMARY}" stop-opacity="0.6"/></linearGradient></defs>`;
+    s+=`<rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="4" fill="url(#bg${i})"><animate attributeName="height" from="0" to="${bh}" dur="0.6s" fill="freeze"/><animate attributeName="y" from="${PAD.top+ch}" to="${y}" dur="0.6s" fill="freeze"/></rect>`;
+    s+=`<text x="${x+bw/2}" y="${y-8}" font-size="11" font-weight="600" fill="${PRIMARY}" text-anchor="middle">${fmtNum(v)}</text>`;
+    let lbl=String(data[i].label||'').slice(0,6);
+    s+=`<text x="${x+bw/2}" y="${PAD.top+ch+20}" font-size="11" fill="${TEXT_MUTED}" text-anchor="middle">${esc(lbl)}</text>`}
+  return s+'</svg>'
+}
+
+function lineChart(data,title='',series=[]){
+  if(!data.length)return emptySvg(title);
+  let cw=W-PAD.left-PAD.right, ch=H-PAD.top-PAD.bottom;
+  if(!series.length){let s=Object.keys(data[0]).filter(k=>k!=='date'&&k!=='label');series=s}
+  let allV=[];data.forEach(d=>series.forEach(k=>{let v=d[k];if(typeof v==='number')allV.push(v)}));
+  let maxV=niceMax(Math.max(...allV,1)),n=data.length,xStep=cw/Math.max(n-1,1);
+  let s=svgOpen();
+  if(title)s+=`<text x="${W/2}" y="28" font-size="16" font-weight="600" fill="${TEXT_COLOR}" text-anchor="middle">${esc(title)}</text>`;
+  for(let i=0;i<=5;i++){let y=PAD.top+ch-(ch*i/5),v=Math.round(maxV*i/5);
+    s+=`<line x1="${PAD.left}" y1="${y}" x2="${PAD.left+cw}" y2="${y}" stroke="${GRID}" stroke-width="0.5" stroke-dasharray="4,4"/>`;
+    s+=`<text x="${PAD.left-10}" y="${y+4}" font-size="11" fill="${TEXT_MUTED}" text-anchor="end">${fmtNum(v)}</text>`}
+  series.forEach((sn,si)=>{let color=COLORS[si%COLORS.length],pts=[];
+    data.forEach((d,i)=>{let x=PAD.left+i*xStep,v=d[sn]||0,y=PAD.top+ch-(v/maxV)*ch;pts.push([x,y,v])});
+    let area=`M ${pts[0][0]},${PAD.top+ch} `+pts.map(p=>`L ${p[0]},${p[1]}`).join(' ')+` L ${pts[pts.length-1][0]},${PAD.top+ch} Z`;
+    s+=`<defs><linearGradient id="ag${si}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${color}" stop-opacity="0.3"/><stop offset="100%" stop-color="${color}" stop-opacity="0.02"/></linearGradient></defs>`;
+    s+=`<path d="${area}" fill="url(#ag${si})"/>`;
+    let line=`M ${pts[0][0]},${pts[0][1]} `+pts.slice(1).map(p=>`L ${p[0]},${p[1]}`).join(' ');
+    s+=`<path d="${line}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round"/>`;
+    pts.forEach(p=>{s+=`<circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="${color}" stroke="white" stroke-width="1.5"/>`})});
+  data.forEach((d,i)=>{let x=PAD.left+i*xStep,lbl=String(d.date||d.label||'').slice(0,8);
+    s+=`<text x="${x}" y="${PAD.top+ch+20}" font-size="11" fill="${TEXT_MUTED}" text-anchor="middle">${esc(lbl)}</text>`});
+  if(series.length>1){let lx=PAD.left,ly=H-12;series.forEach((sn,si)=>{let c=COLORS[si%COLORS.length];
+    s+=`<rect x="${lx}" y="${ly-8}" width="12" height="12" rx="2" fill="${c}"/>`;
+    s+=`<text x="${lx+18}" y="${ly+2}" font-size="11" fill="${TEXT_MUTED}">${esc(sn)}</text>`;lx+=sn.length*8+36})}
+  return s+'</svg>'
+}
+
+function pieChart(data,title=''){
+  if(!data.length)return emptySvg(title);
+  let cx=W/2,cy=H/2+10,r=Math.min(W,H)/2-60,ir=r*0.55;
+  let total=data.reduce((s,d)=>s+(d.value||0),0);if(!total)return emptySvg(title);
+  let s=svgOpen(),startA=-90;
+  if(title)s+=`<text x="${W/2}" y="28" font-size="16" font-weight="600" fill="${TEXT_COLOR}" text-anchor="middle">${esc(title)}</text>`;
+  data.forEach((d,i)=>{let v=d.value||0,pct=v/total,angle=pct*360,endA=startA+angle,color=COLORS[i%COLORS.length];
+    let x1=cx+r*Math.cos(startA*Math.PI/180),y1=cy+r*Math.sin(startA*Math.PI/180);
+    let x2=cx+r*Math.cos(endA*Math.PI/180),y2=cy+r*Math.sin(endA*Math.PI/180);
+    let la=angle>180?1:0;
+    let ix1=cx+ir*Math.cos(startA*Math.PI/180),iy1=cy+ir*Math.sin(startA*Math.PI/180);
+    let ix2=cx+ir*Math.cos(endA*Math.PI/180),iy2=cy+ir*Math.sin(endA*Math.PI/180);
+    s+=`<path d="M ${x1},${y1} A ${r},${r} 0 ${la} 1 ${x2},${y2} L ${ix2},${iy2} A ${ir},${ir} 0 ${la} 0 ${ix1},${iy1} Z" fill="${color}" stroke="${SECONDARY}" stroke-width="2" opacity="0.9"/>`;
+    let midA=startA+angle/2,lr=r+25,lx=cx+lr*Math.cos(midA*Math.PI/180),ly=cy+lr*Math.sin(midA*Math.PI/180);
+    let anch=lx>cx?'start':'end';
+    s+=`<text x="${lx}" y="${ly}" font-size="11" fill="${TEXT_MUTED}" text-anchor="${anch}">${esc(d.label||'')} ${Math.round(pct*100)}%</text>`;
+    startA=endA});
+  s+=`<text x="${cx}" y="${cy-6}" font-size="11" fill="${TEXT_MUTED}" text-anchor="middle">总计</text>`;
+  s+=`<text x="${cx}" y="${cy+16}" font-size="18" font-weight="700" fill="${TEXT_COLOR}" text-anchor="middle">${fmtNum(total)}</text>`;
+  return s+'</svg>'
+}
+
+function multiBarChart(data,title='',series=[]){
+  if(!data.length)return emptySvg(title);
+  let cw=W-PAD.left-PAD.right,ch=H-PAD.top-PAD.bottom;
+  if(!series.length)series=Object.keys(data[0]).filter(k=>k!=='label'&&k!=='date');
+  let allV=[];data.forEach(d=>series.forEach(k=>{let v=d[k];if(typeof v==='number')allV.push(v)}));
+  let maxV=niceMax(Math.max(...allV,1)),n=data.length,ns=series.length;
+  let gap=Math.max(8,cw*0.04),gw=(cw-gap*(n+1))/n,bw=Math.min((gw-4*(ns-1))/ns,30);
+  let totalGW=n*gw+(n+1)*gap,startX=PAD.left+(cw-totalGW)/2+gap;
+  let s=svgOpen();
+  if(title)s+=`<text x="${W/2}" y="28" font-size="16" font-weight="600" fill="${TEXT_COLOR}" text-anchor="middle">${esc(title)}</text>`;
+  for(let i=0;i<=5;i++){let y=PAD.top+ch-(ch*i/5),v=Math.round(maxV*i/5);
+    s+=`<line x1="${PAD.left}" y1="${y}" x2="${PAD.left+cw}" y2="${y}" stroke="${GRID}" stroke-width="0.5" stroke-dasharray="4,4"/>`;
+    s+=`<text x="${PAD.left-10}" y="${y+4}" font-size="11" fill="${TEXT_MUTED}" text-anchor="end">${fmtNum(v)}</text>`}
+  for(let i=0;i<n;i++){let gx=startX+i*(gw+gap);
+    series.forEach((sn,si)=>{let v=data[i][sn]||0,bh=(v/maxV)*ch,bx=gx+si*(bw+2),by=PAD.top+ch-bh,c=COLORS[si%COLORS.length];
+      s+=`<rect x="${bx}" y="${by}" width="${bw}" height="${bh}" rx="3" fill="${c}" opacity="0.85"/>`});
+    let lbl=String(data[i].label||'').slice(0,6);
+    s+=`<text x="${gx+gw/2}" y="${PAD.top+ch+20}" font-size="11" fill="${TEXT_MUTED}" text-anchor="middle">${esc(lbl)}</text>`}
+  let lx=PAD.left,ly=H-12;series.forEach((sn,si)=>{let c=COLORS[si%COLORS.length];
+    s+=`<rect x="${lx}" y="${ly-8}" width="12" height="12" rx="2" fill="${c}"/>`;
+    s+=`<text x="${lx+18}" y="${ly+2}" font-size="11" fill="${TEXT_MUTED}">${esc(sn)}</text>`;lx+=sn.length*8+36});
+  return s+'</svg>'
+}
+
+function emptySvg(title){
+  return svgOpen()+`<text x="${W/2}" y="${H/2}" font-size="14" fill="${TEXT_MUTED}" text-anchor="middle">${esc(title||'暂无数据')}</text></svg>`
+}
+
+// ===== 预设数据 =====
+const PRESETS = {
+  weekly_revenue: {
+    type: 'bar', title: '本周营收趋势',
+    data: [
+      {label:'周一',value:1280},{label:'周二',value:1420},{label:'周三',value:980},
+      {label:'周四',value:1650},{label:'周五',value:2100},{label:'周六',value:2450},{label:'周日',value:1890}
+    ]
+  },
+  cost_structure: {
+    type: 'pie', title: '成本结构分布',
+    data: [
+      {label:'食材成本',value:520},{label:'人工成本',value:300},{label:'房租水电',value:200},
+      {label:'平台抽成',value:180},{label:'包装耗材',value:80}
+    ]
+  },
+  multi_metric: {
+    type: 'multi_bar', title: '营收 vs 成本 vs 利润',
+    data: [
+      {label:'周一',revenue:1280,cost:520,profit:760},
+      {label:'周二',revenue:1420,cost:580,profit:840},
+      {label:'周三',revenue:980,cost:410,profit:570},
+      {label:'周四',revenue:1650,cost:680,profit:970},
+      {label:'周五',revenue:2100,cost:850,profit:1250}
+    ]
+  },
+  trend_7days: {
+    type: 'line', title: '近7日经营趋势',
+    data: [
+      {date:'06-19',revenue:980,cost:410,profit:570},
+      {date:'06-20',revenue:1650,cost:680,profit:970},
+      {date:'06-21',revenue:2100,cost:850,profit:1250},
+      {date:'06-22',revenue:1890,cost:760,profit:1130},
+      {date:'06-23',revenue:1420,cost:580,profit:840},
+      {date:'06-24',revenue:1780,cost:720,profit:1060},
+      {date:'06-25',revenue:2100,cost:850,profit:1250}
+    ]
+  }
+};
+
+// ===== 交互逻辑 =====
+let currentPreset = 'weekly_revenue';
+
+function loadPreset(name) {
+  currentPreset = name;
+  const p = PRESETS[name];
+  document.getElementById('dataInput').value = JSON.stringify(p.data, null, 2);
+  document.getElementById('chartType').value = p.type;
+  document.getElementById('chartTitle').value = p.title;
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  generateChart();
+}
+
+function generateChart() {
+  const type = document.getElementById('chartType').value;
+  const title = document.getElementById('chartTitle').value || '';
+  let data;
+  try { data = JSON.parse(document.getElementById('dataInput').value); }
+  catch(e) { document.getElementById('mainChart').innerHTML = '<span style="color:#ef4444">JSON 格式错误，请检查数据</span>'; return; }
+  if (!Array.isArray(data) || !data.length) {
+    document.getElementById('mainChart').innerHTML = '<span style="color:var(--text-muted)">数据为空</span>'; return;
+  }
+
+  let svg;
+  switch(type) {
+    case 'bar': svg = barChart(data, title); break;
+    case 'line': svg = lineChart(data, title); break;
+    case 'pie': svg = pieChart(data, title); break;
+    case 'multi_bar': svg = multiBarChart(data, title); break;
+    default: svg = emptySvg(title);
+  }
+  document.getElementById('mainChart').innerHTML = svg;
+
+  // 四图预览
+  const grid = document.getElementById('chartsGrid');
+  grid.style.display = 'grid';
+  document.getElementById('previewBar').innerHTML = barChart(data, title);
+  document.getElementById('previewLine').innerHTML = lineChart(data, title);
+  document.getElementById('previewPie').innerHTML = pieChart(data, title);
+  document.getElementById('previewMultiBar').innerHTML = multiBarChart(data, title);
+}
+
+function copySVG() {
+  const svg = document.getElementById('mainChart').innerHTML;
+  if (!svg.startsWith('<svg')) return;
+  navigator.clipboard.writeText(svg).then(() => alert('SVG 代码已复制'));
+}
+
+function downloadSVG() {
+  const svg = document.getElementById('mainChart').innerHTML;
+  if (!svg.startsWith('<svg')) return;
+  const blob = new Blob([svg], {type: 'image/svg+xml'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'chart.svg';
+  a.click();
+}
+
+// 初始化加载
+window.addEventListener('DOMContentLoaded', () => {
+  loadPreset('weekly_revenue');
+});
+</script>
+</body>
+</html>

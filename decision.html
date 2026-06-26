@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>雷军决策模型</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0f172a;
+  color: #e2e8f0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 24px 16px;
+}
+.container { max-width: 520px; width: 100%; }
+.header { text-align: center; margin-bottom: 28px; }
+.header h1 { font-size: 1.6rem; font-weight: 700; margin-bottom: 6px; }
+.header p { color: #94a3b8; font-size: 0.9rem; }
+.card {
+  background: #1e293b;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+label { display: block; font-size: 0.85rem; color: #94a3b8; margin-bottom: 8px; font-weight: 500; }
+textarea {
+  width: 100%;
+  min-height: 120px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  color: #e2e8f0;
+  font-size: 0.95rem;
+  padding: 14px 16px;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s;
+  font-family: inherit;
+  line-height: 1.6;
+}
+textarea:focus { border-color: #f97316; }
+textarea::placeholder { color: #475569; }
+.section-title { font-size: 1rem; font-weight: 600; margin-bottom: 14px; }
+
+/* Model selection cards */
+.model-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.model-card {
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 14px 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+.model-card:hover { border-color: #475569; }
+.model-card.selected {
+  border-color: #f97316;
+  background: rgba(249,115,22,0.08);
+  box-shadow: 0 0 12px rgba(249,115,22,0.15);
+}
+.model-icon { font-size: 1.5rem; margin-bottom: 6px; display: block; }
+.model-name { font-size: 0.82rem; font-weight: 600; color: #e2e8f0; margin-bottom: 4px; }
+.model-desc { font-size: 0.72rem; color: #64748b; line-height: 1.3; }
+.model-all {
+  grid-column: 1 / -1;
+  background: linear-gradient(135deg, rgba(251,191,36,0.08), rgba(249,115,22,0.08));
+  border-color: #fbbf24;
+}
+.model-all .model-name { color: #fbbf24; }
+
+.btn-generate {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 50px;
+  background: linear-gradient(135deg, #fbbf24, #f97316);
+  color: #0f172a;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  margin-top: 16px;
+  letter-spacing: 1px;
+}
+.btn-generate:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(251,191,36,0.3); }
+.btn-generate:active { transform: translateY(0); }
+.btn-generate:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+#result { display: none; }
+
+.decision-block {
+  background: #0f172a;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.decision-model-tag {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.decision-text {
+  font-size: 0.92rem;
+  line-height: 1.8;
+  color: #cbd5e1;
+}
+.reasoning-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #0f172a;
+  border-radius: 10px;
+  cursor: pointer;
+  margin-top: 12px;
+  transition: background 0.2s;
+}
+.reasoning-toggle:hover { background: #1a2332; }
+.reasoning-toggle span { font-size: 0.88rem; color: #94a3b8; }
+.reasoning-toggle .arrow { transition: transform 0.3s; font-size: 0.75rem; color: #64748b; }
+.reasoning-toggle.open .arrow { transform: rotate(180deg); }
+.reasoning-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+.reasoning-content.open { max-height: 800px; }
+.reasoning-inner {
+  padding: 14px 16px;
+  font-size: 0.88rem;
+  line-height: 1.7;
+  color: #94a3b8;
+  border-top: 1px solid #1e293b;
+}
+.risk-box {
+  background: rgba(239,68,68,0.08);
+  border: 1px solid rgba(239,68,68,0.2);
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 12px;
+}
+.risk-title { font-size: 0.9rem; font-weight: 600; color: #ef4444; margin-bottom: 8px; }
+.risk-text { font-size: 0.88rem; line-height: 1.7; color: #fca5a5; }
+
+.btn-copy {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 8px 16px;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-copy:hover { border-color: #fbbf24; color: #fbbf24; }
+.btn-copy.copied { border-color: #34d399; color: #34d399; }
+
+.history-item {
+  background: #0f172a;
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  border: 1px solid transparent;
+}
+.history-item:hover { border-color: #334155; }
+.history-q {
+  font-size: 0.88rem;
+  color: #e2e8f0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: 6px;
+}
+.history-models { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 4px; }
+.history-model-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  background: rgba(251,191,36,0.12);
+  color: #fbbf24;
+}
+.history-time { font-size: 0.75rem; color: #475569; }
+
+.loading {
+  text-align: center;
+  padding: 40px 0;
+  display: none;
+}
+.loading .dots span {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #fbbf24;
+  margin: 0 4px;
+  animation: bounce 1.2s infinite;
+}
+.loading .dots span:nth-child(2) { animation-delay: 0.2s; }
+.loading .dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes bounce {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40% { transform: scale(1); opacity: 1; }
+}
+.loading p { color: #64748b; font-size: 0.85rem; margin-top: 12px; }
+@keyframes shake { 0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)} }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🧠 雷军决策模型</h1>
+    <p>5大心智模型驱动经营决策</p>
+  </div>
+
+  <div class="card">
+    <label>描述你遇到的经营决策问题</label>
+    <textarea id="question" placeholder="例如：隔壁新开了家奶茶店，价格比我低30%，我要不要跟着降价？"></textarea>
+  </div>
+
+  <div class="card">
+    <label>选择分析模型（可多选）</label>
+    <div class="model-grid">
+      <div class="model-card" data-model="顺势而为" onclick="toggleModel(this)">
+        <span class="model-icon">🌊</span>
+        <div class="model-name">顺势而为</div>
+        <div class="model-desc">行业趋势判断</div>
+      </div>
+      <div class="model-card" data-model="专注极致口碑快" onclick="toggleModel(this)">
+        <span class="model-icon">🎯</span>
+        <div class="model-name">专注极致口碑快</div>
+        <div class="model-desc">执行标准</div>
+      </div>
+      <div class="model-card" data-model="性价比哲学" onclick="toggleModel(this)">
+        <span class="model-icon">💰</span>
+        <div class="model-name">性价比哲学</div>
+        <div class="model-desc">定价策略</div>
+      </div>
+      <div class="model-card" data-model="第一性原理" onclick="toggleModel(this)">
+        <span class="model-icon">🔬</span>
+        <div class="model-name">第一性原理</div>
+        <div class="model-desc">根本问题分析</div>
+      </div>
+      <div class="model-card model-all selected" data-model="全部" onclick="selectAll(this)">
+        <span class="model-icon">🧠</span>
+        <div class="model-name">全部模型综合分析</div>
+        <div class="model-desc">5大模型同时分析，给出综合决策建议</div>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn-generate" id="btnGen" onclick="doDecision()">获取决策建议</button>
+
+  <div class="loading" id="loading">
+    <div class="dots"><span></span><span></span><span></span></div>
+    <p>正在调用决策模型分析...</p>
+  </div>
+
+  <div id="result">
+    <div class="card">
+      <div class="section-title">💡 决策建议</div>
+      <div id="decisionList"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">🔍 推理过程</div>
+      <div class="reasoning-toggle" id="reasoningToggle" onclick="toggleReasoning()">
+        <span>展开查看完整推理链</span>
+        <span class="arrow">▼</span>
+      </div>
+      <div class="reasoning-content" id="reasoningContent">
+        <div class="reasoning-inner" id="reasoningText"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="risk-box">
+        <div class="risk-title">⚠️ 风险提示</div>
+        <div class="risk-text" id="riskText"></div>
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-bottom:20px">
+      <button class="btn-copy" onclick="copyDecision(this)">📋 复制决策建议</button>
+    </div>
+
+    <div class="card">
+      <div class="section-title">🕐 历史决策</div>
+      <div id="historyList">
+        <div style="color:#475569;text-align:center;padding:20px 0;font-size:0.88rem">暂无记录</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Supabase
+const SUPABASE_URL = 'https://vovzgfilfdwngfuqnxjc.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvdnpnZmlsZmR3bmdmdXFueGpjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk4ODQ2MTYsImV4cCI6MjA2NTQ2MDYxNn0.BYjr-OjErMSLAbnU3t7D5LmYQV0y2Dk-jDfHQ5xTqCs';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const MODEL_COLORS = {
+  '顺势而为': { bg: 'rgba(59,130,246,0.15)', color: '#3b82f6' },
+  '专注极致口碑快': { bg: 'rgba(168,85,247,0.15)', color: '#a855f7' },
+  '性价比哲学': { bg: 'rgba(251,191,36,0.15)', color: '#fbbf24' },
+  '第一性原理': { bg: 'rgba(34,197,94,0.15)', color: '#22c55e' },
+  '与用户交朋友': { bg: 'rgba(236,72,153,0.15)', color: '#ec4899' }
+};
+
+const MODEL_DECISIONS = {
+  '顺势而为': {
+    keyword: '趋势|行业|市场|潮流|风口|变化',
+    decision: '当前行业正处于变化期，建议密切关注市场动向。不要逆势而行，而是顺应趋势调整策略。观察消费者的需求变化，找到你能切入的方向。记住：站在风口上，猪都能飞。',
+    reasoning: '分析框架：1) 当前行业处于什么阶段？2) 消费者需求在往哪个方向迁移？3) 你的能力是否匹配这个方向？建议先小规模试水，验证趋势后再加大投入。'
+  },
+  '专注极致口碑快': {
+    keyword: '产品|品质|服务|体验|用户|口碑',
+    decision: '把一件事做到极致，比做十件平庸的事更有价值。聚焦你的核心优势，把产品/服务打磨到极致，让用户主动帮你传播。速度是关键——快速迭代、快速响应反馈。',
+    reasoning: '分析框架：1) 你最擅长的是什么？2) 用户最在意的体验点是什么？3) 你现在的响应速度够快吗？建议砍掉不重要的事，集中资源做1-2个爆品。'
+  },
+  '性价比哲学': {
+    keyword: '价格|定价|成本|利润|降|便宜|贵|竞品',
+    decision: '性价比不是最便宜，而是让用户觉得"值"。在保证品质的前提下，通过效率提升来降低成本，把省下的钱让利给用户。不要打价格战，要打造"价格厚道、品质超预期"的产品。',
+    reasoning: '分析框架：1) 你的成本结构是否还有优化空间？2) 用户的心理价位是多少？3) 同价位你的品质是否有优势？建议重新梳理成本链，找到能砍掉但不影响体验的环节。'
+  },
+  '第一性原理': {
+    keyword: '根本|原因|为什么|本质|底层|逻辑|问题',
+    decision: '回到问题的本质：你做餐饮的核心目的是什么？用户来你这里的根本原因是什么？抛开惯性和经验，从零开始思考最优解。不要被"行业惯例"绑架。',
+    reasoning: '分析框架：1) 这个问题最底层的变量是什么？2) 去掉所有假设，事实是什么？3) 从零开始设计，最优方案是什么？建议用"5个为什么"追根溯源。'
+  },
+  '与用户交朋友': {
+    keyword: '客户|用户|复购|会员|关系|流失|回头客',
+    decision: '把用户当朋友，而不是"流量"。真正关心他们的需求，记住他们的偏好，给他们超出预期的体验。朋友会帮你传播，会给你真实反馈，会在你困难时支持你。',
+    reasoning: '分析框架：1) 你了解你的核心用户吗？2) 用户愿意帮你推荐吗？3) 你多久没和老顾客交流了？建议建立核心用户群，定期互动，收集真实反馈。'
+  }
+};
+
+var selectedModels = ['全部'];
+
+function toggleModel(el) {
+  // Deselect "全部"
+  var allCard = document.querySelector('.model-all');
+  allCard.classList.remove('selected');
+  selectedModels = selectedModels.filter(function(m) { return m !== '全部'; });
+
+  el.classList.toggle('selected');
+  var model = el.dataset.model;
+  if (el.classList.contains('selected')) {
+    if (selectedModels.indexOf(model) === -1) selectedModels.push(model);
+  } else {
+    selectedModels = selectedModels.filter(function(m) { return m !== model; });
+  }
+  // If none selected, re-select all
+  if (selectedModels.length === 0) {
+    allCard.classList.add('selected');
+    selectedModels = ['全部'];
+  }
+}
+
+function selectAll(el) {
+  document.querySelectorAll('.model-card').forEach(function(c) { c.classList.remove('selected'); });
+  el.classList.add('selected');
+  selectedModels = ['全部'];
+}
+
+function doDecision() {
+  var q = document.getElementById('question').value.trim();
+  if (!q) {
+    document.getElementById('btnGen').style.animation = 'shake 0.4s';
+    setTimeout(function() { document.getElementById('btnGen').style.animation = ''; }, 400);
+    return;
+  }
+
+  var btn = document.getElementById('btnGen');
+  var loading = document.getElementById('loading');
+  var result = document.getElementById('result');
+
+  btn.disabled = true;
+  result.style.display = 'none';
+  loading.style.display = 'block';
+
+  setTimeout(function() {
+    var models = selectedModels;
+    if (models[0] === '全部') {
+      models = ['顺势而为', '专注极致口碑快', '性价比哲学', '第一性原理', '与用户交朋友'];
+    }
+
+    // Generate decisions based on models
+    var decisions = [];
+    var reasonings = [];
+    var risks = [];
+
+    models.forEach(function(model) {
+      var md = MODEL_DECISIONS[model];
+      if (md) {
+        var relevance = 0;
+        var keywords = md.keyword.split('|');
+        keywords.forEach(function(kw) {
+          if (q.indexOf(kw) !== -1) relevance++;
+        });
+        decisions.push({ model: model, decision: md.decision, relevance: relevance });
+        reasonings.push('【' + model + '】\n' + md.reasoning);
+      }
+    });
+
+    // Sort by relevance
+    decisions.sort(function(a, b) { return b.relevance - a.relevance; });
+
+    // Render decisions
+    var decisionHTML = decisions.map(function(d) {
+      var mc = MODEL_COLORS[d.model] || { bg: 'rgba(148,163,184,0.15)', color: '#94a3b8' };
+      return '<div class="decision-block">' +
+        '<span class="decision-model-tag" style="background:' + mc.bg + ';color:' + mc.color + '">' + d.model + '</span>' +
+        '<div class="decision-text">' + d.decision + '</div>' +
+        '</div>';
+    }).join('');
+    document.getElementById('decisionList').innerHTML = decisionHTML;
+
+    // Reasoning
+    document.getElementById('reasoningText').textContent = reasonings.join('\n\n');
+
+    // Risk warning
+    var riskTexts = [
+      '此决策建议基于模型分析框架，实际执行需结合你的具体经营数据。',
+      '建议先小范围试点验证效果，再全面推广。',
+      '关注执行后的数据反馈，及时调整策略方向。',
+      '每个决策都有机会成本，选定方向后保持专注，避免频繁切换。'
+    ];
+    document.getElementById('riskText').textContent = riskTexts.join('\n');
+
+    // Save to Supabase
+    var modelUsed = models.join(',');
+    var decisionText = decisions.map(function(d) { return '【' + d.model + '】' + d.decision; }).join('\n\n');
+    var reasoningText = reasonings.join('\n\n');
+
+    sb.from('decision_logs').insert({
+      question: q,
+      model_used: modelUsed,
+      decision: decisionText,
+      reasoning: reasoningText,
+      risk_warning: riskTexts.join('\n')
+    }).then(function() {
+      loadHistory();
+    });
+
+    loading.style.display = 'none';
+    result.style.display = 'block';
+    btn.disabled = false;
+  }, 2000);
+}
+
+function toggleReasoning() {
+  var toggle = document.getElementById('reasoningToggle');
+  var content = document.getElementById('reasoningContent');
+  toggle.classList.toggle('open');
+  content.classList.toggle('open');
+  var span = toggle.querySelector('span');
+  if (content.classList.contains('open')) {
+    span.textContent = '收起推理过程';
+  } else {
+    span.textContent = '展开查看完整推理链';
+  }
+}
+
+function copyDecision(btn) {
+  var texts = [];
+  document.querySelectorAll('.decision-text').forEach(function(el) {
+    texts.push(el.textContent);
+  });
+  var text = texts.join('\n\n');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function() { showCopied(btn); });
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+    showCopied(btn);
+  }
+}
+
+function showCopied(btn) {
+  btn.textContent = '已复制 ✓';
+  btn.classList.add('copied');
+  setTimeout(function() {
+    btn.textContent = '📋 复制决策建议';
+    btn.classList.remove('copied');
+  }, 2000);
+}
+
+function loadHistory() {
+  sb.from('decision_logs')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(5)
+    .then(function(res) {
+      var list = document.getElementById('historyList');
+      if (res.error || !res.data || res.data.length === 0) {
+        list.innerHTML = '<div style="color:#475569;text-align:center;padding:20px 0;font-size:0.88rem">暂无记录</div>';
+        return;
+      }
+      list.innerHTML = res.data.map(function(item) {
+        var models = (item.model_used || '').split(',');
+        var modelTags = models.map(function(m) {
+          return '<span class="history-model-tag">' + m + '</span>';
+        }).join('');
+        var time = item.created_at ? new Date(item.created_at).toLocaleString('zh-CN', {month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+        return '<div class="history-item" onclick="useHistory(\'' + encodeURIComponent(item.question) + '\',\'' + item.model_used + '\')">' +
+          '<div class="history-q">' + (item.question || '').substring(0, 50) + '</div>' +
+          '<div class="history-models">' + modelTags + '</div>' +
+          '<div class="history-time">' + time + '</div>' +
+          '</div>';
+      }).join('');
+    });
+}
+
+function useHistory(encodedQ, modelUsed) {
+  document.getElementById('question').value = decodeURIComponent(encodedQ);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Load history on page load
+loadHistory();
+</script>
+</body>
+</html>
