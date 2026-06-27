@@ -289,7 +289,57 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+// ============================================================
+//  Supabase 连接
+// ============================================================
+const SUPABASE_URL = 'https://vovzgflfdwngfuqnxjc.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvdnpnZmxmZHduZ2Z1cW54amMiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc4MTU5ODQ5NiwiZXhwIjoyMDk3MTc0NDk2fQ.p8e3LcWgBqWxQ3jYk7mN2vR4sT8uY6zA9bC1dE5fG3h';
+const db = (typeof supabase !== 'undefined') ? supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+
+
+// ============================================================
+//  Supabase 数据加载
+// ============================================================
+async function loadFromSupabase() {
+  if (!db) return null;
+  try {
+    const { data: invData, error } = await db.from('ingredient_inventory').select('*').order('expiry_date');
+    if (error) throw error;
+    if (invData && invData.length > 0) {
+      console.log('✅ Supabase: loaded', invData.length, 'inventory items');
+      return invData.map(row => ({
+        id: String(row.id),
+        ingredient_name: row.ingredient_name || '',
+        category: row.category || '',
+        batch_no: row.batch_no || '',
+        expiry_date: row.expiry_date || '',
+        storage_location: row.storage_location || '常温',
+        status: row.status || 'normal'
+      }));
+    }
+    return null;
+  } catch(e) {
+    console.warn('⚠️ Supabase load failed, using mock data:', e.message);
+    return null;
+  }
+}
+
+// 页面初始化：先尝试 Supabase，失败则用模拟数据
+(async function initData() {
+  const sbData = await loadFromSupabase();
+  if (sbData) {
+    inventory.length = 0;
+    inventory.push(...sbData);
+    inventory.forEach(it => {
+      const exp = new Date(it.expiry_date);
+      it.remaining_days = Math.round((exp - today)/(86400000));
+    });
+  }
+  renderAll();
+})();
+
 // ============================================================
 //  模拟数据
 // ============================================================

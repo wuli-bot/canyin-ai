@@ -261,7 +261,47 @@ tr:hover td { background: rgba(249,115,22,.04); }
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+// ============================================================
+//  Supabase 连接
+// ============================================================
+const SUPABASE_URL = 'https://vovzgflfdwngfuqnxjc.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvdnpnZmxmZHduZ2Z1cW54amMiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc4MTU5ODQ5NiwiZXhwIjoyMDk3MTc0NDk2fQ.p8e3LcWgBqWxQ3jYk7mN2vR4sT8uY6zA9bC1dE5fG3h';
+const db = (typeof supabase !== 'undefined') ? supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+
+
+// ============================================================
+//  Supabase 数据加载
+// ============================================================
+async function loadLossFromSupabase() {
+  if (!db) return null;
+  try {
+    const { data, error } = await db.from('loss_records').select('*').order('record_date', {ascending: false});
+    if (error) throw error;
+    if (data && data.length > 0) {
+      console.log('✅ Supabase: loaded', data.length, 'loss records');
+      return data;
+    }
+    return null;
+  } catch(e) {
+    console.warn('⚠️ Supabase load failed:', e.message);
+    return null;
+  }
+}
+
+(async function initData() {
+  const sbData = await loadLossFromSupabase();
+  if (sbData) {
+    if (typeof lossRecords !== 'undefined' && Array.isArray(lossRecords)) {
+      lossRecords.length = 0;
+      lossRecords.push(...sbData);
+    }
+  }
+  if (typeof renderAll === 'function') renderAll();
+  else if (typeof render === 'function') render();
+})();
+
 // 模拟数据
 const today = new Date().toISOString().slice(0, 10);
 const reasons = { expired:'过期', spoilage:'变质', damage:'破损', overorder:'过量采购', preparation_waste:'加工损耗' };
