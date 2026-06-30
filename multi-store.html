@@ -1,0 +1,2162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>餐饮AI店长 - 多店管理</title>
+<!-- Supabase SDK v2 -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* ============================================================
+   全局样式 & CSS变量 (与portal.html保持一致)
+   ============================================================ */
+:root {
+  --bg: #0f1117;
+  --card: #1a1d27;
+  --border: #2a2d3a;
+  --blue: #4f8cff;
+  --purple: #a855f7;
+  --gold: #fbbf24;
+  --text: #e4e4e7;
+  --text-dim: #9ca3af;
+  --text-bright: #fff;
+  --green: #22c55e;
+  --red: #ef4444;
+  --orange: #f97316;
+  --yellow: #eab308;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+a { color: var(--blue); text-decoration: none; }
+a:hover { color: var(--purple); }
+
+/* ============================================================
+   布局
+   ============================================================ */
+.app-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* ============================================================
+   Header
+   ============================================================ */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.header h1 {
+  font-size: 26px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header h1 .icon { font-size: 32px; }
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-primary {
+  background: var(--blue);
+  color: #fff;
+}
+
+.btn-primary:hover { background: #3b7be0; }
+
+.btn-secondary {
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover { background: var(--border); }
+
+/* ============================================================
+   提示 Banner
+   ============================================================ */
+.mock-banner {
+  background: linear-gradient(135deg, rgba(79, 140, 255, 0.1), rgba(168, 85, 247, 0.1));
+  border: 1px solid var(--blue);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  display: none;
+  align-items: center;
+  gap: 12px;
+}
+
+.mock-banner.show { display: flex; }
+
+.mock-banner .icon { font-size: 24px; }
+
+.mock-banner .text { flex: 1; }
+
+.mock-banner .text strong { color: var(--gold); }
+
+.mock-banner .close-btn {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 20px;
+  padding: 4px 8px;
+}
+
+.mock-banner .close-btn:hover { color: var(--text); }
+
+/* ============================================================
+   Tabs
+   ============================================================ */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 24px;
+  background: var(--card);
+  padding: 6px;
+  border-radius: 12px;
+  width: fit-content;
+}
+
+.tab {
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-dim);
+  font-weight: 600;
+  font-size: 15px;
+  border: none;
+  transition: all 0.2s;
+}
+
+.tab:hover { color: var(--text); }
+
+.tab.active {
+  background: var(--blue);
+  color: #fff;
+}
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* ============================================================
+   Section Title
+   ============================================================ */
+.section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-bright);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-title .icon { font-size: 22px; }
+
+/* ============================================================
+   Summary Cards Grid
+   ============================================================ */
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  border-left: 4px solid var(--blue);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+
+.stat-card.blue { border-left-color: var(--blue); }
+.stat-card.green { border-left-color: var(--green); }
+.stat-card.purple { border-left-color: var(--purple); }
+.stat-card.gold { border-left-color: var(--gold); }
+.stat-card.red { border-left-color: var(--red); }
+.stat-card.orange { border-left-color: var(--orange); }
+
+.stat-card .label {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+
+.stat-card .value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-bright);
+}
+
+.stat-card .sub {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+
+/* ============================================================
+   Store Card Grid
+   ============================================================ */
+.store-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.store-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.store-card:hover {
+  border-color: var(--blue);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(79, 140, 255, 0.15);
+}
+
+.store-card .store-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.store-card .store-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-bright);
+}
+
+.store-card .store-id {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+.store-card .status-badge {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.store-card .status-badge.active {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--green);
+}
+
+.store-card .status-badge.suspended {
+  background: rgba(234, 179, 8, 0.15);
+  color: var(--yellow);
+}
+
+.store-card .status-badge.closed {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--red);
+}
+
+.store-card .store-address {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.store-card .metrics {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.store-card .metric {
+  background: rgba(255,255,255,0.03);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.store-card .metric .label {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+
+.store-card .metric .value {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.store-card .metric .value.positive { color: var(--green); }
+.store-card .metric .value.negative { color: var(--red); }
+.store-card .metric .value.warning { color: var(--yellow); }
+
+.store-card .metric .sub {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+/* ============================================================
+   Store Detail Modal
+   ============================================================ */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.7);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-overlay.show { display: flex; }
+
+.modal {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 900px;
+  max-height: 85vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h2 {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.modal-header .close-btn {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 28px;
+  line-height: 1;
+  padding: 4px;
+}
+
+.modal-header .close-btn:hover { color: var(--text); }
+
+.modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.modal-tab {
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  transition: all 0.2s;
+}
+
+.modal-tab:hover { color: var(--text); }
+
+.modal-tab.active {
+  background: var(--blue);
+  color: #fff;
+  border-color: var(--blue);
+}
+
+.modal-tab-content { display: none; }
+.modal-tab-content.active { display: block; }
+
+/* ============================================================
+   Chart Container (Pure CSS/SVG)
+   ============================================================ */
+.chart-container {
+  background: rgba(255,255,255,0.02);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.chart-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-dim);
+  margin-bottom: 16px;
+}
+
+.chart-svg {
+  width: 100%;
+  height: 200px;
+}
+
+.chart-line {
+  fill: none;
+  stroke: var(--blue);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.chart-area {
+  fill: url(#blueGradient);
+  opacity: 0.3;
+}
+
+.chart-dot {
+  fill: var(--blue);
+}
+
+.chart-grid-line {
+  stroke: var(--border);
+  stroke-width: 1;
+  stroke-dasharray: 4;
+}
+
+.chart-label {
+  fill: var(--text-dim);
+  font-size: 11px;
+}
+
+/* Bar Chart */
+.bar-chart {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  height: 180px;
+  padding: 20px 10px 40px;
+  position: relative;
+}
+
+.bar-chart::before {
+  content: '';
+  position: absolute;
+  bottom: 40px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--border);
+}
+
+.bar-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.bar {
+  width: 40px;
+  max-width: 100%;
+  border-radius: 6px 6px 0 0;
+  transition: height 0.5s ease;
+  position: relative;
+}
+
+.bar.blue { background: linear-gradient(180deg, var(--blue), rgba(79,140,255,0.5)); }
+.bar.green { background: linear-gradient(180deg, var(--green), rgba(34,197,94,0.5)); }
+.bar.purple { background: linear-gradient(180deg, var(--purple), rgba(168,85,247,0.5)); }
+.bar.gold { background: linear-gradient(180deg, var(--gold), rgba(251,191,36,0.5)); }
+.bar.orange { background: linear-gradient(180deg, var(--orange), rgba(249,115,22,0.5)); }
+
+.bar-value {
+  position: absolute;
+  top: -24px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.bar-label {
+  font-size: 12px;
+  color: var(--text-dim);
+  text-align: center;
+  position: absolute;
+  bottom: -28px;
+}
+
+/* ============================================================
+   Data Table
+   ============================================================ */
+.table-container {
+  overflow-x: auto;
+  margin-bottom: 24px;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.data-table th,
+.data-table td {
+  padding: 14px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.data-table th {
+  background: rgba(255,255,255,0.03);
+  color: var(--text-dim);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.data-table th:hover { color: var(--text); }
+
+.data-table th .sort-icon {
+  margin-left: 6px;
+  opacity: 0.5;
+}
+
+.data-table th.sorted .sort-icon { opacity: 1; }
+
+.data-table tbody tr {
+  transition: background 0.15s;
+}
+
+.data-table tbody tr:hover {
+  background: rgba(255,255,255,0.03);
+}
+
+.data-table .store-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.data-table .store-cell .avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--blue), var(--purple));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.data-table .store-cell .name {
+  font-weight: 600;
+  color: var(--text-bright);
+}
+
+.data-table .status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
+}
+
+.data-table .status-dot.active { background: var(--green); }
+.data-table .status-dot.suspended { background: var(--yellow); }
+.data-table .status-dot.closed { background: var(--red); }
+
+.data-table .warning-cell {
+  background: rgba(234, 179, 8, 0.1);
+  color: var(--yellow);
+  font-weight: 600;
+}
+
+.data-table .danger-cell {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--red);
+  font-weight: 600;
+}
+
+/* ============================================================
+   Comparison Panel
+   ============================================================ */
+.comparison-panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 28px;
+}
+
+.comparison-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.store-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.store-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+
+.store-checkbox:hover {
+  border-color: var(--blue);
+}
+
+.store-checkbox.selected {
+  background: rgba(79, 140, 255, 0.15);
+  border-color: var(--blue);
+  color: var(--blue);
+}
+
+.store-checkbox input {
+  display: none;
+}
+
+.store-checkbox .check {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.store-checkbox.selected .check {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #fff;
+}
+
+.comparison-charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.comparison-chart {
+  background: rgba(255,255,255,0.02);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.comparison-chart h4 {
+  font-size: 14px;
+  color: var(--text-dim);
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+
+/* ============================================================
+   Date Selector
+   ============================================================ */
+.date-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.date-selector label {
+  font-size: 14px;
+  color: var(--text-dim);
+}
+
+.date-input {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 16px;
+  color: var(--text);
+  font-size: 15px;
+  transition: border-color 0.2s;
+}
+
+.date-input:focus {
+  outline: none;
+  border-color: var(--blue);
+}
+
+.quick-dates {
+  display: flex;
+  gap: 8px;
+}
+
+.quick-date {
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 13px;
+  transition: all 0.2s;
+}
+
+.quick-date:hover {
+  border-color: var(--blue);
+  color: var(--text);
+}
+
+.quick-date.active {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #fff;
+}
+
+/* ============================================================
+   Filter Tabs
+   ============================================================ */
+.filter-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.filter-tab {
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  transition: all 0.2s;
+}
+
+.filter-tab:hover { color: var(--text); }
+
+.filter-tab.active {
+  background: var(--blue);
+  color: #fff;
+  border-color: var(--blue);
+}
+
+/* ============================================================
+   Dish List
+   ============================================================ */
+.dish-list {
+  display: grid;
+  gap: 12px;
+}
+
+.dish-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  background: rgba(255,255,255,0.02);
+  border-radius: 10px;
+  transition: background 0.15s;
+}
+
+.dish-item:hover { background: rgba(255,255,255,0.05); }
+
+.dish-item .info { flex: 1; }
+
+.dish-item .name {
+  font-weight: 600;
+  color: var(--text-bright);
+  margin-bottom: 4px;
+}
+
+.dish-item .meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  display: flex;
+  gap: 12px;
+}
+
+.dish-item .price {
+  font-weight: 700;
+  color: var(--gold);
+  font-size: 16px;
+}
+
+/* ============================================================
+   Transaction List
+   ============================================================ */
+.transaction-list {
+  display: grid;
+  gap: 10px;
+}
+
+.transaction-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  background: rgba(255,255,255,0.02);
+  border-radius: 10px;
+}
+
+.transaction-item .info { flex: 1; }
+
+.transaction-item .order-id {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+
+.transaction-item .time {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.transaction-item .amount {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--green);
+}
+
+.transaction-item .status {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  margin-left: 12px;
+}
+
+.transaction-item .status.completed {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--green);
+}
+
+.transaction-item .status.refunded {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--red);
+}
+
+/* ============================================================
+   Loading State
+   ============================================================ */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px;
+  color: var(--text-dim);
+  gap: 12px;
+}
+
+.loading .spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--border);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================================
+   Empty State
+   ============================================================ */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-dim);
+}
+
+.empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+.empty-state p { font-size: 15px; }
+
+/* ============================================================
+   Responsive Design
+   ============================================================ */
+@media (max-width: 768px) {
+  .app-container { padding: 16px; }
+  
+  .header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  
+  .header h1 { font-size: 20px; }
+  
+  .tabs {
+    width: 100%;
+    overflow-x: auto;
+  }
+  
+  .summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .stat-card .value { font-size: 22px; }
+  
+  .store-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .modal {
+    max-height: 90vh;
+  }
+  
+  .comparison-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .data-table {
+    font-size: 13px;
+  }
+  
+  .data-table th,
+  .data-table td {
+    padding: 10px 12px;
+  }
+  
+  .bar-chart { height: 140px; }
+  
+  .bar { width: 30px; }
+}
+
+/* ============================================================
+   Print Styles
+   ============================================================ */
+@media print {
+  .header-actions,
+  .tabs,
+  .btn,
+  .modal-overlay { display: none !important; }
+  
+  body { background: #fff; color: #000; }
+  
+  .card, .stat-card { 
+    background: #f5f5f5; 
+    border: 1px solid #ddd;
+  }
+}
+</style>
+</head>
+<body>
+<div class="app-container">
+  <!-- Header -->
+  <header class="header">
+    <h1>
+      <span class="icon">🏪</span>
+      多店管理
+    </h1>
+    <div class="header-actions">
+      <a href="portal.html" class="btn btn-secondary">← 返回主页</a>
+      <button class="btn btn-primary" onclick="refreshData()">
+        🔄 刷新数据
+      </button>
+    </div>
+  </header>
+
+  <!-- Mock Data Banner -->
+  <div class="mock-banner" id="mockBanner">
+    <span class="icon">⚠️</span>
+    <div class="text">
+      <strong>提示：</strong>数据加载失败，显示模拟数据
+    </div>
+    <button class="close-btn" onclick="closeBanner()">×</button>
+  </div>
+
+  <!-- Main Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('stores')">
+      📊 多店数据管理
+    </button>
+    <button class="tab" onclick="switchTab('report')">
+      📋 多店经营日报
+    </button>
+  </div>
+
+  <!-- Tab 1: 多店数据管理 -->
+  <div class="tab-content active" id="tab-stores">
+    <!-- Summary Stats -->
+    <div class="summary-grid" id="summaryStats">
+      <div class="stat-card blue">
+        <div class="label">门店总数</div>
+        <div class="value" id="totalStores">-</div>
+      </div>
+      <div class="stat-card green">
+        <div class="label">今日总营收</div>
+        <div class="value" id="totalRevenue">¥-</div>
+      </div>
+      <div class="stat-card purple">
+        <div class="label">今日总订单</div>
+        <div class="value" id="totalOrders">-</div>
+      </div>
+      <div class="stat-card gold">
+        <div class="label">平均毛利率</div>
+        <div class="value" id="avgMargin">-%</div>
+      </div>
+      <div class="stat-card red">
+        <div class="label">待处理差评</div>
+        <div class="value" id="totalComplaints">-</div>
+      </div>
+      <div class="stat-card orange">
+        <div class="label">库存预警</div>
+        <div class="value" id="totalWarnings">-</div>
+      </div>
+    </div>
+
+    <!-- Store Grid -->
+    <h3 class="section-title"><span class="icon">🏬</span> 门店列表</h3>
+    <div class="store-grid" id="storeGrid">
+      <div class="loading">
+        <div class="spinner"></div>
+        <span>加载中...</span>
+      </div>
+    </div>
+
+    <!-- Comparison Panel -->
+    <div class="comparison-panel">
+      <div class="comparison-header">
+        <h3 class="section-title" style="margin-bottom:0">
+          <span class="icon">📈</span> 跨店对比
+        </h3>
+        <div class="store-selector" id="storeSelector">
+          <!-- Checkboxes will be generated -->
+        </div>
+      </div>
+      <div class="comparison-charts" id="comparisonCharts">
+        <div class="empty-state">
+          <div class="icon">📊</div>
+          <p>选择2-5家门店进行对比分析</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 2: 多店经营日报 -->
+  <div class="tab-content" id="tab-report">
+    <!-- Date Selector -->
+    <div class="date-selector">
+      <label>选择日期：</label>
+      <input type="date" class="date-input" id="reportDate" onchange="loadDailyReport()">
+      <div class="quick-dates">
+        <button class="quick-date" onclick="setQuickDate('today')">今天</button>
+        <button class="quick-date" onclick="setQuickDate('yesterday')">昨天</button>
+        <button class="quick-date" onclick="setQuickDate('week')">近7天</button>
+        <button class="quick-date" onclick="setQuickDate('month')">近30天</button>
+      </div>
+    </div>
+
+    <!-- Overview Stats -->
+    <div class="summary-grid" id="reportSummary">
+      <div class="stat-card blue">
+        <div class="label">总营收</div>
+        <div class="value" id="reportTotalRevenue">¥-</div>
+      </div>
+      <div class="stat-card orange">
+        <div class="label">总成本</div>
+        <div class="value" id="reportTotalCost">¥-</div>
+      </div>
+      <div class="stat-card green">
+        <div class="label">总毛利</div>
+        <div class="value" id="reportTotalProfit">¥-</div>
+      </div>
+      <div class="stat-card gold">
+        <div class="label">平均毛利率</div>
+        <div class="value" id="reportAvgMargin">-%</div>
+      </div>
+      <div class="stat-card purple">
+        <div class="label">总订单数</div>
+        <div class="value" id="reportTotalOrders">-</div>
+      </div>
+      <div class="stat-card red">
+        <div class="label">总差评数</div>
+        <div class="value" id="reportTotalComplaints">-</div>
+      </div>
+    </div>
+
+    <!-- Daily Report Table -->
+    <h3 class="section-title"><span class="icon">📋</span> 各店明细</h3>
+    <div class="table-container">
+      <table class="data-table" id="dailyReportTable">
+        <thead>
+          <tr>
+            <th onclick="sortTable('store_name')">
+              门店 <span class="sort-icon">↕</span>
+            </th>
+            <th onclick="sortTable('revenue')">
+              营收 <span class="sort-icon">↕</span>
+            </th>
+            <th onclick="sortTable('cost')">
+              成本 <span class="sort-icon">↕</span>
+            </th>
+            <th onclick="sortTable('profit')">
+              毛利 <span class="sort-icon">↕</span>
+            </th>
+            <th onclick="sortTable('margin')">
+              毛利率 <span class="sort-icon">↕</span>
+            </th>
+            <th onclick="sortTable('orders')">
+              订单数 <span class="sort-icon">↕</span>
+            </th>
+            <th onclick="sortTable('complaints')">
+              差评数 <span class="sort-icon">↕</span>
+            </th>
+            <th onclick="sortTable('warnings')">
+              库存预警 <span class="sort-icon">↕</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody id="reportTableBody">
+          <tr>
+            <td colspan="8" class="loading">
+              <div class="loading">
+                <div class="spinner"></div>
+                <span>加载中...</span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Store Detail Modal -->
+<div class="modal-overlay" id="storeModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modalStoreName">门店详情</h2>
+      <button class="close-btn" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <!-- Modal Tabs -->
+      <div class="modal-tabs">
+        <button class="modal-tab active" onclick="switchModalTab('dishes')">菜品列表</button>
+        <button class="modal-tab" onclick="switchModalTab('transactions')">交易记录</button>
+        <button class="modal-tab" onclick="switchModalTab('trend')">趋势分析</button>
+      </div>
+
+      <!-- Dishes Tab -->
+      <div class="modal-tab-content active" id="modal-dishes">
+        <div class="filter-tabs" id="categoryFilters">
+          <button class="filter-tab active" onclick="filterDishes('all')">全部</button>
+        </div>
+        <div class="dish-list" id="dishList">
+          <div class="loading">
+            <div class="spinner"></div>
+            <span>加载中...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Transactions Tab -->
+      <div class="modal-tab-content" id="modal-transactions">
+        <div class="transaction-list" id="transactionList">
+          <div class="loading">
+            <div class="spinner"></div>
+            <span>加载中...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Trend Tab -->
+      <div class="modal-tab-content" id="modal-trend">
+        <div class="chart-container">
+          <div class="chart-title">近7天营收趋势</div>
+          <svg class="chart-svg" id="trendChart" viewBox="0 0 700 200" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <linearGradient id="blueGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:var(--blue);stop-opacity:0.5"/>
+                <stop offset="100%" style="stop-color:var(--blue);stop-opacity:0"/>
+              </linearGradient>
+            </defs>
+            <!-- Chart will be rendered here -->
+          </svg>
+        </div>
+        <div class="chart-container">
+          <div class="chart-title">近7天订单量趋势</div>
+          <svg class="chart-svg" id="orderTrendChart" viewBox="0 0 700 200" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <linearGradient id="greenGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:var(--green);stop-opacity:0.5"/>
+                <stop offset="100%" style="stop-color:var(--green);stop-opacity:0"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// Supabase Configuration
+// ============================================================
+const SUPABASE_URL = 'https://vovzgflfdwngfuqnxjc.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvdnpnZmxmZHduZ2Z1cW54amMiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc4MTU5ODQ5NiwiZXhwIjoyMDk3MTc0NDk2fQ.p8e3LcWgBqWxQ3jYk7mN2vR4sT8uY6zA9bC1dE5fG3h';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ============================================================
+// Global State
+// ============================================================
+let stores = [];
+let storeSummaries = {};
+let selectedStores = new Set();
+let currentStoreId = null;
+let reportData = [];
+let sortColumn = 'revenue';
+let sortDirection = 'desc';
+
+// ============================================================
+// Mock Data (Fallback)
+// ============================================================
+const MOCK_STORES = [
+  { id: 1, name: '望京SOHO店', code: 'BJ-WJ-001', address: '北京市朝阳区望京SOHO T3 1层', status: 'active' },
+  { id: 2, name: '国贸CBD店', code: 'BJ-GM-001', address: '北京市朝阳区国贸三期 B1层', status: 'active' },
+  { id: 3, name: '中关村店', code: 'BJ-ZGC-001', address: '北京市海淀区中关村大街15号', status: 'active' },
+  { id: 4, name: '三里屯店', code: 'BJ-SLT-001', address: '北京市朝阳区三里屯太古里北区', status: 'suspended' },
+  { id: 5, name: '上海浦东店', code: 'SH-PD-001', address: '上海市浦东新区陆家嘴环路', status: 'active' },
+  { id: 6, name: '广州天河城', code: 'GZ-TH-001', address: '广州市天河区天河路208号', status: 'active' }
+];
+
+const MOCK_DISHES = {
+  1: [
+    { name: '招牌红烧肉', category: '主菜', price: 58, cost: 22 },
+    { name: '秘制口水鸡', category: '凉菜', price: 32, cost: 12 },
+    { name: '农家小炒肉', category: '主菜', price: 42, cost: 16 },
+    { name: '酸辣土豆丝', category: '素菜', price: 22, cost: 5 },
+    { name: '番茄蛋汤', category: '汤品', price: 18, cost: 4 },
+    { name: '米饭', category: '主食', price: 3, cost: 0.5 }
+  ],
+  2: [
+    { name: '糖醋里脊', category: '主菜', price: 48, cost: 18 },
+    { name: '宫保鸡丁', category: '主菜', price: 38, cost: 14 },
+    { name: '蒜蓉西兰花', category: '素菜', price: 26, cost: 6 },
+    { name: '老火靓汤', category: '汤品', price: 28, cost: 8 },
+    { name: '米饭', category: '主食', price: 3, cost: 0.5 }
+  ]
+};
+
+const MOCK_TRANSACTIONS = {
+  1: [
+    { id: 'ORD20240115001', time: '10:32:15', amount: 156, status: 'completed' },
+    { id: 'ORD20240115002', time: '11:05:28', amount: 89, status: 'completed' },
+    { id: 'ORD20240115003', time: '12:18:45', amount: 234, status: 'completed' },
+    { id: 'ORD20240115004', time: '13:42:33', amount: 67, status: 'refunded' },
+    { id: 'ORD20240115005', time: '17:25:10', amount: 198, status: 'completed' },
+    { id: 'ORD20240115006', time: '18:56:42', amount: 312, status: 'completed' },
+    { id: 'ORD20240115007', time: '19:33:18', amount: 145, status: 'completed' },
+    { id: 'ORD20240115008', time: '20:15:55', amount: 276, status: 'completed' }
+  ]
+};
+
+const MOCK_DAILY_SUMMARY = {
+  1: { revenue: 15280, cost: 6876, profit: 8404, margin: 55.0, orders: 186, complaints: 2, warnings: 3 },
+  2: { revenue: 12850, cost: 5770, profit: 7080, margin: 55.1, orders: 158, complaints: 1, warnings: 0 },
+  3: { revenue: 9650, cost: 4340, profit: 5310, margin: 55.0, orders: 124, complaints: 0, warnings: 1 },
+  4: { revenue: 0, cost: 0, profit: 0, margin: 0, orders: 0, complaints: 0, warnings: 0 },
+  5: { revenue: 18420, cost: 8289, profit: 10131, margin: 55.0, orders: 215, complaints: 3, warnings: 2 },
+  6: { revenue: 11320, cost: 5094, profit: 6226, margin: 55.0, orders: 142, complaints: 1, warnings: 0 }
+};
+
+const MOCK_WEEKLY_TREND = {
+  1: {
+    dates: ['01-09', '01-10', '01-11', '01-12', '01-13', '01-14', '01-15'],
+    revenue: [12500, 13800, 14200, 13600, 15280, 15800, 16200],
+    orders: [152, 168, 173, 166, 186, 192, 198]
+  }
+};
+
+// ============================================================
+// Utility Functions
+// ============================================================
+function formatCurrency(amount) {
+  if (amount === null || amount === undefined) return '¥-';
+  return '¥' + amount.toLocaleString('zh-CN', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+
+function formatPercent(value) {
+  if (value === null || value === undefined) return '-%';
+  return value.toFixed(1) + '%';
+}
+
+function getToday() {
+  const now = new Date();
+  return now.toISOString().split('T')[0];
+}
+
+function showBanner() {
+  document.getElementById('mockBanner').classList.add('show');
+}
+
+function closeBanner() {
+  document.getElementById('mockBanner').classList.remove('show');
+}
+
+// ============================================================
+// Tab Navigation
+// ============================================================
+function switchTab(tabName) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  
+  event.target.classList.add('active');
+  document.getElementById('tab-' + tabName).classList.add('active');
+  
+  if (tabName === 'report') {
+    loadDailyReport();
+  }
+}
+
+// ============================================================
+// Modal Functions
+// ============================================================
+function switchModalTab(tabName) {
+  document.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.modal-tab-content').forEach(c => c.classList.remove('active'));
+  
+  event.target.classList.add('active');
+  document.getElementById('modal-' + tabName).classList.add('active');
+}
+
+function openStoreModal(storeId) {
+  currentStoreId = storeId;
+  const store = stores.find(s => s.id === storeId);
+  if (!store) return;
+  
+  document.getElementById('modalStoreName').textContent = store.name + ' - 门店详情';
+  document.getElementById('storeModal').classList.add('show');
+  
+  // Reset to first tab
+  switchModalTab('dishes');
+  
+  // Load data
+  loadStoreDishes(storeId);
+  loadStoreTransactions(storeId);
+  loadStoreTrend(storeId);
+}
+
+function closeModal() {
+  document.getElementById('storeModal').classList.remove('show');
+  currentStoreId = null;
+}
+
+// Close modal on overlay click
+document.getElementById('storeModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ============================================================
+// Data Loading
+// ============================================================
+async function loadStores() {
+  try {
+    // Try to fetch from Supabase
+    const { data, error } = await sb
+      .from('stores')
+      .select('*')
+      .order('id');
+    
+    if (error) throw error;
+    
+    stores = data || [];
+    
+    // Fetch daily summaries
+    await loadDailySummaries();
+    
+  } catch (error) {
+    console.warn('Supabase fetch failed, using mock data:', error.message);
+    showBanner();
+    stores = MOCK_STORES;
+    storeSummaries = MOCK_DAILY_SUMMARY;
+  }
+  
+  renderStoreGrid();
+  renderStoreSelector();
+  updateSummaryStats();
+}
+
+async function loadDailySummaries() {
+  const today = getToday();
+  
+  try {
+    const { data, error } = await sb
+      .from('store_daily_summary')
+      .select('*')
+      .eq('date', today);
+    
+    if (error) throw error;
+    
+    // Build summary map
+    if (data) {
+      data.forEach(row => {
+        storeSummaries[row.store_id] = {
+          revenue: row.revenue || 0,
+          cost: row.cost || 0,
+          profit: row.profit || 0,
+          margin: row.profit && row.revenue ? (row.profit / row.revenue * 100) : 0,
+          orders: row.order_count || 0,
+          complaints: row.complaint_count || 0,
+          warnings: row.inventory_alerts || 0
+        };
+      });
+    }
+  } catch (error) {
+    console.warn('Daily summaries fetch failed:', error.message);
+    storeSummaries = MOCK_DAILY_SUMMARY;
+  }
+}
+
+async function loadDailyReport() {
+  const date = document.getElementById('reportDate').value;
+  
+  try {
+    const { data, error } = await sb
+      .from('store_daily_summary')
+      .select('*')
+      .eq('date', date);
+    
+    if (error) throw error;
+    
+    if (data && data.length > 0) {
+      reportData = data.map(row => ({
+        store_id: row.store_id,
+        store_name: stores.find(s => s.id === row.store_id)?.name || '未知门店',
+        status: stores.find(s => s.id === row.store_id)?.status || 'unknown',
+        revenue: row.revenue || 0,
+        cost: row.cost || 0,
+        profit: row.profit || 0,
+        margin: row.profit && row.revenue ? (row.profit / row.revenue * 100) : 0,
+        orders: row.order_count || 0,
+        complaints: row.complaint_count || 0,
+        warnings: row.inventory_alerts || 0
+      }));
+    } else {
+      // Fallback to mock data for selected date
+      reportData = MOCK_STORES.map(store => ({
+        store_id: store.id,
+        store_name: store.name,
+        status: store.status,
+        revenue: MOCK_DAILY_SUMMARY[store.id]?.revenue || 0,
+        cost: MOCK_DAILY_SUMMARY[store.id]?.cost || 0,
+        profit: MOCK_DAILY_SUMMARY[store.id]?.profit || 0,
+        margin: MOCK_DAILY_SUMMARY[store.id]?.margin || 0,
+        orders: MOCK_DAILY_SUMMARY[store.id]?.orders || 0,
+        complaints: MOCK_DAILY_SUMMARY[store.id]?.complaints || 0,
+        warnings: MOCK_DAILY_SUMMARY[store.id]?.warnings || 0
+      }));
+    }
+  } catch (error) {
+    console.warn('Daily report fetch failed:', error.message);
+    showBanner();
+    reportData = MOCK_STORES.map(store => ({
+      store_id: store.id,
+      store_name: store.name,
+      status: store.status,
+      revenue: MOCK_DAILY_SUMMARY[store.id]?.revenue || 0,
+      cost: MOCK_DAILY_SUMMARY[store.id]?.cost || 0,
+      profit: MOCK_DAILY_SUMMARY[store.id]?.profit || 0,
+      margin: MOCK_DAILY_SUMMARY[store.id]?.margin || 0,
+      orders: MOCK_DAILY_SUMMARY[store.id]?.orders || 0,
+      complaints: MOCK_DAILY_SUMMARY[store.id]?.complaints || 0,
+      warnings: MOCK_DAILY_SUMMARY[store.id]?.warnings || 0
+    }));
+  }
+  
+  updateReportSummary();
+  renderReportTable();
+}
+
+async function loadStoreDishes(storeId) {
+  const dishList = document.getElementById('dishList');
+  const categoryFilters = document.getElementById('categoryFilters');
+  
+  try {
+    const { data, error } = await sb
+      .from('store_dishes')
+      .select('*')
+      .eq('store_id', storeId);
+    
+    if (error) throw error;
+    
+    renderDishList(data || MOCK_DISHES[storeId] || []);
+    renderCategoryFilters(data || MOCK_DISHES[storeId] || []);
+    
+  } catch (error) {
+    console.warn('Dishes fetch failed:', error.message);
+    renderDishList(MOCK_DISHES[storeId] || []);
+    renderCategoryFilters(MOCK_DISHES[storeId] || []);
+  }
+}
+
+async function loadStoreTransactions(storeId) {
+  try {
+    const { data, error } = await sb
+      .from('store_transactions')
+      .select('*')
+      .eq('store_id', storeId)
+      .order('created_at', { ascending: false })
+      .limit(10);
+    
+    if (error) throw error;
+    
+    renderTransactionList(data || MOCK_TRANSACTIONS[storeId] || []);
+    
+  } catch (error) {
+    console.warn('Transactions fetch failed:', error.message);
+    renderTransactionList(MOCK_TRANSACTIONS[storeId] || []);
+  }
+}
+
+async function loadStoreTrend(storeId) {
+  try {
+    // Fetch last 7 days data
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 6);
+    
+    const { data, error } = await sb
+      .from('store_daily_summary')
+      .select('*')
+      .eq('store_id', storeId)
+      .gte('date', startDate.toISOString().split('T')[0])
+      .lte('date', endDate.toISOString().split('T')[0])
+      .order('date');
+    
+    if (error) throw error;
+    
+    renderTrendChart(data || MOCK_WEEKLY_TREND[storeId] || null);
+    
+  } catch (error) {
+    console.warn('Trend fetch failed:', error.message);
+    renderTrendChart(MOCK_WEEKLY_TREND[storeId] || null);
+  }
+}
+
+// ============================================================
+// Render Functions
+// ============================================================
+function renderStoreGrid() {
+  const grid = document.getElementById('storeGrid');
+  
+  if (stores.length === 0) {
+    grid.innerHTML = `
+      <div class="empty-state">
+        <div class="icon">🏪</div>
+        <p>暂无门店数据</p>
+      </div>
+    `;
+    return;
+  }
+  
+  grid.innerHTML = stores.map(store => {
+    const summary = storeSummaries[store.id] || {};
+    const statusClass = store.status === 'active' ? 'active' : 
+                        store.status === 'suspended' ? 'suspended' : 'closed';
+    const statusText = store.status === 'active' ? '营业中' : 
+                       store.status === 'suspended' ? '已暂停' : '已关闭';
+    
+    return `
+      <div class="store-card" onclick="openStoreModal(${store.id})">
+        <div class="store-header">
+          <div>
+            <div class="store-name">${store.name}</div>
+            <div class="store-id">${store.code || 'NO-' + store.id}</div>
+          </div>
+          <span class="status-badge ${statusClass}">${statusText}</span>
+        </div>
+        <div class="store-address">
+          📍 ${store.address || '暂无地址'}
+        </div>
+        <div class="metrics">
+          <div class="metric">
+            <div class="label">今日营收</div>
+            <div class="value">${formatCurrency(summary.revenue)}</div>
+          </div>
+          <div class="metric">
+            <div class="label">毛利率</div>
+            <div class="value ${summary.margin < 30 ? 'negative' : 'positive'}">${formatPercent(summary.margin)}</div>
+          </div>
+          <div class="metric">
+            <div class="label">订单数</div>
+            <div class="value">${summary.orders || 0}</div>
+          </div>
+          <div class="metric">
+            <div class="label">差评数</div>
+            <div class="value ${summary.complaints > 0 ? 'negative' : ''}">${summary.complaints || 0}</div>
+          </div>
+          <div class="metric">
+            <div class="label">库存预警</div>
+            <div class="value ${summary.warnings > 0 ? 'warning' : ''}">${summary.warnings || 0}</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderStoreSelector() {
+  const selector = document.getElementById('storeSelector');
+  
+  selector.innerHTML = stores.map(store => `
+    <label class="store-checkbox" onclick="toggleStoreSelection(${store.id})">
+      <input type="checkbox" value="${store.id}">
+      <span class="check">✓</span>
+      ${store.name}
+    </label>
+  `).join('');
+}
+
+function renderDishList(dishes) {
+  const dishList = document.getElementById('dishList');
+  
+  if (dishes.length === 0) {
+    dishList.innerHTML = `
+      <div class="empty-state">
+        <div class="icon">🍽️</div>
+        <p>暂无菜品数据</p>
+      </div>
+    `;
+    return;
+  }
+  
+  dishList.innerHTML = dishes.map(dish => `
+    <div class="dish-item">
+      <div class="info">
+        <div class="name">${dish.name}</div>
+        <div class="meta">
+          <span>分类: ${dish.category || '未分类'}</span>
+          <span>成本: ${formatCurrency(dish.cost)}</span>
+        </div>
+      </div>
+      <div class="price">${formatCurrency(dish.price)}</div>
+    </div>
+  `).join('');
+}
+
+function renderCategoryFilters(dishes) {
+  const filters = document.getElementById('categoryFilters');
+  const categories = [...new Set(dishes.map(d => d.category || '未分类'))];
+  
+  filters.innerHTML = `
+    <button class="filter-tab active" onclick="filterDishes('all')">全部</button>
+    ${categories.map(cat => `
+      <button class="filter-tab" onclick="filterDishes('${cat}')">${cat}</button>
+    `).join('')}
+  `;
+}
+
+function filterDishes(category) {
+  document.querySelectorAll('#categoryFilters .filter-tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  
+  const dishes = MOCK_DISHES[currentStoreId] || [];
+  const filtered = category === 'all' ? dishes : dishes.filter(d => d.category === category);
+  renderDishList(filtered);
+}
+
+function renderTransactionList(transactions) {
+  const list = document.getElementById('transactionList');
+  
+  if (transactions.length === 0) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <div class="icon">📝</div>
+        <p>暂无交易记录</p>
+      </div>
+    `;
+    return;
+  }
+  
+  list.innerHTML = transactions.map(tx => `
+    <div class="transaction-item">
+      <div class="info">
+        <div class="order-id">${tx.id}</div>
+        <div class="time">${tx.time}</div>
+      </div>
+      <span class="status ${tx.status}">${tx.status === 'completed' ? '已完成' : '已退款'}</span>
+      <div class="amount">${tx.status === 'refunded' ? '-' : '+'}${formatCurrency(tx.amount)}</div>
+    </div>
+  `).join('');
+}
+
+function renderTrendChart(data) {
+  const chart = document.getElementById('trendChart');
+  const orderChart = document.getElementById('orderTrendChart');
+  
+  if (!data) {
+    chart.innerHTML = '<text x="350" y="100" text-anchor="middle" fill="#9ca3af">暂无趋势数据</text>';
+    orderChart.innerHTML = '<text x="350" y="100" text-anchor="middle" fill="#9ca3af">暂无趋势数据</text>';
+    return;
+  }
+  
+  const dates = data.dates || [];
+  const revenue = data.revenue || [];
+  const orders = data.orders || [];
+  
+  // Calculate chart dimensions
+  const chartWidth = 700;
+  const chartHeight = 200;
+  const padding = { top: 20, right: 20, bottom: 30, left: 50 };
+  const width = chartWidth - padding.left - padding.right;
+  const height = chartHeight - padding.top - padding.bottom;
+  
+  // Revenue chart
+  const maxRevenue = Math.max(...revenue) * 1.1;
+  const points = revenue.map((val, i) => ({
+    x: padding.left + (i / (revenue.length - 1 || 1)) * width,
+    y: padding.top + height - (val / maxRevenue) * height
+  }));
+  
+  const pathD = points.map((p, i) => (i === 0 ? 'M' : 'L') + p.x + ',' + p.y).join(' ');
+  const areaD = pathD + ' L' + points[points.length - 1].x + ',' + (padding.top + height) + ' L' + points[0].x + ',' + (padding.top + height) + ' Z';
+  
+  chart.innerHTML = `
+    <defs>
+      <linearGradient id="blueGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" style="stop-color:var(--blue);stop-opacity:0.4"/>
+        <stop offset="100%" style="stop-color:var(--blue);stop-opacity:0"/>
+      </linearGradient>
+    </defs>
+    <!-- Grid lines -->
+    <line x1="${padding.left}" y1="${padding.top}" x2="${padding.left}" y2="${padding.top + height}" class="chart-grid-line"/>
+    <line x1="${padding.left}" y1="${padding.top + height * 0.25}" x2="${chartWidth - padding.right}" y2="${padding.top + height * 0.25}" class="chart-grid-line"/>
+    <line x1="${padding.left}" y1="${padding.top + height * 0.5}" x2="${chartWidth - padding.right}" y2="${padding.top + height * 0.5}" class="chart-grid-line"/>
+    <line x1="${padding.left}" y1="${padding.top + height * 0.75}" x2="${chartWidth - padding.right}" y2="${padding.top + height * 0.75}" class="chart-grid-line"/>
+    <line x1="${padding.left}" y1="${padding.top + height}" x2="${chartWidth - padding.right}" y2="${padding.top + height}" class="chart-grid-line"/>
+    <!-- Y axis labels -->
+    <text x="${padding.left - 5}" y="${padding.top + 5}" class="chart-label" text-anchor="end">${formatCurrency(maxRevenue)}</text>
+    <text x="${padding.left - 5}" y="${padding.top + height * 0.5 + 4}" class="chart-label" text-anchor="end">${formatCurrency(maxRevenue * 0.5)}</text>
+    <text x="${padding.left - 5}" y="${padding.top + height + 4}" class="chart-label" text-anchor="end">¥0</text>
+    <!-- Area fill -->
+    <path d="${areaD}" class="chart-area"/>
+    <!-- Line -->
+    <path d="${pathD}" class="chart-line"/>
+    <!-- Dots and labels -->
+    ${points.map((p, i) => `
+      <circle cx="${p.x}" cy="${p.y}" r="5" class="chart-dot"/>
+      <text x="${p.x}" y="${padding.top + height + 20}" class="chart-label" text-anchor="middle">${dates[i] || ''}</text>
+    `).join('')}
+  `;
+  
+  // Orders chart
+  const maxOrders = Math.max(...orders) * 1.1;
+  const orderPoints = orders.map((val, i) => ({
+    x: padding.left + (i / (orders.length - 1 || 1)) * width,
+    y: padding.top + height - (val / maxOrders) * height
+  }));
+  
+  const orderPathD = orderPoints.map((p, i) => (i === 0 ? 'M' : 'L') + p.x + ',' + p.y).join(' ');
+  const orderAreaD = orderPathD + ' L' + orderPoints[orderPoints.length - 1].x + ',' + (padding.top + height) + ' L' + orderPoints[0].x + ',' + (padding.top + height) + ' Z';
+  
+  orderChart.innerHTML = `
+    <defs>
+      <linearGradient id="greenGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" style="stop-color:var(--green);stop-opacity:0.4"/>
+        <stop offset="100%" style="stop-color:var(--green);stop-opacity:0"/>
+      </linearGradient>
+    </defs>
+    <!-- Grid lines -->
+    <line x1="${padding.left}" y1="${padding.top}" x2="${padding.left}" y2="${padding.top + height}" class="chart-grid-line"/>
+    <line x1="${padding.left}" y1="${padding.top + height * 0.25}" x2="${chartWidth - padding.right}" y2="${padding.top + height * 0.25}" class="chart-grid-line"/>
+    <line x1="${padding.left}" y1="${padding.top + height * 0.5}" x2="${chartWidth - padding.right}" y2="${padding.top + height * 0.5}" class="chart-grid-line"/>
+    <line x1="${padding.left}" y1="${padding.top + height * 0.75}" x2="${chartWidth - padding.right}" y2="${padding.top + height * 0.75}" class="chart-grid-line"/>
+    <line x1="${padding.left}" y1="${padding.top + height}" x2="${chartWidth - padding.right}" y2="${padding.top + height}" class="chart-grid-line"/>
+    <!-- Y axis labels -->
+    <text x="${padding.left - 5}" y="${padding.top + 5}" class="chart-label" text-anchor="end">${Math.round(maxOrders)}</text>
+    <text x="${padding.left - 5}" y="${padding.top + height * 0.5 + 4}" class="chart-label" text-anchor="end">${Math.round(maxOrders * 0.5)}</text>
+    <text x="${padding.left - 5}" y="${padding.top + height + 4}" class="chart-label" text-anchor="end">0</text>
+    <!-- Area fill -->
+    <path d="${orderAreaD}" fill="url(#greenGradient)"/>
+    <!-- Line -->
+    <path d="${orderPathD}" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Dots and labels -->
+    ${orderPoints.map((p, i) => `
+      <circle cx="${p.x}" cy="${p.y}" r="5" fill="var(--green)"/>
+      <text x="${p.x}" y="${padding.top + height + 20}" class="chart-label" text-anchor="middle">${dates[i] || ''}</text>
+    `).join('')}
+  `;
+}
+
+function updateSummaryStats() {
+  document.getElementById('totalStores').textContent = stores.length;
+  
+  let totalRevenue = 0;
+  let totalOrders = 0;
+  let totalComplaints = 0;
+  let totalWarnings = 0;
+  let totalMargin = 0;
+  let activeCount = 0;
+  
+  stores.forEach(store => {
+    const summary = storeSummaries[store.id] || {};
+    totalRevenue += summary.revenue || 0;
+    totalOrders += summary.orders || 0;
+    totalComplaints += summary.complaints || 0;
+    totalWarnings += summary.warnings || 0;
+    if (summary.margin > 0) {
+      totalMargin += summary.margin;
+      activeCount++;
+    }
+  });
+  
+  document.getElementById('totalRevenue').textContent = formatCurrency(totalRevenue);
+  document.getElementById('totalOrders').textContent = totalOrders.toLocaleString();
+  document.getElementById('totalComplaints').textContent = totalComplaints;
+  document.getElementById('totalWarnings').textContent = totalWarnings;
+  document.getElementById('avgMargin').textContent = formatPercent(activeCount > 0 ? totalMargin / activeCount : 0);
+}
+
+function updateReportSummary() {
+  let totalRevenue = 0;
+  let totalCost = 0;
+  let totalProfit = 0;
+  let totalOrders = 0;
+  let totalComplaints = 0;
+  
+  reportData.forEach(row => {
+    totalRevenue += row.revenue || 0;
+    totalCost += row.cost || 0;
+    totalProfit += row.profit || 0;
+    totalOrders += row.orders || 0;
+    totalComplaints += row.complaints || 0;
+  });
+  
+  const avgMargin = totalRevenue > 0 ? (totalProfit / totalRevenue * 100) : 0;
+  
+  document.getElementById('reportTotalRevenue').textContent = formatCurrency(totalRevenue);
+  document.getElementById('reportTotalCost').textContent = formatCurrency(totalCost);
+  document.getElementById('reportTotalProfit').textContent = formatCurrency(totalProfit);
+  document.getElementById('reportAvgMargin').textContent = formatPercent(avgMargin);
+  document.getElementById('reportTotalOrders').textContent = totalOrders.toLocaleString();
+  document.getElementById('reportTotalComplaints').textContent = totalComplaints;
+}
+
+function renderReportTable() {
+  const tbody = document.getElementById('reportTableBody');
+  
+  // Sort data
+  const sorted = [...reportData].sort((a, b) => {
+    let aVal = a[sortColumn];
+    let bVal = b[sortColumn];
+    
+    if (typeof aVal === 'string') {
+      aVal = aVal.toLowerCase();
+      bVal = bVal.toLowerCase();
+    }
+    
+    if (sortDirection === 'asc') {
+      return aVal > bVal ? 1 : -1;
+    } else {
+      return aVal < bVal ? 1 : -1;
+    }
+  });
+  
+  if (sorted.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="8">
+          <div class="empty-state">
+            <div class="icon">📋</div>
+            <p>暂无日报数据</p>
+          </div>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+  
+  tbody.innerHTML = sorted.map(row => {
+    const marginClass = row.margin < 30 ? 'danger-cell' : '';
+    const warningsClass = row.warnings > 0 ? 'warning-cell' : '';
+    const statusClass = row.status === 'active' ? 'active' : 
+                       row.status === 'suspended' ? 'suspended' : 'closed';
+    
+    return `
+      <tr>
+        <td>
+          <div class="store-cell">
+            <div class="avatar">${row.store_name.charAt(0)}</div>
+            <div>
+              <div class="name">${row.store_name}</div>
+              <span class="status-dot ${statusClass}"></span>
+              <span style="font-size:12px;color:var(--text-dim)">
+                ${statusClass === 'active' ? '营业中' : statusClass === 'suspended' ? '已暂停' : '已关闭'}
+              </span>
+            </div>
+          </div>
+        </td>
+        <td>${formatCurrency(row.revenue)}</td>
+        <td>${formatCurrency(row.cost)}</td>
+        <td>${formatCurrency(row.profit)}</td>
+        <td class="${marginClass}">${formatPercent(row.margin)}</td>
+        <td>${row.orders}</td>
+        <td class="${row.complaints > 0 ? 'danger-cell' : ''}">${row.complaints}</td>
+        <td class="${warningsClass}">${row.warnings}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function sortTable(column) {
+  if (sortColumn === column) {
+    sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortColumn = column;
+    sortDirection = 'desc';
+  }
+  
+  // Update sort indicators
+  document.querySelectorAll('.data-table th').forEach(th => {
+    th.classList.remove('sorted');
+    th.querySelector('.sort-icon').textContent = '↕';
+  });
+  
+  const currentTh = document.querySelector(`.data-table th[onclick="sortTable('${column}')"]`);
+  currentTh.classList.add('sorted');
+  currentTh.querySelector('.sort-icon').textContent = sortDirection === 'asc' ? '↑' : '↓';
+  
+  renderReportTable();
+}
+
+// ============================================================
+// Store Selection for Comparison
+// ============================================================
+function toggleStoreSelection(storeId) {
+  event.stopPropagation();
+  
+  const checkbox = event.target.closest('.store-checkbox');
+  
+  if (selectedStores.has(storeId)) {
+    selectedStores.delete(storeId);
+    checkbox.classList.remove('selected');
+  } else {
+    if (selectedStores.size >= 5) {
+      alert('最多选择5家门店进行对比');
+      return;
+    }
+    selectedStores.add(storeId);
+    checkbox.classList.add('selected');
+  }
+  
+  renderComparisonChart();
+}
+
+function renderComparisonChart() {
+  const container = document.getElementById('comparisonCharts');
+  
+  if (selectedStores.size < 2) {
+    container.innerHTML = `
+      <div class="empty-state" style="grid-column: 1 / -1;">
+        <div class="icon">📊</div>
+        <p>选择2-5家门店进行对比分析</p>
+      </div>
+    `;
+    return;
+  }
+  
+  const selected = Array.from(selectedStores).map(id => {
+    const store = stores.find(s => s.id === id);
+    const summary = storeSummaries[id] || {};
+    return { ...store, ...summary };
+  });
+  
+  const colors = ['blue', 'green', 'purple', 'gold', 'orange'];
+  
+  // Calculate max values for scaling
+  const maxRevenue = Math.max(...selected.map(s => s.revenue || 0)) * 1.2;
+  const maxMargin = Math.max(...selected.map(s => s.margin || 0), 50) * 1.2;
+  const maxOrders = Math.max(...selected.map(s => s.orders || 0)) * 1.2;
+  
+  const maxComplaints = Math.max(...selected.map(s => s.complaints || 0), 1);
+  
+  container.innerHTML = `
+    <div class="comparison-chart">
+      <h4>💰 营收对比</h4>
+      <div class="bar-chart">
+        ${selected.map((s, i) => `
+          <div class="bar-group">
+            <div class="bar ${colors[i]}" style="height: ${((s.revenue || 0) / maxRevenue) * 140}px;">
+              <span class="bar-value">${formatCurrency(s.revenue)}</span>
+            </div>
+            <span class="bar-label">${s.name.substring(0, 4)}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+    
+    <div class="comparison-chart">
+      <h4>📈 毛利率对比</h4>
+      <div class="bar-chart">
+        ${selected.map((s, i) => `
+          <div class="bar ${colors[i]}" style="height: ${((s.margin || 0) / maxMargin) * 140}px;">
+            <span class="bar-value">${formatPercent(s.margin)}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+    
+    <div class="comparison-chart">
+      <h4>🛒 订单量对比</h4>
+      <div class="bar-chart">
+        ${selected.map((s, i) => `
+          <div class="bar ${colors[i]}" style="height: ${((s.orders || 0) / maxOrders) * 140}px;">
+            <span class="bar-value">${s.orders || 0}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+    
+    <div class="comparison-chart">
+      <h4>⚠️ 差评数对比</h4>
+      <div class="bar-chart">
+        ${selected.map((s, i) => `
+          <div class="bar ${colors[i]}" style="height: ${((s.complaints || 0) / maxComplaints) * 140}px;">
+            <span class="bar-value">${s.complaints || 0}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+// ============================================================
+// Date Quick Selection
+// ============================================================
+function setQuickDate(period) {
+  document.querySelectorAll('.quick-date').forEach(btn => btn.classList.remove('active'));
+  event.target.classList.add('active');
+  
+  const input = document.getElementById('reportDate');
+  const today = new Date();
+  
+  switch (period) {
+    case 'today':
+      input.value = getToday();
+      break;
+    case 'yesterday':
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      input.value = yesterday.toISOString().split('T')[0];
+      break;
+    case 'week':
+      // For week, we'll use a range - for now just show today
+      input.value = getToday();
+      break;
+    case 'month':
+      input.value = getToday();
+      break;
+  }
+  
+  loadDailyReport();
+}
+
+// ============================================================
+// Refresh Data
+// ============================================================
+async function refreshData() {
+  await loadStores();
+  await loadDailyReport();
+}
+
+// ============================================================
+// Initialize
+// ============================================================
+document.addEventListener('DOMContentLoaded', async function() {
+  // Set default date
+  document.getElementById('reportDate').value = getToday();
+  
+  // Load data
+  await loadStores();
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeModal();
+  }
+});
+</script>
+</body>
+</html>
