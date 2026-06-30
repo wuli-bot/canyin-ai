@@ -1,0 +1,1386 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>餐饮AI店长 - 连锁管理后台</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  
+  /* === CSS Variables (设计风格) === */
+  :root {
+    --bg:#0f1117; --card:#1a1d27; --border:#2a2d3a;
+    --blue:#4f8cff; --purple:#a855f7; --gold:#fbbf24;
+    --text:#e4e4e7; --text-dim:#9ca3af; --text-bright:#fff;
+    --green:#22c55e; --red:#ef4444; --orange:#f97316;
+  }
+  
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 20px;
+  }
+  
+  /* === Header === */
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .page-header h1 {
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-bright);
+  }
+  .header-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+  }
+  .btn-primary { background: var(--blue); color: #fff; }
+  .btn-primary:hover { background: #3d7ae6; }
+  .btn-secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--blue); }
+  .btn-gold { background: var(--gold); color: #000; }
+  .btn-gold:hover { background: #e5a91f; }
+  .btn-purple { background: var(--purple); color: #fff; }
+  .btn-purple:hover { background: #9333ea; }
+  .btn-danger { background: var(--red); color: #fff; }
+  .btn-danger:hover { background: #dc2626; }
+  .btn-small { padding: 6px 12px; font-size: 0.8rem; }
+  .back-link {
+    color: var(--blue);
+    text-decoration: none;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .back-link:hover { text-decoration: underline; }
+  
+  /* === Tabs === */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 24px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  .tab {
+    padding: 12px 24px;
+    border-radius: 10px 10px 0 0;
+    cursor: pointer;
+    background: var(--card);
+    color: var(--text-dim);
+    font-weight: 600;
+    border: none;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+  .tab.active { background: var(--blue); color: #fff; }
+  .tab:hover:not(.active) { background: var(--border); }
+  
+  /* === Cards === */
+  .card {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 20px;
+    border: 1px solid var(--border);
+  }
+  .card h2 {
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+    color: var(--text-bright);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  /* === Stat Cards === */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+    border: 1px solid var(--border);
+    transition: transform 0.15s, border-color 0.15s;
+  }
+  .stat-card:hover { transform: translateY(-2px); border-color: var(--blue); }
+  .stat-card .icon { font-size: 2rem; margin-bottom: 8px; }
+  .stat-card .num {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-bright);
+  }
+  .stat-card .lbl {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+  .stat-card .sub {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    margin-top: 6px;
+  }
+  
+  /* === Summary Row === */
+  .summary-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .summary-pill {
+    background: var(--bg);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .pill-green { border: 1px solid var(--green); color: var(--green); }
+  .pill-orange { border: 1px solid var(--orange); color: var(--orange); }
+  .pill-red { border: 1px solid var(--red); color: var(--red); }
+  .pill-blue { border: 1px solid var(--blue); color: var(--blue); }
+  .pill-purple { border: 1px solid var(--purple); color: var(--purple); }
+  .pill-gold { border: 1px solid var(--gold); color: var(--gold); }
+  
+  /* === Filter Bar === */
+  .filter-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .filter-bar input[type="text"] {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    color: var(--text);
+    font-size: 0.9rem;
+    min-width: 200px;
+  }
+  .filter-bar input[type="text"]:focus {
+    outline: none;
+    border-color: var(--blue);
+  }
+  .filter-btn {
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+  }
+  .filter-btn.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+  .filter-btn:hover:not(.active) { border-color: var(--blue); color: var(--text); }
+  
+  /* === Table === */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 12px 14px; text-align: left; font-size: 0.88rem; }
+  th {
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+  }
+  th:hover { color: var(--blue); }
+  th .sort-icon { margin-left: 4px; font-size: 0.75rem; }
+  td { border-bottom: 1px solid var(--border); }
+  tr:hover td { background: rgba(79, 140, 255, 0.05); }
+  tr:last-child td { border-bottom: none; }
+  
+  /* === Badge === */
+  .badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .badge-active { background: rgba(34, 197, 94, 0.15); color: var(--green); }
+  .badge-paused { background: rgba(251, 191, 36, 0.15); color: var(--gold); }
+  .badge-closed { background: rgba(239, 68, 68, 0.15); color: var(--red); }
+  .badge-enabled { background: rgba(79, 140, 255, 0.15); color: var(--blue); }
+  .badge-disabled { background: rgba(156, 163, 175, 0.15); color: var(--text-dim); }
+  
+  /* === Action Buttons in Table === */
+  .action-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+  
+  /* === Section Visibility === */
+  .section { display: none; }
+  .section.active { display: block; }
+  
+  /* === Modal === */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 20px;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 28px;
+    max-width: 600px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+  }
+  .modal h3 {
+    color: var(--text-bright);
+    margin-bottom: 20px;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .modal-close {
+    margin-top: 20px;
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    background: var(--border);
+    color: var(--text);
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.2s;
+  }
+  .modal-close:hover { background: var(--blue); color: #fff; }
+  
+  /* === Form === */
+  .form-group { margin-bottom: 16px; }
+  .form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    font-weight: 500;
+  }
+  .form-group input, .form-group select, .form-group textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-size: 0.9rem;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    outline: none;
+    border-color: var(--blue);
+  }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 500px) { .form-row { grid-template-columns: 1fr; } }
+  
+  /* === Module Config === */
+  .module-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .module-item {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .module-item:hover { border-color: var(--blue); }
+  .module-item.selected { border-color: var(--blue); background: rgba(79, 140, 255, 0.1); }
+  .module-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--blue);
+    cursor: pointer;
+  }
+  .module-item .module-icon { font-size: 1.3rem; }
+  .module-item .module-name { font-size: 0.9rem; color: var(--text); }
+  .module-item .module-new {
+    font-size: 0.65rem;
+    background: var(--purple);
+    color: #fff;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: auto;
+  }
+  
+  /* === Push Section === */
+  .push-form { margin-bottom: 20px; }
+  .push-history { margin-top: 24px; }
+  .history-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    background: var(--bg);
+    border-radius: 10px;
+    margin-bottom: 8px;
+  }
+  .history-item .h-icon { font-size: 1.3rem; }
+  .history-item .h-info { flex: 1; }
+  .history-item .h-title { font-weight: 600; font-size: 0.9rem; }
+  .history-item .h-meta { font-size: 0.78rem; color: var(--text-dim); margin-top: 2px; }
+  .history-item .h-targets { font-size: 0.8rem; color: var(--blue); }
+  
+  /* === Rank List === */
+  .rank-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 700px) { .rank-grid { grid-template-columns: 1fr; } }
+  .rank-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: var(--bg);
+    border-radius: 10px;
+    margin-bottom: 8px;
+  }
+  .rank-item .rank-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+  }
+  .rank-1 { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #000; }
+  .rank-2 { background: linear-gradient(135deg, #9ca3af, #6b7280); color: #fff; }
+  .rank-3 { background: linear-gradient(135deg, #cd7f32, #a0522d); color: #fff; }
+  .rank-other { background: var(--border); color: var(--text-dim); }
+  .rank-item .rank-info { flex: 1; }
+  .rank-item .rank-name { font-weight: 600; font-size: 0.9rem; }
+  .rank-item .rank-val { font-size: 0.85rem; color: var(--text-dim); margin-top: 2px; }
+  
+  /* === Toast === */
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    padding: 14px 24px;
+    background: var(--green);
+    color: #fff;
+    border-radius: 10px;
+    font-weight: 600;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 9999;
+    max-width: 90%;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.error { background: var(--red); }
+  
+  /* === Loading === */
+  .loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: var(--text-dim);
+  }
+  .spinner {
+    width: 30px;
+    height: 30px;
+    border: 3px solid var(--border);
+    border-top-color: var(--blue);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-right: 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  
+  /* === Empty State === */
+  .empty-state {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-dim);
+  }
+  .empty-state .empty-icon { font-size: 3rem; margin-bottom: 12px; }
+  
+  /* === Checkbox in form === */
+  .checkbox-group { display: flex; align-items: center; gap: 8px; }
+  .checkbox-group input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--blue);
+  }
+  
+  /* === Responsive === */
+  @media (max-width: 600px) {
+    body { padding: 12px; }
+    .page-header h1 { font-size: 1.2rem; }
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+    .tab { padding: 10px 16px; font-size: 0.85rem; }
+    .card { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ======== Header ======== -->
+<div class="page-header">
+  <h1>🏪 餐饮AI店长 - 连锁管理后台</h1>
+  <div class="header-actions">
+    <a href="portal.html" class="back-link">← 返回主页</a>
+  </div>
+</div>
+
+<!-- ======== Tabs ======== -->
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('dashboard')">📊 数据总览</button>
+  <button class="tab" onclick="switchTab('stores')">🏪 门店管理</button>
+  <button class="tab" onclick="switchTab('modules')">⚙️ 模块配置</button>
+  <button class="tab" onclick="switchTab('push')">📤 统一推送</button>
+</div>
+
+<!-- ============================================================ -->
+<!--                    数据总览仪表盘                              -->
+<!-- ============================================================ -->
+<div id="section-dashboard" class="section active">
+  <!-- 关键指标卡片 -->
+  <div class="stat-grid" id="dashboard-stats"></div>
+  
+  <!-- 门店排名 -->
+  <div class="card">
+    <h2>🏆 门店排名</h2>
+    <div class="rank-grid">
+      <div>
+        <h3 style="font-size:0.95rem;color:var(--green);margin-bottom:12px">💰 营收 TOP5</h3>
+        <div id="rank-revenue"></div>
+      </div>
+      <div>
+        <h3 style="font-size:0.95rem;color:var(--red);margin-bottom:12px">⚠️ 差评 TOP5</h3>
+        <div id="rank-complaints"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!--                    门店管理                                  -->
+<!-- ============================================================ -->
+<div id="section-stores" class="section">
+  <!-- 操作栏 -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+      <h2 style="margin:0">🏪 门店列表</h2>
+      <button class="btn btn-primary" onclick="openAddStoreModal()">➕ 添加门店</button>
+    </div>
+  </div>
+  
+  <!-- 筛选栏 -->
+  <div class="card">
+    <div class="filter-bar">
+      <input type="text" id="search-store" placeholder="🔍 搜索门店名称/编号..." oninput="renderStoreList()">
+      <select id="filter-status" onchange="renderStoreList()">
+        <option value="all">全部状态</option>
+        <option value="active">🟢 营业中</option>
+        <option value="paused">🟡 暂停营业</option>
+        <option value="closed">🔴 已关闭</option>
+      </select>
+    </div>
+    
+    <!-- 门店列表 -->
+    <div class="table-wrap" id="store-table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th onclick="sortTable('store_code')">编号 <span class="sort-icon">↕</span></th>
+            <th onclick="sortTable('name')">门店名称 <span class="sort-icon">↕</span></th>
+            <th>地址</th>
+            <th>联系人</th>
+            <th onclick="sortTable('phone')">电话 <span class="sort-icon">↕</span></th>
+            <th>营业时间</th>
+            <th onclick="sortTable('status')">状态 <span class="sort-icon">↕</span></th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="store-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!--                    模块配置                                  -->
+<!-- ============================================================ -->
+<div id="section-modules" class="section">
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+      <h2 style="margin:0">⚙️ 模块配置</h2>
+      <div class="filter-bar" style="margin:0">
+        <select id="config-store-select" onchange="loadStoreConfig()">
+          <option value="">选择门店...</option>
+        </select>
+        <button class="btn btn-secondary btn-small" onclick="selectAllStores()">全部门店</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 模块列表 -->
+  <div class="card">
+    <h2>功能模块</h2>
+    <p style="color:var(--text-dim);font-size:0.85rem;margin-bottom:16px">
+      勾选即为该门店启用对应功能模块，支持批量配置
+    </p>
+    <div class="module-grid" id="module-grid"></div>
+    <div style="display:flex;gap:12px;margin-top:20px">
+      <button class="btn btn-primary" onclick="saveModuleConfig()">💾 保存配置</button>
+      <button class="btn btn-secondary" onclick="resetModuleConfig()">🔄 重置</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!--                    统一推送                                  -->
+<!-- ============================================================ -->
+<div id="section-push" class="section">
+  <div class="card">
+    <h2>📤 统一推送</h2>
+    <p style="color:var(--text-dim);font-size:0.85rem;margin-bottom:20px">
+      选择目标门店，一次性推送活动方案或定价策略到多个门店
+    </p>
+    
+    <div class="push-form">
+      <!-- 推送类型 -->
+      <div class="form-group">
+        <label>推送类型</label>
+        <select id="push-type" onchange="togglePushForm()">
+          <option value="activity">📣 活动方案推送</option>
+          <option value="pricing">💰 定价建议推送</option>
+        </select>
+      </div>
+      
+      <!-- 目标门店选择 -->
+      <div class="form-group">
+        <label>目标门店（可多选）</label>
+        <div id="push-store-checkboxes" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:8px"></div>
+      </div>
+      
+      <!-- 活动方案 -->
+      <div id="push-activity-form">
+        <div class="form-group">
+          <label>活动主题</label>
+          <input type="text" id="push-activity-title" placeholder="如：夏日清凉饮品节">
+        </div>
+        <div class="form-group">
+          <label>活动内容</label>
+          <textarea id="push-activity-content" rows="5" placeholder="详细描述活动方案..."></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>活动开始日期</label>
+            <input type="date" id="push-activity-start">
+          </div>
+          <div class="form-group">
+            <label>活动结束日期</label>
+            <input type="date" id="push-activity-end">
+          </div>
+        </div>
+      </div>
+      
+      <!-- 定价建议 -->
+      <div id="push-pricing-form" style="display:none">
+        <div class="form-group">
+          <label>定价调整说明</label>
+          <textarea id="push-pricing-content" rows="5" placeholder="描述定价调整策略..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>调整生效时间</label>
+          <input type="datetime-local" id="push-pricing-time">
+        </div>
+      </div>
+      
+      <button class="btn btn-gold" onclick="executePush()">🚀 确认推送</button>
+    </div>
+    
+    <!-- 推送历史 -->
+    <div class="push-history">
+      <h3 style="font-size:1rem;margin-bottom:12px">📋 推送历史</h3>
+      <div id="push-history-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ======== Toast ======== -->
+<div class="toast" id="toast"></div>
+
+<!-- ======== Modal: 添加/编辑门店 ======== -->
+<div class="modal-overlay" id="store-modal">
+  <div class="modal">
+    <h3 id="store-modal-title">➕ 添加门店</h3>
+    <input type="hidden" id="store-edit-id">
+    <div class="form-group">
+      <label>门店名称 *</label>
+      <input type="text" id="store-name" placeholder="如：湘味小厨-大学城店">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>门店编号 *</label>
+        <input type="text" id="store-code" placeholder="如：XXC001">
+      </div>
+      <div class="form-group">
+        <label>联系人</label>
+        <input type="text" id="store-contact" placeholder="张三">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>门店地址 *</label>
+      <input type="text" id="store-address" placeholder="详细地址">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>联系电话</label>
+        <input type="tel" id="store-phone" placeholder="138xxxx">
+      </div>
+      <div class="form-group">
+        <label>初始状态</label>
+        <select id="store-status">
+          <option value="active">营业中</option>
+          <option value="paused">暂停营业</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>营业开始时间</label>
+        <input type="time" id="store-open-time" value="09:00">
+      </div>
+      <div class="form-group">
+        <label>营业结束时间</label>
+        <input type="time" id="store-close-time" value="22:00">
+      </div>
+    </div>
+    <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="saveStore()">💾 保存</button>
+    <button class="modal-close" onclick="closeStoreModal()">取消</button>
+  </div>
+</div>
+
+<!-- ======== Modal: 删除确认 ======== -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal">
+    <h3>⚠️ 确认删除</h3>
+    <p style="color:var(--text-dim);margin:16px 0;line-height:1.6">
+      确定要删除门店 <strong id="delete-store-name" style="color:var(--red)"></strong> 吗？<br>
+      此操作不可恢复，相关配置数据也将一并删除。
+    </p>
+    <div style="display:flex;gap:12px">
+      <button class="btn btn-danger" style="flex:1" onclick="confirmDelete()">🗑️ 确认删除</button>
+      <button class="btn btn-secondary" style="flex:1" onclick="closeDeleteModal()">取消</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ============================================================
+//  Supabase 配置 (复用 food-safety.html)
+// ============================================================
+const SUPABASE_URL = 'https://vovzgflfdwngfuqnxjc.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvdnpnZmxmZHduZ2Z1cW54amMiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc4MTU5ODQ5NiwiZXhwIjoyMDk3MTc0NDk2fQ.p8e3LcWgBqWxQ3jYk7mN2vR4sT8uY6zA9bC1dE5fG3h';
+const db = (typeof supabase !== 'undefined') ? supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+
+// ============================================================
+//  模拟数据
+// ============================================================
+const today = new Date();
+const fmtDate = d => d.toISOString().slice(0, 10);
+
+let stores = [
+  {
+    id: 's1',
+    store_code: 'WSZG001',
+    name: '哇塞猛火猪油炒饭-总店',
+    address: '北京市朝阳区三里屯SOHO商场B1层',
+    contact: '李建国',
+    phone: '13800138001',
+    open_time: '09:00',
+    close_time: '22:00',
+    status: 'active',
+    today_revenue: 12580.50,
+    week_revenue: 85630.00,
+    month_revenue: 328500.00,
+    gross_margin: 68.5,
+    complaints: 2,
+    inventory_alerts: 3
+  },
+  {
+    id: 's2',
+    store_code: 'XXC002',
+    name: '湘味小厨-大学城店',
+    address: '北京市海淀区中关村大街12号学府商业街2层',
+    contact: '王秀英',
+    phone: '13800138002',
+    open_time: '10:00',
+    close_time: '21:30',
+    status: 'active',
+    today_revenue: 8560.00,
+    week_revenue: 58200.00,
+    month_revenue: 215800.00,
+    gross_margin: 65.2,
+    complaints: 5,
+    inventory_alerts: 7
+  },
+  {
+    id: 's3',
+    store_code: 'LBD003',
+    name: '辣不怕-科技园店',
+    address: '北京市海淀区上地信息路26号软件园二期8号楼',
+    contact: '张伟',
+    phone: '13800138003',
+    open_time: '08:30',
+    close_time: '20:00',
+    status: 'paused',
+    today_revenue: 3200.00,
+    week_revenue: 25600.00,
+    month_revenue: 98200.00,
+    gross_margin: 62.8,
+    complaints: 8,
+    inventory_alerts: 12
+  },
+  {
+    id: 's4',
+    store_code: 'YSC004',
+    name: '御膳房-国贸店',
+    address: '北京市朝阳区建国门外大街1号国贸商城3层',
+    contact: '陈丽华',
+    phone: '13800138004',
+    open_time: '11:00',
+    close_time: '23:00',
+    status: 'active',
+    today_revenue: 15800.00,
+    week_revenue: 98600.00,
+    month_revenue: 412000.00,
+    gross_margin: 72.1,
+    complaints: 1,
+    inventory_alerts: 2
+  },
+  {
+    id: 's5',
+    store_code: 'MJH005',
+    name: '美极汇-望京店',
+    address: '北京市朝阳区望京街望京SOHO塔2-1801',
+    contact: '刘强',
+    phone: '13800138005',
+    open_time: '09:30',
+    close_time: '21:00',
+    status: 'closed',
+    today_revenue: 0,
+    week_revenue: 0,
+    month_revenue: 45600.00,
+    gross_margin: 58.5,
+    complaints: 15,
+    inventory_alerts: 5
+  }
+];
+
+// 功能模块列表
+const modules = [
+  { id: 'cost_calc', name: '成本核算', icon: '🧮' },
+  { id: 'pricing', name: '定价策略', icon: '💲' },
+  { id: 'menu_design', name: '菜单设计', icon: '📋' },
+  { id: 'inventory', name: '库存管理', icon: '📦' },
+  { id: 'review_handle', name: '差评处理', icon: '⭐' },
+  { id: 'finance', name: '财务报表', icon: '📊' },
+  { id: 'private_flow', name: '私域引流', icon: '🔄' },
+  { id: 'repurchase', name: '复购提升', icon: '💝' },
+  { id: 'equipment', name: '设备维护', icon: '🔧' },
+  { id: 'expiry', name: '食材效期', icon: '📅' },
+  { id: 'supplier', name: '供应商管理', icon: '🚚' },
+  { id: 'staff', name: '员工管理', icon: '👥' },
+  { id: 'auto_reply', name: '客服自动回复', icon: '🤖', isNew: true },
+  { id: 'mcp_realtime', name: 'MCP实时数据', icon: '⚡', isNew: true }
+];
+
+// 门店模块配置 (默认全部开启)
+let storeConfigs = {};
+stores.forEach(s => {
+  storeConfigs[s.id] = modules.map(m => m.id);
+});
+
+// 推送历史
+let pushHistory = [
+  {
+    id: 'p1',
+    type: 'activity',
+    title: '暑期清凉饮品节',
+    targets: ['哇塞猛火猪油炒饭-总店', '湘味小厨-大学城店', '辣不怕-科技园店'],
+    time: '2026-06-28 14:30',
+    status: 'success'
+  },
+  {
+    id: 'p2',
+    type: 'pricing',
+    title: '午市套餐定价调整',
+    targets: ['御膳房-国贸店', '美极汇-望京店'],
+    time: '2026-06-27 10:15',
+    status: 'success'
+  }
+];
+
+// ============================================================
+//  Supabase 数据加载
+// ============================================================
+async function loadFromSupabase() {
+  if (!db) return null;
+  try {
+    const { data, error } = await db.from('stores').select('*').order('created_at');
+    if (error) throw error;
+    if (data && data.length > 0) {
+      console.log('✅ Supabase: loaded', data.length, 'stores');
+      return data.map(row => ({
+        id: String(row.id),
+        store_code: row.store_code || '',
+        name: row.name || '',
+        address: row.address || '',
+        contact: row.contact || '',
+        phone: row.phone || '',
+        open_time: row.open_time || '09:00',
+        close_time: row.close_time || '22:00',
+        status: row.status || 'active',
+        today_revenue: row.today_revenue || 0,
+        week_revenue: row.week_revenue || 0,
+        month_revenue: row.month_revenue || 0,
+        gross_margin: row.gross_margin || 0,
+        complaints: row.complaints || 0,
+        inventory_alerts: row.inventory_alerts || 0
+      }));
+    }
+    return null;
+  } catch(e) {
+    console.warn('⚠️ Supabase stores load failed:', e.message);
+    return null;
+  }
+}
+
+// ============================================================
+//  页面初始化
+// ============================================================
+(async function init() {
+  // 尝试从 Supabase 加载
+  const sbStores = await loadFromSupabase();
+  if (sbStores && sbStores.length > 0) {
+    stores = sbStores;
+  }
+  
+  // 渲染所有模块
+  renderDashboard();
+  renderStoreList();
+  renderModuleGrid();
+  renderPushHistory();
+  renderStoreSelects();
+})();
+
+// ============================================================
+//  Tab 切换
+// ============================================================
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('section-' + tab).classList.add('active');
+}
+
+// ============================================================
+//  仪表盘渲染
+// ============================================================
+function renderDashboard() {
+  // 统计卡片
+  const active = stores.filter(s => s.status === 'active').length;
+  const paused = stores.filter(s => s.status === 'paused').length;
+  const closed = stores.filter(s => s.status === 'closed').length;
+  const totalToday = stores.reduce((sum, s) => sum + s.today_revenue, 0);
+  const totalWeek = stores.reduce((sum, s) => sum + s.week_revenue, 0);
+  const totalMonth = stores.reduce((sum, s) => sum + s.month_revenue, 0);
+  const avgMargin = stores.length ? (stores.reduce((sum, s) => sum + s.gross_margin, 0) / stores.length).toFixed(1) : 0;
+  const totalComplaints = stores.reduce((sum, s) => sum + s.complaints, 0);
+  const totalAlerts = stores.reduce((sum, s) => sum + s.inventory_alerts, 0);
+
+  document.getElementById('dashboard-stats').innerHTML = [
+    { icon: '🏪', num: stores.length, lbl: '总门店数', sub: `🟢${active} 🟡${paused} 🔴${closed}`, color: 'var(--blue)' },
+    { icon: '💰', num: formatCurrency(totalToday), lbl: '今日营收', sub: `本周 ${formatCurrency(totalWeek)}`, color: 'var(--green)' },
+    { icon: '📈', num: formatCurrency(totalMonth), lbl: '本月营收', sub: `平均毛利率 ${avgMargin}%`, color: 'var(--gold)' },
+    { icon: '⭐', num: totalComplaints, lbl: '总差评数', sub: '本月累计', color: 'var(--orange)' },
+    { icon: '⚠️', num: totalAlerts, lbl: '库存预警', sub: '需关注门店', color: 'var(--red)' }
+  ].map(s => `
+    <div class="stat-card" style="border-left:4px solid ${s.color}">
+      <div class="icon">${s.icon}</div>
+      <div class="num" style="color:${s.color}">${s.num}</div>
+      <div class="lbl">${s.lbl}</div>
+      <div class="sub">${s.sub}</div>
+    </div>
+  `).join('');
+
+  // 营收排名
+  const revenueRank = [...stores].sort((a, b) => b.month_revenue - a.month_revenue).slice(0, 5);
+  document.getElementById('rank-revenue').innerHTML = revenueRank.map((s, i) => `
+    <div class="rank-item">
+      <span class="rank-num ${i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : 'rank-other'}">${i + 1}</span>
+      <div class="rank-info">
+        <div class="rank-name">${s.name}</div>
+        <div class="rank-val">${formatCurrency(s.month_revenue)} / 月</div>
+      </div>
+    </div>
+  `).join('');
+
+  // 差评排名
+  const complaintRank = [...stores].sort((a, b) => b.complaints - a.complaints).slice(0, 5);
+  document.getElementById('rank-complaints').innerHTML = complaintRank.map((s, i) => `
+    <div class="rank-item">
+      <span class="rank-num ${i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : 'rank-other'}">${i + 1}</span>
+      <div class="rank-info">
+        <div class="rank-name">${s.name}</div>
+        <div class="rank-val">${s.complaints} 条差评</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function formatCurrency(val) {
+  if (val >= 10000) {
+    return '¥' + (val / 10000).toFixed(1) + '万';
+  }
+  return '¥' + val.toFixed(0);
+}
+
+// ============================================================
+//  门店列表
+// ============================================================
+let sortField = '';
+let sortDir = 'asc';
+
+function sortTable(field) {
+  if (sortField === field) {
+    sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortField = field;
+    sortDir = 'asc';
+  }
+  renderStoreList();
+}
+
+function renderStoreList() {
+  const search = document.getElementById('search-store').value.toLowerCase();
+  const status = document.getElementById('filter-status').value;
+  
+  let list = stores.filter(s => {
+    const matchSearch = !search || s.name.toLowerCase().includes(search) || s.store_code.toLowerCase().includes(search);
+    const matchStatus = status === 'all' || s.status === status;
+    return matchSearch && matchStatus;
+  });
+
+  // 排序
+  if (sortField) {
+    list.sort((a, b) => {
+      const aVal = a[sortField] || '';
+      const bVal = b[sortField] || '';
+      if (sortDir === 'asc') {
+        return aVal > bVal ? 1 : -1;
+      } else {
+        return aVal < bVal ? 1 : -1;
+      }
+    });
+  }
+
+  const tbody = document.getElementById('store-body');
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">🏪</div>暂无门店数据</div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map(s => `
+    <tr>
+      <td><strong>${s.store_code}</strong></td>
+      <td>${s.name}</td>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.address}</td>
+      <td>${s.contact}</td>
+      <td>${s.phone}</td>
+      <td>${s.open_time} - ${s.close_time}</td>
+      <td><span class="badge badge-${s.status}">${statusLabel(s.status)}</span></td>
+      <td>
+        <div class="action-btns">
+          <button class="btn btn-secondary btn-small" onclick="editStore('${s.id}')">✏️</button>
+          <button class="btn btn-secondary btn-small" onclick="changeStatus('${s.id}')">🔄</button>
+          <button class="btn btn-danger btn-small" onclick="openDeleteModal('${s.id}')">🗑️</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function statusLabel(status) {
+  return { active: '营业中', paused: '暂停', closed: '已关闭' }[status] || status;
+}
+
+// ============================================================
+//  门店 CRUD
+// ============================================================
+function openAddStoreModal() {
+  document.getElementById('store-modal-title').textContent = '➕ 添加门店';
+  document.getElementById('store-edit-id').value = '';
+  document.getElementById('store-name').value = '';
+  document.getElementById('store-code').value = '';
+  document.getElementById('store-contact').value = '';
+  document.getElementById('store-address').value = '';
+  document.getElementById('store-phone').value = '';
+  document.getElementById('store-status').value = 'active';
+  document.getElementById('store-open-time').value = '09:00';
+  document.getElementById('store-close-time').value = '22:00';
+  document.getElementById('store-modal').classList.add('show');
+}
+
+function editStore(id) {
+  const store = stores.find(s => s.id === id);
+  if (!store) return;
+  document.getElementById('store-modal-title').textContent = '✏️ 编辑门店';
+  document.getElementById('store-edit-id').value = id;
+  document.getElementById('store-name').value = store.name;
+  document.getElementById('store-code').value = store.store_code;
+  document.getElementById('store-contact').value = store.contact;
+  document.getElementById('store-address').value = store.address;
+  document.getElementById('store-phone').value = store.phone;
+  document.getElementById('store-status').value = store.status;
+  document.getElementById('store-open-time').value = store.open_time;
+  document.getElementById('store-close-time').value = store.close_time;
+  document.getElementById('store-modal').classList.add('show');
+}
+
+function saveStore() {
+  const editId = document.getElementById('store-edit-id').value;
+  const name = document.getElementById('store-name').value.trim();
+  const code = document.getElementById('store-code').value.trim();
+  const address = document.getElementById('store-address').value.trim();
+
+  if (!name || !code || !address) {
+    showToast('请填写必填项（名称、编号、地址）', true);
+    return;
+  }
+
+  if (editId) {
+    // 更新
+    const idx = stores.findIndex(s => s.id === editId);
+    if (idx !== -1) {
+      stores[idx] = {
+        ...stores[idx],
+        name,
+        store_code: code,
+        contact: document.getElementById('store-contact').value.trim(),
+        address,
+        phone: document.getElementById('store-phone').value.trim(),
+        status: document.getElementById('store-status').value,
+        open_time: document.getElementById('store-open-time').value,
+        close_time: document.getElementById('store-close-time').value
+      };
+      showToast('✅ 门店信息已更新');
+    }
+  } else {
+    // 新增
+    const newStore = {
+      id: 's' + Date.now(),
+      store_code: code,
+      name,
+      address,
+      contact: document.getElementById('store-contact').value.trim(),
+      phone: document.getElementById('store-phone').value.trim(),
+      status: document.getElementById('store-status').value,
+      open_time: document.getElementById('store-open-time').value,
+      close_time: document.getElementById('store-close-time').value,
+      today_revenue: 0,
+      week_revenue: 0,
+      month_revenue: 0,
+      gross_margin: 0,
+      complaints: 0,
+      inventory_alerts: 0
+    };
+    stores.push(newStore);
+    storeConfigs[newStore.id] = modules.map(m => m.id);
+    showToast('✅ 门店添加成功');
+  }
+
+  closeStoreModal();
+  renderStoreList();
+  renderDashboard();
+  renderStoreSelects();
+}
+
+function closeStoreModal() {
+  document.getElementById('store-modal').classList.remove('show');
+}
+
+function changeStatus(id) {
+  const store = stores.find(s => s.id === id);
+  if (!store) return;
+  
+  const next = store.status === 'active' ? 'paused' : store.status === 'paused' ? 'closed' : 'active';
+  store.status = next;
+  showToast(`门店状态已更新为：${statusLabel(next)}`);
+  renderStoreList();
+  renderDashboard();
+}
+
+let deleteTargetId = '';
+
+function openDeleteModal(id) {
+  const store = stores.find(s => s.id === id);
+  if (!store) return;
+  deleteTargetId = id;
+  document.getElementById('delete-store-name').textContent = store.name;
+  document.getElementById('delete-modal').classList.add('show');
+}
+
+function confirmDelete() {
+  if (deleteTargetId) {
+    stores = stores.filter(s => s.id !== deleteTargetId);
+    delete storeConfigs[deleteTargetId];
+    showToast('🗑️ 门店已删除');
+    closeDeleteModal();
+    renderStoreList();
+    renderDashboard();
+    renderStoreSelects();
+  }
+}
+
+function closeDeleteModal() {
+  document.getElementById('delete-modal').classList.remove('show');
+  deleteTargetId = '';
+}
+
+// ============================================================
+//  模块配置
+// ============================================================
+function renderStoreSelects() {
+  const selects = ['config-store-select', 'push-store-select'];
+  selects.forEach(selId => {
+    const el = document.getElementById(selId);
+    if (!el) return;
+    const currentVal = el.value;
+    el.innerHTML = '<option value="">选择门店...</option>' + 
+      stores.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+    if (stores.find(s => s.id === currentVal)) {
+      el.value = currentVal;
+    }
+  });
+
+  // 推送门店复选框
+  renderPushStoreCheckboxes();
+}
+
+function renderPushStoreCheckboxes() {
+  const container = document.getElementById('push-store-checkboxes');
+  if (!container) return;
+  container.innerHTML = stores.map(s => `
+    <label class="module-item" style="flex:0 0 auto">
+      <input type="checkbox" value="${s.id}" checked onchange>
+      <span>${s.name}</span>
+    </label>
+  `).join('');
+}
+
+function loadStoreConfig() {
+  const storeId = document.getElementById('config-store-select').value;
+  if (!storeId) {
+    showToast('请先选择门店', true);
+    return;
+  }
+  const config = storeConfigs[storeId] || [];
+  document.querySelectorAll('#module-grid input[type="checkbox"]').forEach(cb => {
+    cb.checked = config.includes(cb.value);
+  });
+}
+
+function renderModuleGrid() {
+  const grid = document.getElementById('module-grid');
+  grid.innerHTML = modules.map(m => `
+    <label class="module-item">
+      <input type="checkbox" value="${m.id}" checked>
+      <span class="module-icon">${m.icon}</span>
+      <span class="module-name">${m.name}</span>
+      ${m.isNew ? '<span class="module-new">V2新</span>' : ''}
+    </label>
+  `).join('');
+}
+
+function selectAllStores() {
+  // 批量设置所有门店为相同配置
+  const checked = Array.from(document.querySelectorAll('#module-grid input[type="checkbox"]')).map(cb => cb.value);
+  const confirmed = confirm(`确认要将所有 ${stores.length} 家门店设置为相同模块配置吗？`);
+  if (confirmed) {
+    stores.forEach(s => {
+      storeConfigs[s.id] = [...checked];
+    });
+    showToast('✅ 批量配置已保存');
+  }
+}
+
+function saveModuleConfig() {
+  const storeId = document.getElementById('config-store-select').value;
+  if (!storeId) {
+    showToast('请先选择门店', true);
+    return;
+  }
+  
+  const checked = Array.from(document.querySelectorAll('#module-grid input[type="checkbox"]'))
+    .filter(cb => cb.checked)
+    .map(cb => cb.value);
+  
+  storeConfigs[storeId] = checked;
+  showToast('✅ 模块配置已保存');
+}
+
+function resetModuleConfig() {
+  const storeId = document.getElementById('config-store-select').value;
+  if (!storeId) {
+    showToast('请先选择门店', true);
+    return;
+  }
+  storeConfigs[storeId] = modules.map(m => m.id);
+  document.querySelectorAll('#module-grid input[type="checkbox"]').forEach(cb => {
+    cb.checked = true;
+  });
+  showToast('🔄 配置已重置为默认');
+}
+
+// ============================================================
+//  统一推送
+// ============================================================
+function togglePushForm() {
+  const type = document.getElementById('push-type').value;
+  document.getElementById('push-activity-form').style.display = type === 'activity' ? 'block' : 'none';
+  document.getElementById('push-pricing-form').style.display = type === 'pricing' ? 'block' : 'none';
+}
+
+function executePush() {
+  const type = document.getElementById('push-type').value;
+  const selected = Array.from(document.querySelectorAll('#push-store-checkboxes input:checked')).map(cb => cb.value);
+  
+  if (!selected.length) {
+    showToast('请选择至少一个目标门店', true);
+    return;
+  }
+
+  const targetNames = selected.map(id => stores.find(s => s.id === id)?.name).filter(Boolean);
+  
+  if (type === 'activity') {
+    const title = document.getElementById('push-activity-title').value.trim();
+    if (!title) {
+      showToast('请填写活动主题', true);
+      return;
+    }
+    pushHistory.unshift({
+      id: 'p' + Date.now(),
+      type: 'activity',
+      title,
+      targets: targetNames,
+      time: new Date().toLocaleString('zh-CN'),
+      status: 'success'
+    });
+    showToast(`📣 活动方案已推送到 ${selected.length} 家门店`);
+  } else {
+    const content = document.getElementById('push-pricing-content').value.trim();
+    if (!content) {
+      showToast('请填写定价调整说明', true);
+      return;
+    }
+    pushHistory.unshift({
+      id: 'p' + Date.now(),
+      type: 'pricing',
+      title: '定价策略调整',
+      targets: targetNames,
+      time: new Date().toLocaleString('zh-CN'),
+      status: 'success'
+    });
+    showToast(`💰 定价建议已推送到 ${selected.length} 家门店`);
+  }
+
+  renderPushHistory();
+}
+
+function renderPushHistory() {
+  const container = document.getElementById('push-history-list');
+  if (!pushHistory.length) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div>暂无推送记录</div>';
+    return;
+  }
+  container.innerHTML = pushHistory.map(p => `
+    <div class="history-item">
+      <span class="h-icon">${p.type === 'activity' ? '📣' : '💰'}</span>
+      <div class="h-info">
+        <div class="h-title">${p.title}</div>
+        <div class="h-meta">${p.time}</div>
+        <div class="h-targets">→ ${p.targets.join('、')}</div>
+      </div>
+      <span class="badge badge-active">✓ 成功</span>
+    </div>
+  `).join('');
+}
+
+// ============================================================
+//  Toast
+// ============================================================
+function showToast(msg, isError) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isError ? ' error' : '');
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+// ============================================================
+//  工具函数
+// ============================================================
+function debounce(fn, delay) {
+  let timer;
+  return function(...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), delay);
+  };
+}
+</script>
+</body>
+</html>
