@@ -411,13 +411,31 @@ footer{
 .agent-group-card.manager:hover{border-color:#4f8cff}
 .agent-group-card.marketing::before{background:linear-gradient(90deg,#a855f7,#ec4899)}
 .agent-group-card.marketing:hover{border-color:#a855f7}
-.group-icon{
-  font-size:2.5rem;margin-bottom:.75rem;display:block;
+.agent-group-card.entry::before{background:linear-gradient(90deg,#06b6d4,#3b82f6)}
+.agent-group-card.entry:hover{border-color:#06b6d4}
+.group-avatar{
+  width:72px;height:72px;border-radius:18px;
+  object-fit:cover;margin-bottom:.75rem;display:block;
+  border:2px solid var(--border);
+  transition:border-color .3s,box-shadow .3s;
+}
+.agent-group-card:hover .group-avatar{
+  border-color:rgba(255,255,255,.2);
+  box-shadow:0 4px 20px rgba(0,0,0,.4);
 }
 .group-name{
   font-size:1.4rem;font-weight:800;color:var(--text-bright);
   margin-bottom:.25rem;
 }
+.group-slogan{
+  font-size:.9rem;font-weight:600;
+  margin-bottom:.75rem;
+  letter-spacing:.02em;
+}
+.boss .group-slogan{color:#fbbf24}
+.manager .group-slogan{color:#4f8cff}
+.marketing .group-slogan{color:#a855f7}
+.entry .group-slogan{color:#06b6d4}
 .group-role{
   font-size:.85rem;color:var(--text-dim);margin-bottom:1rem;
   display:flex;align-items:center;gap:.4rem;
@@ -429,6 +447,7 @@ footer{
 .boss .role-badge{background:rgba(251,191,36,.12);color:#fbbf24}
 .manager .role-badge{background:rgba(79,140,255,.12);color:#4f8cff}
 .marketing .role-badge{background:rgba(168,85,247,.12);color:#a855f7}
+.entry .role-badge{background:rgba(6,182,212,.12);color:#06b6d4}
 .group-desc{
   font-size:.95rem;color:var(--text);line-height:1.6;
   margin-bottom:1.25rem;
@@ -460,6 +479,9 @@ footer{
 }
 .marketing .group-enter-btn{
   background:linear-gradient(135deg,#a855f7,#ec4899);color:#fff;
+}
+.entry .group-enter-btn{
+  background:linear-gradient(135deg,#06b6d4,#3b82f6);color:#fff;
 }
 .group-enter-btn:hover{
   opacity:.9;transform:translateY(-2px);
@@ -506,66 +528,84 @@ footer{
   <div class="hero-content">
     <span class="hero-logo">🍜</span>
     <h1>餐饮AI店长</h1>
-    <p class="subtitle">3大智能体 + 25位AI数字员工，7×24小时帮你盯店</p>
-    <p class="value">老板看决策 → 店长管运营 → 营销抓增长</p>
+    <p class="subtitle">4大智能体 + 25位AI数字员工，7×24小时帮你盯店</p>
+    <p class="value">老板看决策 → 店长管运营 → 营销抓增长 → 小哇全对接</p>
     <a href="access.html" class="cta-btn" target="_blank">🚀 立即试用</a>
   </div>
 </section>
 
 <!-- AGENT GROUPS (V3 智能体群) -->
 <section id="agents">
-  <h2 class="section-title">🤖 3大智能体，按需调用</h2>
-  <p class="section-subtitle">对标客如云、茶百道前沿方案，将25位AI员工重组为3大智能体群</p>
+  <h2 class="section-title">🤖 4大智能体，各司其职</h2>
+  <p class="section-subtitle">从功能列表升级为智能体群——你的AI管理团队，7×24小时在岗</p>
   <div class="agent-groups">
     <!-- 老板助手 -->
     <div class="agent-group-card boss" onclick="this.classList.toggle('expanded')">
-      <span class="group-icon">📊</span>
+      <img class="group-avatar" src="assets/avatars/avatar-boss.jpg" alt="老板助手">
       <div class="group-name">老板助手</div>
+      <div class="group-slogan">每分钱都算清，每个决策都有据</div>
       <div class="group-role"><span class="role-badge">经营决策</span></div>
-      <p class="group-desc">帮你算清每道菜赚多少、每天赚多少、哪个菜最赚钱、该卖什么价。用数据驱动每一个经营决策。</p>
+      <p class="group-desc">帮你算清每道菜赚多少、每天赚多少、哪个菜最赚钱、该卖什么价。用数据驱动每一个经营决策，告别拍脑袋。</p>
       <div class="group-modules">
-        <span class="mod-tag">成本核算</span>
-        <span class="mod-tag">财务报表</span>
-        <span class="mod-tag">菜品分析</span>
-        <span class="mod-tag">定价策略</span>
-        <span class="mod-tag">雷军决策模型</span>
-        <span class="mod-tag">经营图表</span>
+        <span class="mod-tag">💰 成本核算</span>
+        <span class="mod-tag">📊 财务报表</span>
+        <span class="mod-tag">🍜 菜品分析</span>
+        <span class="mod-tag">🏷️ 定价策略</span>
+        <span class="mod-tag">🧠 决策模型</span>
+        <span class="mod-tag">📈 经营图表</span>
       </div>
-      <a href="access.html" target="_blank" class="group-enter-btn" onclick="event.stopPropagation()">进入老板助手 →</a>
+      <a href="agent-chat.html?agent=boss" target="_blank" class="group-enter-btn" onclick="event.stopPropagation()">与老板助手对话 →</a>
     </div>
     <!-- 店长助手 -->
     <div class="agent-group-card manager" onclick="this.classList.toggle('expanded')">
-      <span class="group-icon">📋</span>
+      <img class="group-avatar" src="assets/avatars/avatar-manager.jpg" alt="店长助手">
       <div class="group-name">店长助手</div>
+      <div class="group-slogan">琐事AI接管，你只管关键决策</div>
       <div class="group-role"><span class="role-badge">日常运营</span></div>
-      <p class="group-desc">库存预警自动提醒、差评AI自动回复、菜单结构优化、新老客自动识别。让你从琐事中解放出来。</p>
+      <p class="group-desc">库存预警自动提醒、差评AI自动回复、菜单结构优化、新老客自动识别。从开档到收档，让你从琐事中解放出来。</p>
       <div class="group-modules">
-        <span class="mod-tag">库存管理</span>
-        <span class="mod-tag">差评处理</span>
-        <span class="mod-tag">菜单设计</span>
-        <span class="mod-tag">食材效期</span>
-        <span class="mod-tag">供应商验收</span>
-        <span class="mod-tag">设备维护</span>
-        <span class="mod-tag">损耗追踪</span>
-        <span class="mod-tag">员工管理</span>
+        <span class="mod-tag">📦 库存管理</span>
+        <span class="mod-tag">️ 差评处理</span>
+        <span class="mod-tag">📋 菜单设计</span>
+        <span class="mod-tag">🥬 食材效期</span>
+        <span class="mod-tag">🚚 供应商验收</span>
+        <span class="mod-tag">⚙️ 设备维护</span>
+        <span class="mod-tag">📉 损耗追踪</span>
+        <span class="mod-tag">👥 员工管理</span>
       </div>
-      <a href="access.html" target="_blank" class="group-enter-btn" onclick="event.stopPropagation()">进入店长助手 →</a>
+      <a href="agent-chat.html?agent=manager" target="_blank" class="group-enter-btn" onclick="event.stopPropagation()">与店长助手对话 →</a>
     </div>
     <!-- 营销助手 -->
     <div class="agent-group-card marketing" onclick="this.classList.toggle('expanded')">
-      <span class="group-icon">📱</span>
+      <img class="group-avatar" src="assets/avatars/avatar-marketing.jpg" alt="营销助手">
       <div class="group-name">营销助手</div>
+      <div class="group-slogan">让客流持续增长，让顾客来了还想来</div>
       <div class="group-role"><span class="role-badge">增长获客</span></div>
-      <p class="group-desc">自动生成朋友圈/小红书文案、7次触达复购、AI味检测与改写、语音点餐。让客流持续增长。</p>
+      <p class="group-desc">自动生成朋友圈/小红书文案、7次触达复购计划、AI味检测与改写、语音点餐接入。让客流持续增长，不再靠天吃饭。</p>
       <div class="group-modules">
-        <span class="mod-tag">私域引流</span>
-        <span class="mod-tag">复购引擎</span>
-        <span class="mod-tag">去AI味改写</span>
-        <span class="mod-tag">语音点餐</span>
-        <span class="mod-tag">竞品监控</span>
-        <span class="mod-tag">小哇客服</span>
+        <span class="mod-tag">🔗 私域引流</span>
+        <span class="mod-tag">🔄 复购引擎</span>
+        <span class="mod-tag">✍️ 去AI味改写</span>
+        <span class="mod-tag">🎙️ 语音点餐</span>
+        <span class="mod-tag">🔍 竞品监控</span>
       </div>
-      <a href="access.html" target="_blank" class="group-enter-btn" onclick="event.stopPropagation()">进入营销助手 →</a>
+      <a href="agent-chat.html?agent=marketing" target="_blank" class="group-enter-btn" onclick="event.stopPropagation()">与营销助手对话 →</a>
+    </div>
+    <!-- 智能小哇 -->
+    <div class="agent-group-card entry" onclick="this.classList.toggle('expanded')">
+      <img class="group-avatar" src="assets/avatars/avatar-entry.jpg" alt="智能小哇">
+      <div class="group-name">智能小哇</div>
+      <div class="group-slogan">有任何问题，先问小哇</div>
+      <div class="group-role"><span class="role-badge">统一入口</span></div>
+      <p class="group-desc">解答系统使用问题、引导操作流程、对接人工客服、收集功能反馈。你的全能助手，7×24小时在线，有问必答。</p>
+      <div class="group-modules">
+        <span class="mod-tag">💬 使用指导</span>
+        <span class="mod-tag">🗺️ 操作流程</span>
+        <span class="mod-tag">👤 客服对接</span>
+        <span class="mod-tag">📝 反馈收集</span>
+        <span class="mod-tag">🔀 智能路由</span>
+      </div>
+      <a href="xiaowa-bot.html" target="_blank" class="group-enter-btn" onclick="event.stopPropagation()">与小哇对话 →</a>
     </div>
   </div>
 </section>
