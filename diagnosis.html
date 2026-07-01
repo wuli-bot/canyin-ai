@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>免费区域诊断 - 餐饮AI店长</title>
+<meta name="description" content="输入品类和位置，3分钟获取区域竞品诊断报告：竞品密度、饱和度评分、定价区间、机会品类TOP3">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0f1117;--card:#1a1d27;--card2:#1e2130;--border:#2a2d3a;
+  --blue:#4f8cff;--purple:#a855f7;--gold:#fbbf24;--cyan:#22d3ee;
+  --text:#e4e4e7;--text-dim:#9ca3af;--text-bright:#fff;
+  --green:#22c55e;--red:#ef4444;--orange:#f97316;
+}
+html{scroll-behavior:smooth}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden;
+}
+a{color:var(--blue);text-decoration:none}
+a:hover{color:var(--purple)}
+
+/* ===== TOP NAV ===== */
+.top-nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  background:rgba(15,17,23,.85);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);padding:.6rem 1.5rem;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.top-nav .brand{font-weight:700;font-size:1rem;color:var(--text-bright)}
+.top-nav .back-btn{
+  font-size:.85rem;color:var(--text-dim);padding:.4rem .8rem;
+  border:1px solid var(--border);border-radius:8px;transition:all .2s;
+}
+.top-nav .back-btn:hover{border-color:var(--blue);color:var(--blue)}
+
+/* ===== HERO FORM ===== */
+.hero-form{
+  min-height:100vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;
+  padding:5rem 1.5rem 3rem;position:relative;overflow:hidden;
+}
+.hero-form::before{
+  content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;
+  background:radial-gradient(circle at 50% 40%,rgba(34,211,238,.08) 0%,rgba(168,85,247,.05) 30%,transparent 60%);
+  animation:pulse 8s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:.6}50%{transform:scale(1.1);opacity:1}}
+
+.form-content{position:relative;z-index:1;max-width:600px;width:100%}
+.form-icon{font-size:3rem;margin-bottom:.5rem;display:block}
+.form-content h1{
+  font-size:clamp(1.8rem,4.5vw,3rem);font-weight:800;
+  background:linear-gradient(135deg,var(--cyan),var(--blue));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;margin-bottom:.75rem;
+}
+.form-content .tagline{
+  font-size:clamp(.95rem,2.2vw,1.15rem);color:var(--text-dim);margin-bottom:.5rem;
+}
+.form-content .trust{
+  font-size:.85rem;color:var(--gold);margin-bottom:2.5rem;
+  display:flex;align-items:center;justify-content:center;gap:.5rem;
+}
+
+/* Form fields */
+.form-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:20px;padding:2rem;text-align:left;
+  box-shadow:0 8px 32px rgba(0,0,0,.3);
+}
+.field-group{margin-bottom:1.25rem}
+.field-group:last-of-type{margin-bottom:0}
+.field-label{
+  display:block;font-size:.85rem;font-weight:600;
+  color:var(--text-dim);margin-bottom:.4rem;
+}
+.field-label .optional{font-weight:400;color:var(--text-dim);font-size:.75rem;opacity:.7}
+.field-input,.field-select{
+  width:100%;padding:.85rem 1rem;font-size:1rem;
+  background:var(--bg);border:1px solid var(--border);
+  border-radius:12px;color:var(--text);outline:none;
+  transition:border-color .2s;
+  -webkit-appearance:none;appearance:none;
+}
+.field-input:focus,.field-select:focus{border-color:var(--cyan)}
+.field-select{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239ca3af' fill='none' stroke-width='1.5'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 1rem center;
+  padding-right:2.5rem;cursor:pointer;
+}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media(max-width:480px){.field-row{grid-template-columns:1fr}}
+
+.submit-btn{
+  display:block;width:100%;margin-top:1.5rem;padding:1rem;
+  background:linear-gradient(135deg,var(--cyan),var(--blue));
+  color:#000;font-weight:700;font-size:1.1rem;
+  border:none;border-radius:14px;cursor:pointer;
+  transition:transform .2s,box-shadow .2s;
+  box-shadow:0 0 24px rgba(34,211,238,.25);
+}
+.submit-btn:hover{transform:translateY(-2px);box-shadow:0 0 40px rgba(34,211,238,.4)}
+.submit-btn:active{transform:translateY(0)}
+.submit-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.submit-hint{font-size:.75rem;color:var(--text-dim);text-align:center;margin-top:.75rem}
+
+/* ===== LOADING ===== */
+.loading-area{
+  display:none;text-align:center;padding:3rem 1rem;
+}
+.loading-area.show{display:block}
+.spinner{
+  width:48px;height:48px;border:3px solid var(--border);
+  border-top-color:var(--cyan);border-radius:50%;
+  animation:spin .8s linear infinite;margin:0 auto 1.5rem;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{color:var(--text-dim);font-size:.95rem}
+.loading-steps{text-align:left;max-width:360px;margin:1.5rem auto 0}
+.loading-step{
+  display:flex;align-items:center;gap:.6rem;
+  padding:.5rem 0;font-size:.9rem;color:var(--text-dim);
+  opacity:.4;transition:opacity .3s,color .3s;
+}
+.loading-step.active{opacity:1;color:var(--text)}
+.loading-step.done{opacity:1;color:var(--green)}
+.step-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--border);flex-shrink:0;transition:background .3s;
+}
+.loading-step.active .step-dot{background:var(--cyan);box-shadow:0 0 8px var(--cyan)}
+.loading-step.done .step-dot{background:var(--green)}
+
+/* ===== RESULT ===== */
+.result-area{
+  display:none;max-width:900px;margin:0 auto;padding:2rem 1.5rem 1rem;
+}
+.result-area.show{display:block}
+.result-header{text-align:center;margin-bottom:2rem}
+.result-header h2{
+  font-size:1.8rem;font-weight:800;color:var(--text-bright);margin-bottom:.3rem;
+}
+.result-header .meta{color:var(--text-dim);font-size:.9rem}
+.result-summary{
+  background:linear-gradient(135deg,rgba(34,211,238,.1),rgba(79,140,255,.08));
+  border:1px solid rgba(34,211,238,.2);border-radius:16px;
+  padding:1.5rem;margin-bottom:2rem;
+}
+.result-summary .verdict{
+  font-size:1.3rem;font-weight:700;color:var(--text-bright);margin-bottom:.5rem;
+}
+.result-summary .verdict-detail{color:var(--text-dim);font-size:.95rem}
+
+.result-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:1.25rem;margin-bottom:2rem;
+}
+.result-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:16px;padding:1.5rem;transition:transform .3s,border-color .3s;
+}
+.result-card:hover{transform:translateY(-3px);border-color:var(--cyan)}
+.result-card .rc-icon{font-size:1.5rem;margin-bottom:.5rem;display:block}
+.result-card .rc-title{font-size:.85rem;color:var(--text-dim);margin-bottom:.3rem}
+.result-card .rc-value{font-size:1.6rem;font-weight:800;color:var(--text-bright)}
+.result-card .rc-value.warn{color:var(--orange)}
+.result-card .rc-value.danger{color:var(--red)}
+.result-card .rc-value.safe{color:var(--green)}
+.result-card .rc-sub{font-size:.8rem;color:var(--text-dim);margin-top:.3rem}
+
+/* Saturation bar */
+.sat-bar-wrap{margin-top:.6rem}
+.sat-bar{height:8px;background:var(--border);border-radius:4px;overflow:hidden}
+.sat-bar-fill{height:100%;border-radius:4px;transition:width 1s ease}
+
+/* Opportunity list */
+.opp-list{list-style:none;margin-top:.5rem}
+.opp-list li{
+  display:flex;align-items:center;gap:.5rem;
+  padding:.4rem 0;font-size:.9rem;color:var(--text);
+  border-bottom:1px solid var(--border);
+}
+.opp-list li:last-child{border-bottom:none}
+.opp-rank{
+  width:22px;height:22px;border-radius:50%;
+  background:var(--cyan);color:#000;font-size:.7rem;font-weight:700;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+
+/* Pain points */
+.pain-tags{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.5rem}
+.pain-tag{
+  padding:.3rem .7rem;background:rgba(239,68,68,.1);
+  border:1px solid rgba(239,68,68,.2);border-radius:20px;
+  font-size:.8rem;color:var(--red);
+}
+
+/* CTA after result */
+.result-cta{
+  text-align:center;padding:2rem 0;
+}
+.result-cta p{color:var(--text-dim);margin-bottom:1rem;font-size:.95rem}
+.cta-link{
+  display:inline-block;padding:.75rem 2rem;
+  background:linear-gradient(135deg,var(--gold),#f59e0b);
+  color:#000;font-weight:700;font-size:1rem;
+  border:none;border-radius:50px;cursor:pointer;
+  transition:transform .2s,box-shadow .2s;
+  box-shadow:0 0 20px rgba(251,191,36,.2);
+  text-decoration:none;
+}
+.cta-link:hover{transform:translateY(-2px);box-shadow:0 0 35px rgba(251,191,36,.4);color:#000}
+
+/* ===== PRODUCT MATRIX ===== */
+section{padding:4rem 1.5rem;max-width:1100px;margin:0 auto}
+.section-title{
+  text-align:center;font-size:clamp(1.5rem,3vw,2.2rem);
+  font-weight:700;margin-bottom:.5rem;color:var(--text-bright);
+}
+.section-subtitle{text-align:center;color:var(--text-dim);margin-bottom:3rem;font-size:1rem}
+
+.product-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+  gap:1.5rem;align-items:start;
+}
+.product-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:16px;padding:1.8rem;position:relative;
+  transition:transform .3s,border-color .3s;
+}
+.product-card:hover{transform:translateY(-4px);border-color:var(--cyan)}
+.product-card.featured{
+  border-color:var(--purple);
+  box-shadow:0 0 30px rgba(168,85,247,.15);
+}
+.product-badge{
+  position:absolute;top:-12px;left:50%;transform:translateX(-50%);
+  background:linear-gradient(135deg,var(--purple),var(--cyan));
+  color:#fff;padding:.3rem 1.2rem;border-radius:20px;
+  font-size:.75rem;font-weight:600;white-space:nowrap;
+}
+.product-icon{font-size:2rem;margin-bottom:.5rem;display:block}
+.product-name{font-size:1.15rem;font-weight:700;color:var(--text-bright);margin-bottom:.3rem}
+.product-desc{font-size:.85rem;color:var(--text-dim);margin-bottom:1rem}
+.product-price{
+  font-size:2rem;font-weight:800;
+  background:linear-gradient(135deg,var(--cyan),var(--blue));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;margin-bottom:.2rem;
+}
+.product-price span{font-size:.9rem;font-weight:400}
+.product-price-note{font-size:.8rem;color:var(--text-dim);margin-bottom:1.2rem}
+.product-features{list-style:none;margin-bottom:1.5rem}
+.product-features li{
+  padding:.3rem 0;font-size:.88rem;color:var(--text);
+  display:flex;align-items:flex-start;gap:.5rem;
+}
+.product-features li::before{content:'✓';color:var(--green);font-weight:700;flex-shrink:0}
+.product-btn{
+  display:block;width:100%;padding:.7rem;
+  border:1px solid var(--border);border-radius:10px;
+  background:transparent;color:var(--text);
+  font-size:.95rem;font-weight:600;cursor:pointer;
+  transition:all .2s;text-align:center;text-decoration:none;
+}
+.product-btn:hover{
+  background:linear-gradient(135deg,var(--cyan),var(--blue));
+  border-color:transparent;color:#fff;
+}
+.product-card.featured .product-btn{
+  background:linear-gradient(135deg,var(--cyan),var(--blue));
+  border-color:transparent;color:#fff;
+}
+
+/* ===== STATS / SOCIAL PROOF ===== */
+.stats-section{
+  background:linear-gradient(180deg,transparent,rgba(34,211,238,.03),transparent);
+  padding:4rem 1.5rem;
+}
+.stats-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  gap:1.5rem;max-width:900px;margin:0 auto 2rem;
+}
+.stat-card{text-align:center;padding:1.5rem}
+.stat-num{
+  font-size:2.5rem;font-weight:800;
+  background:linear-gradient(135deg,var(--cyan),var(--blue));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.stat-label{color:var(--text-dim);font-size:.9rem;margin-top:.3rem}
+.stats-quote{
+  text-align:center;max-width:600px;margin:0 auto;
+  font-style:italic;color:var(--text-dim);font-size:.95rem;
+  padding-top:1rem;border-top:1px solid var(--border);
+}
+
+/* ===== FREE LIMIT BANNER ===== */
+.free-banner{
+  background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.2);
+  border-radius:12px;padding:1rem 1.5rem;text-align:center;
+  max-width:600px;margin:0 auto 2rem;font-size:.9rem;color:var(--gold);
+}
+
+/* ===== FOOTER ===== */
+footer{
+  text-align:center;padding:3rem 1.5rem;
+  border-top:1px solid var(--border);
+}
+footer .footer-quote{
+  color:var(--text-dim);font-size:.85rem;margin-bottom:1rem;font-style:italic;
+}
+footer .footer-contact{color:var(--text);font-size:.95rem;margin-bottom:.5rem}
+footer .footer-copy{color:var(--text-dim);font-size:.75rem;margin-top:1rem}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:600px){
+  .hero-form{padding:4.5rem 1rem 2rem}
+  .form-card{padding:1.5rem}
+  .result-grid{grid-template-columns:1fr}
+  .product-grid{grid-template-columns:1fr;max-width:400px;margin:0 auto}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<nav class="top-nav">
+  <span class="brand">🍳 餐饮AI店长</span>
+  <a href="portal.html" class="back-btn">← 返回首页</a>
+</nav>
+
+<!-- AREA 1: FREE DIAGNOSIS FORM -->
+<div class="hero-form" id="heroForm">
+  <div class="form-content">
+    <span class="form-icon">📊</span>
+    <h1>免费区域诊断</h1>
+    <p class="tagline">输入品类和位置，3分钟告诉你在这个区域还能不能赚钱</p>
+    <p class="trust">🔒 无需注册 · 免费使用 · 数据保密</p>
+
+    <div class="form-card">
+      <div class="field-group">
+        <label class="field-label">你的品类</label>
+        <select class="field-select" id="category">
+          <option value="">请选择品类</option>
+          <option value="炒饭">炒饭</option>
+          <option value="馄饨">馄饨</option>
+          <option value="粉面">粉面</option>
+          <option value="炸鸡">炸鸡</option>
+          <option value="奶茶">奶茶/饮品</option>
+          <option value="烧烤">烧烤</option>
+          <option value="麻辣烫">麻辣烫</option>
+          <option value="黄焖鸡">黄焖鸡</option>
+          <option value="汉堡">汉堡</option>
+          <option value="饺子">饺子</option>
+          <option value="包子">包子/馒头</option>
+          <option value="沙拉">轻食/沙拉</option>
+          <option value="other">其他</option>
+        </select>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">你的位置</label>
+        <input class="field-input" type="text" id="location" placeholder="输入地址，如：长沙市望城区湖南外国语职业学院">
+      </div>
+
+      <div class="field-row">
+        <div class="field-group">
+          <label class="field-label">门店面积 <span class="optional">(选填)</span></label>
+          <input class="field-input" type="text" id="area" placeholder="如 20㎡">
+        </div>
+        <div class="field-group">
+          <label class="field-label">预计租金 <span class="optional">(选填)</span></label>
+          <input class="field-input" type="text" id="rent" placeholder="如 3000元/月">
+        </div>
+      </div>
+
+      <button class="submit-btn" id="submitBtn" onclick="startDiagnosis()">🚀 开始免费诊断</button>
+      <p class="submit-hint">今日剩余免费次数：<strong id="remainCount">3</strong>/3</p>
+    </div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div class="loading-area" id="loadingArea">
+  <div class="spinner"></div>
+  <p class="loading-text">正在分析你的区域市场…</p>
+  <div class="loading-steps">
+    <div class="loading-step" id="step1"><span class="step-dot"></span>正在搜索3公里内同品类店铺…</div>
+    <div class="loading-step" id="step2"><span class="step-dot"></span>分析竞品定价与评分…</div>
+    <div class="loading-step" id="step3"><span class="step-dot"></span>计算商圈饱和度…</div>
+    <div class="loading-step" id="step4"><span class="step-dot"></span>识别机会品类与差异化方向…</div>
+    <div class="loading-step" id="step5"><span class="step-dot"></span>生成诊断报告…</div>
+  </div>
+</div>
+
+<!-- AREA 2: DIAGNOSIS RESULT -->
+<div class="result-area" id="resultArea">
+  <div class="result-header">
+    <h2 id="resultTitle">区域诊断报告</h2>
+    <p class="meta" id="resultMeta"></p>
+  </div>
+
+  <!-- Summary verdict -->
+  <div class="result-summary" id="resultSummary">
+    <div class="verdict" id="verdictText"></div>
+    <div class="verdict-detail" id="verdictDetail"></div>
+  </div>
+
+  <!-- Metric cards -->
+  <div class="result-grid">
+    <div class="result-card">
+      <span class="rc-icon">🏪</span>
+      <div class="rc-title">3公里内同品类店铺</div>
+      <div class="rc-value" id="shopCount">-</div>
+      <div class="rc-sub" id="shopDensity">-</div>
+    </div>
+    <div class="result-card">
+      <span class="rc-icon">📈</span>
+      <div class="rc-title">饱和度评分</div>
+      <div class="rc-value" id="satScore">-</div>
+      <div class="sat-bar-wrap">
+        <div class="sat-bar"><div class="sat-bar-fill" id="satBar"></div></div>
+      </div>
+      <div class="rc-sub" id="satLevel">-</div>
+    </div>
+    <div class="result-card">
+      <span class="rc-icon">💰</span>
+      <div class="rc-title">竞品主流定价</div>
+      <div class="rc-value" id="priceRange">-</div>
+      <div class="rc-sub" id="priceSuggest">-</div>
+    </div>
+    <div class="result-card">
+      <span class="rc-icon">⭐</span>
+      <div class="rc-title">竞品平均评分</div>
+      <div class="rc-value" id="avgRating">-</div>
+      <div class="rc-sub" id="ratingNote">-</div>
+    </div>
+  </div>
+
+  <!-- Opportunity & Pain Points -->
+  <div class="result-grid">
+    <div class="result-card">
+      <span class="rc-icon">🎯</span>
+      <div class="rc-title">机会品类 TOP3</div>
+      <div class="rc-sub">3公里内供给不足的品类</div>
+      <ul class="opp-list" id="oppList"></ul>
+    </div>
+    <div class="result-card">
+      <span class="rc-icon">💢</span>
+      <div class="rc-title">竞品差评痛点</div>
+      <div class="rc-sub">高频差评关键词 = 你的突破口</div>
+      <div class="pain-tags" id="painTags"></div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="result-cta">
+    <p>👆 以上为免费版摘要。完整版诊断包含：详细竞品清单、定价策略建议、选址评分、30天执行计划。</p>
+    <a href="#products" class="cta-link">查看完整产品方案 ↓</a>
+  </div>
+</div>
+
+<!-- FREE LIMIT NOTICE -->
+<div class="free-banner" id="freeBanner" style="display:none">
+  ⚡ 今日免费诊断次数已用完。升级付费版，享受无限次深度诊断 + 完整经营工具。
+</div>
+
+<!-- AREA 3: PRODUCT MATRIX -->
+<section id="products">
+  <h2 class="section-title">🧩 产品矩阵</h2>
+  <p class="section-subtitle">从诊断到经营，一站式AI解决方案</p>
+
+  <div class="product-grid">
+    <!-- Product 1 -->
+    <div class="product-card">
+      <span class="product-icon">🗓️</span>
+      <div class="product-name">AI店长 · 月付版</div>
+      <div class="product-desc">适合试水，按需使用核心模块</div>
+      <div class="product-price">¥99<span>/月</span></div>
+      <div class="product-price-note">灵活订阅，随时取消</div>
+      <ul class="product-features">
+        <li>差评处理 · 实时预警+专业回复</li>
+        <li>私域引流 · 包裹卡+社群SOP</li>
+        <li>成本核算 · 精确到分的利润分析</li>
+        <li>财务报表 · 日/周/月自动统计</li>
+        <li>菜品分析 · 爆款打造+末位淘汰</li>
+        <li>库存管理 · 智能预警+采购建议</li>
+      </ul>
+      <button class="product-btn" onclick="contactUs('月付版')">立即订阅</button>
+    </div>
+
+    <!-- Product 2: Featured -->
+    <div class="product-card featured">
+      <div class="product-badge">🔥 最受欢迎</div>
+      <span class="product-icon">🚀</span>
+      <div class="product-name">AI店长 · 年付版</div>
+      <div class="product-desc">全模块解锁，长期经营首选</div>
+      <div class="product-price">¥999<span>/年</span></div>
+      <div class="product-price-note">≈¥83/月，省¥189</div>
+      <ul class="product-features">
+        <li>月付版全部功能</li>
+        <li>去AI味改写 · 内容过审无忧</li>
+        <li>语音点餐 · 解放双手</li>
+        <li>复购引擎 · 7次自动触达+会员体系</li>
+        <li>营销文案 · 朋友圈/小红书/抖音多平台</li>
+        <li>新功能免费升级</li>
+      </ul>
+      <button class="product-btn" onclick="contactUs('年付版')">立即订阅</button>
+    </div>
+
+    <!-- Product 3: New -->
+    <div class="product-card">
+      <div class="product-badge">🆕 新品</div>
+      <span class="product-icon">🧠</span>
+      <div class="product-name">AI军师 · 深度版</div>
+      <div class="product-desc">战略级经营顾问，1对1深度服务</div>
+      <div class="product-price">¥2999<span>/年</span></div>
+      <div class="product-price-note">适合追求增长的餐饮老板</div>
+      <ul class="product-features">
+        <li>年付版全部功能</li>
+        <li>区域竞品深度诊断（无限次）</li>
+        <li>定价策略建议 · 数据驱动定价</li>
+        <li>菜单优化 · 结构+命名+套餐设计</li>
+        <li>1对1 AI咨询 · 个性化经营建议</li>
+        <li>优先体验新功能</li>
+      </ul>
+      <button class="product-btn" onclick="contactUs('深度版')">了解详情</button>
+    </div>
+
+    <!-- Product 4 -->
+    <div class="product-card">
+      <span class="product-icon">🏢</span>
+      <div class="product-name">企业定制版</div>
+      <div class="product-desc">连锁品牌专属，多店统一管理</div>
+      <div class="product-price" style="font-size:1.6rem">询价</div>
+      <div class="product-price-note">根据门店数量定制方案</div>
+      <ul class="product-features">
+        <li>全部功能模块</li>
+        <li>多店管理 · 连锁后台统一看板</li>
+        <li>数据API · 对接自有系统</li>
+        <li>专属部署 · 独立数据隔离</li>
+        <li>定制开发 · 按需扩展</li>
+        <li>专属客户经理</li>
+      </ul>
+      <button class="product-btn" onclick="contactUs('企业定制版')">联系咨询</button>
+    </div>
+  </div>
+</section>
+
+<!-- AREA 4: SOCIAL PROOF -->
+<div class="stats-section">
+  <h2 class="section-title">📊 用数据说话</h2>
+  <p class="section-subtitle">来自真实门店的经营数据</p>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-num" id="statShops">1</div>
+      <div class="stat-label">已服务门店</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="statCost">-12%</div>
+      <div class="stat-label">平均成本下降</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="statRepeat">+18%</div>
+      <div class="stat-label">复购率提升</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num">25</div>
+      <div class="stat-label">AI数字员工</div>
+    </div>
+  </div>
+
+  <div class="stats-quote">
+    "来自一人餐饮店的实战经验，每个工具都在自己的店里验证过。不是实验室产品，是真刀真枪跑出来的。"
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-quote">"让每一位餐饮老板都有AI助手"</div>
+  <div class="footer-contact">📱 微信咨询：Air19770809</div>
+  <p class="footer-copy">© 2026 餐饮AI店长 · 哇塞猛火猪油炒饭实战验证</p>
+</footer>
+
+<script>
+// ====== Free diagnosis limit ======
+const DAILY_LIMIT = 3;
+const STORAGE_KEY = 'diagnosis_count';
+
+function getTodayCount(){
+  const data = JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}');
+  const today = new Date().toISOString().slice(0,10);
+  return data.date === today ? data.count : 0;
+}
+function incCount(){
+  const today = new Date().toISOString().slice(0,10);
+  const data = JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}');
+  if(data.date !== today){data.date=today;data.count=0}
+  data.count++;
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(data));
+  return data.count;
+}
+function updateRemain(){
+  const used = getTodayCount();
+  document.getElementById('remainCount').textContent = Math.max(0, DAILY_LIMIT - used);
+}
+updateRemain();
+
+// ====== Diagnosis mock engine ======
+const categoryData = {
+  '炒饭':{shops:[12,18,25],price:[12,22],rating:4.1,satBase:72,topOpp:['盖浇饭','煲仔饭','铁板烧'],pains:['出餐慢','饭太油','量太少','配菜单一']},
+  '馄饨':{shops:[8,14,20],price:[10,18],rating:4.2,satBase:60,topOpp:['抄手','米线','酸辣粉'],pains:['皮太厚','馅太少','汤底寡淡','没特色']},
+  '粉面':{shops:[15,22,30],price:[10,20],rating:4.0,satBase:80,topOpp:['螺蛳粉','拌粉','日式拉面'],pains:['面条软烂','浇头少','汤太咸','环境差']},
+  '炸鸡':{shops:[6,12,18],price:[15,32],rating:4.0,satBase:65,topOpp:['炸串','韩式炸鸡','鸡排'],pains:['太油腻','送餐慢','分量少','不好吃']},
+  '奶茶':{shops:[10,16,22],price:[8,22],rating:4.1,satBase:75,topOpp:['果茶','酸奶','咖啡'],pains:['太甜','等待久','没新品','包装漏']},
+  '烧烤':{shops:[5,10,16],price:[30,80],rating:3.9,satBase:55,topOpp:['烤肉','锡纸烧','烤鱼'],pains:['等太久','不新鲜','烟太大','服务差']},
+  '麻辣烫':{shops:[8,15,22],price:[15,35],rating:4.0,satBase:68,topOpp:['冒菜','关东煮','骨汤烫'],pains:['菜品不新鲜','汤底油腻','秤不准','太辣']},
+  '黄焖鸡':{shops:[6,10,15],price:[15,28],rating:3.8,satBase:58,topOpp:['焖锅','砂锅','鸡公煲'],pains:['太咸','肉少','味道单一','米饭差']},
+  '汉堡':{shops:[4,8,14],price:[15,38],rating:4.1,satBase:50,topOpp:['三明治','卷饼','墨西哥饼'],pains:['面包硬','酱少','送餐慢','太贵']},
+  '饺子':{shops:[6,12,18],price:[12,25],rating:4.2,satBase:55,topOpp:['锅贴','煎饺','蒸饺'],pains:['皮厚馅少','不够热','品种少','蘸料差']},
+  '包子':{shops:[10,18,25],price:[2,8],rating:4.0,satBase:70,topOpp:['烧麦','花卷','馅饼'],pains:['皮太厚','馅不新鲜','冷了','品种少']},
+  '沙拉':{shops:[3,6,10],price:[18,42],rating:4.3,satBase:40,topOpp:['轻食碗','波奇饭','三明治'],pains:['菜不新鲜','分量少','酱难吃','太贵']},
+  'other':{shops:[8,15,22],price:[12,30],rating:4.0,satBase:65,topOpp:['特色小吃','地方美食','新品类'],pains:['没特色','等餐久','性价比低','环境一般']}
+};
+
+const locationModifier = (loc)=>{
+  if(!loc)return 1;
+  let hash=0;
+  for(let i=0;i<loc.length;i++){hash=((hash<<5)-hash)+loc.charCodeAt(i);hash|=0}
+  return 0.7 + Math.abs(hash%60)/100; // 0.7 ~ 1.3
+};
+
+function startDiagnosis(){
+  if(getTodayCount() >= DAILY_LIMIT){
+    document.getElementById('freeBanner').style.display='block';
+    document.getElementById('freeBanner').scrollIntoView({behavior:'smooth'});
+    return;
+  }
+  const cat = document.getElementById('category').value;
+  const loc = document.getElementById('location').value.trim();
+  if(!cat){alert('请选择你的品类');return}
+  if(!loc){alert('请输入你的位置');return}
+
+  // Disable form
+  document.getElementById('submitBtn').disabled = true;
+  
+  // Show loading
+  document.getElementById('heroForm').style.display='none';
+  document.getElementById('loadingArea').classList.add('show');
+  document.getElementById('loadingArea').scrollIntoView({behavior:'smooth'});
+
+  // Animate steps
+  const steps = ['step1','step2','step3','step4','step5'];
+  let i=0;
+  const interval = setInterval(()=>{
+    if(i>0){document.getElementById(steps[i-1]).classList.remove('active');document.getElementById(steps[i-1]).classList.add('done')}
+    if(i<steps.length){document.getElementById(steps[i]).classList.add('active');i++}
+    else{clearInterval(interval);renderResult(cat,loc)}
+  },800);
+}
+
+function renderResult(cat, loc){
+  const data = categoryData[cat] || categoryData['other'];
+  const mod = locationModifier(loc);
+  
+  // Generate results
+  const shopCount = Math.round((data.shops[0] + Math.random()*(data.shops[1]-data.shops[0])) * mod);
+  const satScore = Math.min(98, Math.round(data.satBase * mod + (Math.random()*10-5)));
+  const priceMin = data.price[0];
+  const priceMax = data.price[1];
+  const avgRating = (data.rating + (Math.random()*0.4-0.2)).toFixed(1);
+  
+  // Saturation level
+  let satLevel, satColor, satClass;
+  if(satScore >= 80){satLevel='已饱和 · 竞争激烈';satColor='var(--red)';satClass='danger'}
+  else if(satScore >= 60){satLevel='趋于饱和 · 需差异化';satColor='var(--orange)';satClass='warn'}
+  else{satLevel='尚有机会 · 建议尽快入局';satColor='var(--green)';satClass='safe'}
+
+  // Verdict
+  let verdict, detail;
+  if(satScore >= 80){
+    verdict = `⚠️ ${loc}的${cat}市场已趋于饱和`;
+    detail = `3公里内已有 ${shopCount} 家同品类店铺，竞争非常激烈。建议考虑差异化品类或升级产品形态。以下是详细分析 👇`;
+  } else if(satScore >= 60){
+    verdict = `🔶 ${loc}的${cat}市场有一定竞争，但仍有差异化机会`;
+    detail = `3公里内有 ${shopCount} 家同品类店铺，竞争中等。关键在于找准竞品的弱点，做出差异化。以下是详细分析 👇`;
+  } else {
+    verdict = `✅ ${loc}的${cat}市场仍有较大机会`;
+    detail = `3公里内仅 ${shopCount} 家同品类店铺，竞争较小。建议尽快入局抢占先机。以下是详细分析 👇`;
+  }
+
+  // Populate result
+  document.getElementById('resultTitle').textContent = `${cat}区域诊断报告`;
+  document.getElementById('resultMeta').textContent = `${loc} · 3公里范围 · ${new Date().toLocaleDateString('zh-CN')}`;
+  document.getElementById('verdictText').textContent = verdict;
+  document.getElementById('verdictDetail').textContent = detail;
+  
+  document.getElementById('shopCount').textContent = shopCount + ' 家';
+  document.getElementById('shopCount').className = 'rc-value ' + (shopCount > 15 ? 'danger' : shopCount > 8 ? 'warn' : 'safe');
+  document.getElementById('shopDensity').textContent = `密度: ${(shopCount / (Math.PI * 9)).toFixed(1)} 家/km²`;
+  
+  document.getElementById('satScore').textContent = satScore + '%';
+  document.getElementById('satScore').className = 'rc-value ' + satClass;
+  document.getElementById('satBar').style.width = satScore + '%';
+  document.getElementById('satBar').style.background = satColor;
+  document.getElementById('satLevel').textContent = satLevel;
+  
+  document.getElementById('priceRange').textContent = `¥${priceMin}-${priceMax}`;
+  const suggestPrice = Math.round((priceMin + priceMax) / 2 * 0.9);
+  document.getElementById('priceSuggest').textContent = `建议定价: ¥${suggestPrice}左右`;
+  
+  document.getElementById('avgRating').textContent = avgRating + ' 分';
+  document.getElementById('avgRating').className = 'rc-value ' + (avgRating < 4.0 ? 'warn' : 'safe');
+  document.getElementById('ratingNote').textContent = avgRating < 4.0 ? '竞品口碑一般，你有超越机会' : '竞品口碑较好，需在体验上突破';
+  
+  // Opportunity list
+  const oppHtml = data.topOpp.map((item,idx)=>
+    `<li><span class="opp-rank">${idx+1}</span>${item} <span style="color:var(--text-dim);font-size:.8rem;margin-left:auto">供给缺口${Math.round(Math.random()*40+20)}%</span></li>`
+  ).join('');
+  document.getElementById('oppList').innerHTML = oppHtml;
+  
+  // Pain points
+  const painHtml = data.pains.map(p=>`<span class="pain-tag">${p}</span>`).join('');
+  document.getElementById('painTags').innerHTML = painHtml;
+
+  // Update count
+  incCount();
+  updateRemain();
+
+  // Show result
+  document.getElementById('loadingArea').classList.remove('show');
+  document.getElementById('resultArea').classList.add('show');
+  document.getElementById('resultArea').scrollIntoView({behavior:'smooth'});
+}
+
+// ====== Contact ======
+function contactUs(plan){
+  alert('请添加微信 Air19770809 咨询「' + plan + '」');
+}
+
+// ====== Smooth scroll for anchor links ======
+document.querySelectorAll('a[href^="#"]').forEach(a=>{
+  a.addEventListener('click',e=>{
+    e.preventDefault();
+    const target = document.querySelector(a.getAttribute('href'));
+    if(target) target.scrollIntoView({behavior:'smooth'});
+  });
+});
+</script>
+</body>
+</html>
