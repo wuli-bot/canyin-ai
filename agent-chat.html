@@ -169,6 +169,7 @@ var agents = {
     name: '老板助手',
     role: '经营决策 · 数据驱动',
     avatar: 'assets/avatars/avatar-boss.jpg',
+    botId: '7651922196432338995',
     slogan: '每分钱都算清，每个决策都有据',
     welcome: '你好！我是老板助手，专注于用数据帮你做经营决策。\n\n我可以帮你分析：今天赚了多少钱、哪道菜最赚钱、该定什么价、成本哪里可以优化。\n\n试试点击下面的快捷按钮，或直接输入你的问题：',
     quickActions: [
@@ -190,6 +191,7 @@ var agents = {
     name: '店长助手',
     role: '日常运营 · 琐事接管',
     avatar: 'assets/avatars/avatar-manager.jpg',
+    botId: '7651944084466794550',
     slogan: '琐事AI接管，你只管关键决策',
     welcome: '你好！我是店长助手，帮你搞定从开档到收档的所有运营琐事。\n\n库存预警、差评回复、菜单优化、员工排班...你只需关注关键决策，其他的交给我。\n\n试试下面的快捷操作：',
     quickActions: [
@@ -211,6 +213,7 @@ var agents = {
     name: '营销助手',
     role: '增长获客 · 客流增长',
     avatar: 'assets/avatars/avatar-marketing.jpg',
+    botId: '7651952126398054435',
     slogan: '让客流持续增长，让顾客来了还想来',
     welcome: '你好！我是营销助手，帮你解决获客和复购两大难题。\n\n从朋友圈文案到小红书种草，从私域引流到复购引擎，让客流持续增长。\n\n试试下面的快捷操作：',
     quickActions: [
@@ -284,20 +287,111 @@ function renderQuickActions() {
   area.scrollTop = area.scrollHeight;
 }
 
+// Coze API Configuration
+var COZE_API = 'https://api.coze.cn';
+var COZE_TOKEN = 'sat_LvCuUkueRmeZlNEJFdSBf1qXCu61fPi32jkbpTWKpktSUkTVY6oH16QKqYLQNIfY';
+var USER_ID = 'web_user_' + Date.now();
+
+// Call Coze Bot API
+async function callCozeBot(message) {
+  var botId = agent.botId;
+  if (!botId) {
+    return 'AI助手配置中，请稍后再试。';
+  }
+  
+  // Show typing indicator
+  var area = document.getElementById('chatArea');
+  var typingMsg = document.createElement('div');
+  typingMsg.className = 'message bot';
+  typingMsg.id = 'typingIndicator';
+  typingMsg.innerHTML = '<img class="msg-avatar" src="' + agent.avatar + '" alt=""><div class="msg-bubble" style="color:var(--text-dim)">思考中...</div>';
+  area.appendChild(typingMsg);
+  area.scrollTop = area.scrollHeight;
+
+  try {
+    // Step 1: Send message
+    var resp = await fetch(COZE_API + '/v3/chat', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + COZE_TOKEN,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        bot_id: botId,
+        user_id: USER_ID,
+        stream: false,
+        additional_messages: [{ role: 'user', content: message, content_type: 'text' }]
+      })
+    });
+    var data = await resp.json();
+    
+    if (data.code !== 0) {
+      throw new Error(data.msg || 'API返回错误');
+    }
+    
+    var chatId = data.data.id;
+    var convId = data.data.conversation_id;
+    
+    // Step 2: Poll for result
+    var attempts = 0;
+    var maxAttempts = 30;
+    while (attempts < maxAttempts) {
+      await new Promise(r => setTimeout(r, 1000));
+      var pollResp = await fetch(COZE_API + '/v3/chat/retrieve?chat_id=' + chatId + '&conversation_id=' + convId, {
+        headers: { 'Authorization': 'Bearer ' + COZE_TOKEN }
+      });
+      var pollData = await pollResp.json();
+      
+      if (pollData.data && pollData.data.status === 'completed') {
+        // Step 3: Get message list
+        var msgResp = await fetch(COZE_API + '/v3/chat/message/list?chat_id=' + chatId + '&conversation_id=' + convId, {
+          headers: { 'Authorization': 'Bearer ' + COZE_TOKEN }
+        });
+        var msgData = await msgResp.json();
+        
+        if (msgData.data && msgData.data.length > 0) {
+          // Find the assistant's response
+          for (var i = msgData.data.length - 1; i >= 0; i--) {
+            if (msgData.data[i].role === 'assistant' && msgData.data[i].type === 'answer') {
+              var typingEl = document.getElementById('typingIndicator');
+              if (typingEl) typingEl.remove();
+              return msgData.data[i].content;
+            }
+          }
+        }
+        var typingEl2 = document.getElementById('typingIndicator');
+        if (typingEl2) typingEl2.remove();
+        return '收到，但目前无法生成回复，请重试。';
+      }
+      
+      if (pollData.data && pollData.data.status === 'failed') {
+        throw new Error(pollData.data.last_error?.msg || '处理失败');
+      }
+      
+      attempts++;
+    }
+    
+    var typingEl3 = document.getElementById('typingIndicator');
+    if (typingEl3) typingEl3.remove();
+    return '回复超时，请重试。';
+  } catch (e) {
+    var typingEl4 = document.getElementById('typingIndicator');
+    if (typingEl4) typingEl4.remove();
+    console.error('Coze API Error:', e);
+    return 'AI助手暂时无法响应：' + (e.message || '未知错误') + '\n\n请稍后重试，或添加微信 Air19770809 咨询人工客服。';
+  }
+}
+
 function handleQuickAction(action) {
-  // Remove old quick actions
   var oldActions = document.getElementById('currentActions');
   if (oldActions) oldActions.remove();
   
-  // Show user message
   renderMessage(action.label, 'user');
   
-  // Show bot response after delay
-  setTimeout(function() {
-    var response = agent.responses[action.action] || '收到！这个功能正在开发中，敬请期待。\n\n👉 你可以试试其他快捷操作，或直接输入你的问题。';
+  callCozeBot(action.label).then(function(response) {
     renderMessage(response, 'bot');
     renderQuickActions();
-  }, 500);
+  });
 }
 
 // Send message
@@ -306,7 +400,6 @@ function sendMessage() {
   var text = input.value.trim();
   if (!text) return;
   
-  // Remove old quick actions
   var oldActions = document.getElementById('currentActions');
   if (oldActions) oldActions.remove();
   
@@ -314,12 +407,10 @@ function sendMessage() {
   input.value = '';
   input.style.height = 'auto';
   
-  // Simulate bot response
-  setTimeout(function() {
-    var response = '收到你的问题：「' + text + '」\n\n这个功能正在接入AI大模型，即将上线。目前你可以：\n1. 点击下方的快捷按钮体验现有功能\n2. 前往对应模块页面获取完整服务\n3. 添加微信 Air19770809 咨询人工客服\n\n我们会持续迭代，感谢你的耐心！';
+  callCozeBot(text).then(function(response) {
     renderMessage(response, 'bot');
     renderQuickActions();
-  }, 800);
+  });
 }
 
 function handleKey(e) {
