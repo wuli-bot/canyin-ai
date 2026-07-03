@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数据加载器 · 望月湖店</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui;background:#1a1a2e;color:#eee;padding:20px;max-width:500px;margin:0 auto}
+.card{background:#16213e;border-radius:12px;padding:20px;margin-bottom:16px}
+h1{font-size:18px;margin-bottom:16px;color:#e94560}
+.status{padding:12px;border-radius:8px;margin:8px 0;font-size:14px}
+.ok{background:rgba(76,175,80,0.2);border:1px solid #4caf50}
+.warn{background:rgba(255,193,7,0.2);border:1px solid #ffc107}
+.err{background:rgba(244,67,54,0.2);border:1px solid #f44336}
+.btn{display:block;width:100%;padding:14px;background:#e94560;color:#fff;border:none;border-radius:8px;font-size:16px;cursor:pointer;margin:8px 0}
+.btn:active{transform:scale(0.98)}
+.btn:disabled{opacity:0.5;cursor:not-allowed}
+#log{font-size:12px;line-height:1.8;white-space:pre-wrap;max-height:300px;overflow-y:auto;background:#0d1117;padding:12px;border-radius:8px;margin-top:8px}
+.progress{height:4px;background:#333;border-radius:2px;margin:8px 0;overflow:hidden}
+.bar{height:100%;background:#e94560;transition:width 0.3s;width:0}
+</style>
+</head>
+<body>
+<h1>🍚 望月湖店数据加载器</h1>
+
+<div class="card">
+<div id="checkResult">正在检查Supabase数据状态...</div>
+</div>
+
+<div class="card" id="loadSection" style="display:none">
+<h2 style="font-size:14px;margin-bottom:12px">数据加载</h2>
+<div class="progress"><div class="bar" id="bar"></div></div>
+<button class="btn" id="loadBtn" onclick="loadData()">一键灌入模拟数据</button>
+<div id="log"></div>
+</div>
+
+<div class="card" id="doneSection" style="display:none">
+<div class="status ok">✅ 数据已就绪！可以去测试页面了</div>
+<a href="console.html" class="btn" style="text-decoration:none;text-align:center">打开控制台</a>
+<a href="agent-chat.html?agent=boss" class="btn" style="background:#16213e;text-decoration:none;text-align:center">测试AI对话</a>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://vovzgflfdwngfuqnxjc.supabase.co';
+const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvdnpnZmxmZHduZ2Z1cW54amMiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc4MTU5ODQ5NiwiZXhwIjoyMDk3MTc0NDk2fQ.p8e3LcWgBqWxQ3jYk7mN2vR4sT8uY6zA9bC1dE5fG3h';
+const sb = supabase.createClient(SUPABASE_URL, ANON_KEY);
+const STORE_CODE = 'WM001';
+let storeId = null;
+
+function log(msg) {
+  const el = document.getElementById('log');
+  el.textContent += msg + '\n';
+  el.scrollTop = el.scrollHeight;
+}
+
+function setBar(pct) {
+  document.getElementById('bar').style.width = pct + '%';
+}
+
+// 检查数据状态
+async function checkData() {
+  try {
+    // 查stores表
+    const { data: stores, error: storeErr } = await sb
+      .from('stores')
+      .select('id,store_code,store_name')
+      .eq('store_code', STORE_CODE)
+      .limit(1);
+
+    if (storeErr) {
+      // 表不存在
+      document.getElementById('checkResult').innerHTML = `
+        <div class="status err">❌ Supabase表不存在：${storeErr.message}</div>
+        <div class="status warn">⚠️ 需要先在Supabase SQL Editor执行建表SQL</div>
+        <p style="margin-top:12px;font-size:13px;color:#999">
+          建表SQL文件（请在Supabase Dashboard → SQL Editor中依次执行）：<br>
+          1. v2_schema.sql<br>
+          2. supabase_build.sql<br>
+          3. feedback_iteration_schema.sql<br>
+          4. v2_default_data.sql<br>
+          5. mock_data_wangyuehu.sql<br><br>
+          或者直接点击下方按钮灌入数据（如果表已存在）
+        </p>
+      `;
+      document.getElementById('loadSection').style.display = 'block';
+      return;
+    }
+
+    if (stores && stores.length > 0) {
+      // 数据已存在
+      storeId = stores[0].id;
+      const { count } = await sb.from('store_dishes').select('*', { count: 'exact', head: true }).eq('store_id', storeId);
+
+      if (count > 0) {
+        document.getElementById('checkResult').innerHTML = `
+          <div class="status ok">✅ 数据已就绪！</div>
+          <div class="status ok">门店：${stores[0].store_name} (${stores[0].store_code})</div>
+          <div class="status ok">菜品数：${count}</div>
+        `;
+        document.getElementById('doneSection').style.display = 'block';
+      } else {
+        document.getElementById('checkResult').innerHTML = `
+          <div class="status warn">⚠️ 门店存在但无菜品数据，需要灌入模拟数据</div>
+          <div class="status ok">门店：${stores[0].store_name} (${stores[0].store_code})</div>
+        `;
+        document.getElementById('loadSection').style.display = 'block';
+      }
+    } else {
+      // 表存在但无数据
+      document.getElementById('checkResult').innerHTML = `
+        <div class="status warn">⚠️ 表已存在但无望月湖店数据</div>
+        <p style="margin-top:8px;font-size:13px;color:#999">点击下方按钮灌入模拟数据</p>
+      `;
+      document.getElementById('loadSection').style.display = 'block';
+    }
+  } catch (e) {
+    document.getElementById('checkResult').innerHTML = `
+      <div class="status err">❌ 连接失败：${e.message}</div>
+      <p style="margin-top:8px;font-size:13px;color:#999">可能Supabase项目已暂停，请在Dashboard恢复后重试</p>
+    `;
+  }
+}
+
+// 灌入模拟数据
+async function loadData() {
+  const btn = document.getElementById('loadBtn');
+  btn.disabled = true;
+  btn.textContent = '正在灌入...';
+  log('🚀 开始灌入模拟数据...');
+
+  try {
+    // Step 1: 插入门店
+    setBar(10);
+    log('1/5 插入门店信息...');
+    const { data: storeData, error: storeErr } = await sb.from('stores').upsert({
+      store_name: '哇塞猛火猪油炒饭（望月湖店）',
+      store_code: 'WM001',
+      address: '长沙市岳麓区望月湖',
+      contact_person: '艾刃',
+      phone: '19770809',
+      business_hours: { open: '10:00', close: '21:00' },
+      platform_accounts: { meituan: 'shop_wm001_mt', douyin: 'shop_wm001_dy', jd: 'shop_wm001_jd' },
+      status: 'active',
+      owner_id: 'owner_default',
+      settings: { theme: 'dark', auto_reply: true, mock_data: true }
+    }, { onConflict: 'store_code' }).select();
+
+    if (storeErr) throw new Error('门店插入失败: ' + storeErr.message);
+    storeId = storeData[0].id;
+    log('  ✅ 门店ID: ' + storeId);
+    setBar(25);
+
+    // Step 2: 插入菜品
+    log('2/5 插入28道菜品...');
+    const dishes = [
+      ['一口香酱油炒饭（基础版）',9.9,3.0,70.0,true,'引流爆款，猪油酱油炒饭',3200],
+      ['一口香酱油炒饭（加量版）',11.9,3.5,71.0,false,'450g加量版',1200],
+      ['哇塞蛋炒饭（基础版）',11.0,3.0,73.0,true,'招牌蛋炒饭，猛火猪油',4100],
+      ['哇塞蛋炒饭（加量版）',13.0,3.5,73.0,false,'450g加量版',1800],
+      ['老干妈蛋炒饭（基础版）',12.0,3.0,75.0,false,'老干妈酱+蛋+炒饭',2100],
+      ['老干妈蛋炒饭（加量版）',14.0,3.5,75.0,false,'450g加量版',800],
+      ['扬州炒饭（基础版）',14.0,3.0,79.0,false,'经典扬州炒饭',1500],
+      ['扬州炒饭（加量版）',16.0,3.5,78.0,false,'450g加量版',500],
+      ['广式香肠蛋炒饭（基础版）',17.0,6.0,65.0,false,'广式腊肠+蛋+炒饭',1300],
+      ['广式香肠蛋炒饭（加量版）',19.0,6.5,66.0,false,'450g加量版',450],
+      ['黑椒烤肠蛋炒饭（基础版）',17.0,6.0,65.0,false,'黑椒烤肠+蛋+炒饭',1100],
+      ['黑椒烤肠蛋炒饭（加量版）',19.0,6.5,66.0,false,'450g加量版',400],
+      ['港式肉肠蛋炒饭（基础版）',17.0,6.0,65.0,false,'港式肉肠+蛋+炒饭',950],
+      ['港式肉肠蛋炒饭（加量版）',19.0,6.5,66.0,false,'450g加量版',350],
+      ['辣椒炒肉蛋炒饭（基础版）',19.0,6.0,68.0,true,'湖南辣椒炒肉+蛋+炒饭',2800],
+      ['辣椒炒肉蛋炒饭（加量版）',21.0,6.5,69.0,false,'450g加量版',1000],
+      ['梅菜扣肉蛋炒饭（基础版）',19.0,6.0,68.0,false,'梅菜扣肉+蛋+炒饭',1200],
+      ['梅菜扣肉蛋炒饭（加量版）',21.0,6.5,69.0,false,'450g加量版',400],
+      ['牛肉蛋炒饭（基础版）',21.0,6.0,71.0,true,'鲜牛肉+蛋+炒饭',2400],
+      ['牛肉蛋炒饭（加量版）',23.0,6.5,72.0,false,'450g加量版',900],
+      ['整块鸡排蛋炒饭（基础版）',21.0,6.0,71.0,false,'整块鸡排+蛋+炒饭',1100],
+      ['整块鸡排蛋炒饭（加量版）',23.0,6.5,72.0,false,'450g加量版',380],
+      ['怀旧脆油渣蛋炒饭（基础版）',17.0,6.0,65.0,true,'猪油渣+蛋+炒饭，怀旧口味',1600],
+      ['怀旧脆油渣蛋炒饭（加量版）',19.0,6.5,66.0,false,'450g加量版',550],
+      ['素炒粉（基础版）',9.0,2.5,72.0,false,'素炒米粉',800],
+      ['素炒粉（加量版）',11.0,3.0,73.0,false,'450g加量版',300],
+      ['素炒方便面（基础版）',9.0,2.5,72.0,false,'素炒方便面',600],
+      ['素炒方便面（加量版）',11.0,3.0,73.0,false,'450g加量版',200]
+    ];
+
+    const dishRows = dishes.map((d, i) => ({
+      store_id: storeId,
+      dish_name: d[0], category: '主食', price: d[1], cost: d[2],
+      gross_margin: d[3], status: 'available', is_featured: d[4],
+      is_new: false, sort_order: i + 1, description: d[5],
+      total_sold: d[6], total_revenue: d[6] * d[1], daily_avg_sold: Math.round(d[6] / 15)
+    }));
+
+    const { error: dishErr } = await sb.from('store_dishes').upsert(dishRows, { onConflict: 'store_id,dish_name' });
+    if (dishErr) log('  ⚠️ 菜品部分失败: ' + dishErr.message);
+    else log('  ✅ 28道菜品插入成功');
+    setBar(50);
+
+    // Step 3: 插入日报
+    log('3/5 插入3天日报...');
+    const today = new Date();
+    const dates = [];
+    for (let i = 0; i < 3; i++) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      dates.push(d.toISOString().split('T')[0]);
+    }
+
+    const summaries = [
+      { date: dates[2], revenue: 1680, cost: 588, orders: 92, customers: 78 },
+      { date: dates[1], revenue: 2150, cost: 752, orders: 118, customers: 102 },
+      { date: dates[0], revenue: 1820, cost: 637, orders: 98, customers: 85 }
+    ];
+
+    for (const s of summaries) {
+      const profit = s.revenue - s.cost;
+      const { error } = await sb.from('store_daily_summary').upsert({
+        store_id: storeId,
+        summary_date: s.date,
+        total_revenue: s.revenue,
+        total_cost: s.cost,
+        gross_profit: profit,
+        gross_margin_pct: Math.round(profit / s.revenue * 100 * 10) / 10,
+        order_count: s.orders,
+        avg_order_value: Math.round(s.revenue / s.orders * 10) / 10,
+        customer_count: s.customers,
+        new_customer_count: Math.round(s.customers * 0.15),
+        negative_reviews: 0,
+        inventory_alerts: 1,
+        food_safety_score: 97,
+        top_dishes: [{ name: '哇塞蛋炒饭（基础版）', qty: 18, revenue: 198 }],
+        bottom_dishes: [{ name: '素炒方便面（加量版）', qty: 1, revenue: 11 }],
+        channel_breakdown: { meituan: s.revenue * 0.5, jd: s.revenue * 0.3, dinein: s.revenue * 0.2 },
+        peak_hours: { '12': 28, '18': 22 },
+        notes: '工作日正常'
+      }, { onConflict: 'store_id,summary_date' });
+      if (error) log('  ⚠️ ' + s.date + ': ' + error.message);
+    }
+    log('  ✅ 3天日报插入完成');
+    setBar(75);
+
+    // Step 4: 插入库存
+    log('4/5 插入18种库存...');
+    const invData = [
+      ['大米','主食',50,'kg','常温','normal'],
+      ['鸡蛋','蛋类',8,'kg','冷藏','normal'],
+      ['猪油','调料',5,'kg','冷藏','normal'],
+      ['酱油','调料',3,'L','常温','normal'],
+      ['广式香肠','肉类',2,'kg','冷藏','warning'],
+      ['黑椒烤肠','肉类',1.5,'kg','冷藏','warning'],
+      ['港式肉肠','肉类',1.2,'kg','冷藏','warning'],
+      ['牛肉','肉类',0.8,'kg','冷冻','critical'],
+      ['鸡排','肉类',1.0,'kg','冷冻','normal'],
+      ['辣椒','蔬菜',0.5,'kg','冷藏','critical'],
+      ['老干妈酱','调料',0.5,'kg','常温','normal'],
+      ['梅菜','蔬菜',0.3,'kg','冷藏','normal'],
+      ['猪油渣','肉类',0.4,'kg','冷藏','normal'],
+      ['米粉','主食',2,'kg','常温','normal'],
+      ['方便面','主食',1,'kg','常温','normal'],
+      ['食用油','调料',4,'L','常温','normal'],
+      ['葱','蔬菜',0.3,'kg','冷藏','critical'],
+      ['蒜末','调料',0.2,'kg','冷藏','normal']
+    ];
+
+    const invRows = invData.map((d, i) => ({
+      ingredient_name: d[0], category: d[1],
+      quantity: d[2], unit: d[3], storage_location: d[4], status: d[5],
+      batch_no: 'BATCH-' + (i+1), purchase_date: dates[0],
+      expiry_date: dates[0], shelf_life_days: 30
+    }));
+
+    const { error: invErr } = await sb.from('ingredient_inventory').upsert(invRows, { onConflict: 'ingredient_name' });
+    if (invErr) log('  ⚠️ 库存部分失败: ' + invErr.message);
+    else log('  ✅ 18种库存插入成功');
+    setBar(100);
+
+    // Step 5: 完成
+    log('5/5 ✅ 全部数据灌入完成！');
+    log('');
+    log('🎉 现在可以去测试了：');
+    log('  - 控制台: console.html');
+    log('  - AI对话: agent-chat.html?agent=boss');
+
+    document.getElementById('doneSection').style.display = 'block';
+    btn.style.display = 'none';
+  } catch (e) {
+    log('❌ 错误: ' + e.message);
+    btn.disabled = false;
+    btn.textContent = '重试';
+  }
+}
+
+checkData();
+</script>
+</body>
+</html>
