@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>望月湖店 · 控制台</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    :root {
+      --bg: #1a1a2e;
+      --card: #16213e;
+      --card-hover: #1a2944;
+      --accent: #e94560;
+      --accent-soft: rgba(233, 69, 96, 0.15);
+      --text: #eaeaea;
+      --text-dim: #8892a6;
+      --text-bright: #ffffff;
+      --green: #4ecca3;
+      --orange: #f0a500;
+      --radius: 12px;
+      --shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      max-width: 480px;
+      margin: 0 auto;
+      padding-bottom: 80px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ===== 顶部栏 ===== */
+    .header {
+      padding: 20px 16px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header .store-info h1 {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-bright);
+    }
+    .header .store-info .sub {
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+    .header .date-badge {
+      background: var(--accent-soft);
+      color: var(--accent);
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    /* ===== 核心指标 ===== */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      padding: 4px 16px 16px;
+    }
+    .metric-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 16px 14px;
+      position: relative;
+      overflow: hidden;
+    }
+    .metric-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 3px; height: 100%;
+      background: var(--accent);
+      opacity: 0.8;
+    }
+    .metric-card .label {
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+    }
+    .metric-card .value {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--text-bright);
+      letter-spacing: -0.5px;
+    }
+    .metric-card .value .unit {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-dim);
+      margin-left: 2px;
+    }
+    .metric-card .trend {
+      font-size: 11px;
+      margin-top: 4px;
+    }
+    .trend.up { color: var(--green); }
+    .trend.down { color: var(--accent); }
+
+    /* ===== 快捷入口 ===== */
+    .section-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-dim);
+      padding: 0 16px 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .action-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      padding: 0 16px 20px;
+    }
+    .action-btn {
+      background: var(--card);
+      border: none;
+      border-radius: var(--radius);
+      padding: 18px 8px 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      text-decoration: none;
+      color: var(--text);
+    }
+    .action-btn:active {
+      transform: scale(0.95);
+      background: var(--card-hover);
+    }
+    .action-btn .icon {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+    .action-btn .name {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      text-align: center;
+    }
+
+    /* icon backgrounds */
+    .icon-ai { background: rgba(233, 69, 96, 0.15); }
+    .icon-menu { background: rgba(78, 204, 163, 0.15); }
+    .icon-cost { background: rgba(240, 165, 0, 0.15); }
+    .icon-stock { background: rgba(100, 149, 237, 0.15); }
+    .icon-review { background: rgba(255, 99, 132, 0.15); }
+    .icon-report { background: rgba(186, 104, 200, 0.15); }
+
+    /* ===== 底部 ===== */
+    .footer {
+      position: fixed;
+      bottom: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      background: rgba(22, 33, 62, 0.95);
+      backdrop-filter: blur(10px);
+      border-top: 1px solid rgba(255,255,255,0.05);
+      padding: 10px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: var(--text-dim);
+      z-index: 50;
+    }
+    .footer .hours span { color: var(--green); font-weight: 600; }
+    .footer .phone { color: var(--accent); font-weight: 600; }
+
+    /* ===== 弹出层 ===== */
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 100;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .overlay.show { display: flex; }
+    .sheet {
+      background: var(--card);
+      width: 100%;
+      max-width: 480px;
+      max-height: 70vh;
+      border-radius: 20px 20px 0 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      animation: slideUp 0.3s ease;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+    .sheet-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 18px 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .sheet-header h2 { font-size: 16px; font-weight: 700; color: var(--text-bright); }
+    .sheet-close {
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 22px;
+      cursor: pointer;
+      padding: 4px 8px;
+      line-height: 1;
+    }
+    .sheet-body {
+      overflow-y: auto;
+      padding: 12px 18px 24px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* 菜品列表 */
+    .dish-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .dish-item:last-child { border-bottom: none; }
+    .dish-item .dish-name { font-size: 14px; font-weight: 500; }
+    .dish-item .dish-price { font-size: 14px; font-weight: 700; color: var(--accent); }
+    .dish-tag {
+      display: inline-block;
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      margin-left: 6px;
+    }
+    .tag-hot { background: var(--accent-soft); color: var(--accent); }
+    .tag-new { background: rgba(78,204,163,0.15); color: var(--green); }
+
+    /* 库存列表 */
+    .stock-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .stock-item:last-child { border-bottom: none; }
+    .stock-item .stock-name { font-size: 14px; font-weight: 500; }
+    .stock-item .stock-qty { font-size: 13px; font-weight: 700; }
+    .stock-warn { color: var(--accent); }
+    .stock-ok { color: var(--green); }
+    .stock-bar {
+      width: 60px;
+      height: 6px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 3px;
+      margin-top: 4px;
+      overflow: hidden;
+    }
+    .stock-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.3s;
+    }
+
+    /* 日报详情 */
+    .report-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      font-size: 14px;
+    }
+    .report-row:last-child { border-bottom: none; }
+    .report-row .r-label { color: var(--text-dim); }
+    .report-row .r-value { font-weight: 600; color: var(--text-bright); }
+    .report-note {
+      margin-top: 12px;
+      padding: 12px;
+      background: rgba(233,69,96,0.08);
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--text);
+    }
+
+    /* 加载动画 */
+    .spinner {
+      width: 20px; height: 20px;
+      border: 2px solid rgba(255,255,255,0.1);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 20px auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .empty-tip {
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 13px;
+      padding: 24px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== 顶部栏 ===== -->
+  <div class="header">
+    <div class="store-info">
+      <h1>🔥 猛火炒饭 · 望月湖店</h1>
+      <div class="sub" id="storeSub">今日营业中</div>
+    </div>
+    <div class="date-badge" id="dateBadge">--</div>
+  </div>
+
+  <!-- ===== 核心指标 ===== -->
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="label">今日营收</div>
+      <div class="value"><span style="color:var(--accent)">¥</span><span id="mRevenue">--</span></div>
+      <div class="trend up" id="mRevenueTrend">—</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">今日订单</div>
+      <div class="value"><span id="mOrders">--</span><span class="unit">单</span></div>
+      <div class="trend up" id="mOrdersTrend">—</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">毛利率</div>
+      <div class="value"><span id="mMargin">--</span><span class="unit">%</span></div>
+      <div class="trend up" id="mMarginTrend">—</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">库存预警</div>
+      <div class="value"><span id="mStockWarn">--</span><span class="unit">项</span></div>
+      <div class="trend down" id="mStockTrend">—</div>
+    </div>
+  </div>
+
+  <!-- ===== 快捷入口 ===== -->
+  <div class="section-title">快捷功能</div>
+  <div class="action-grid">
+    <a href="agent-chat.html?agent=boss" class="action-btn">
+      <div class="icon icon-ai">🤖</div>
+      <div class="name">AI助手</div>
+    </a>
+    <button class="action-btn" onclick="openMenu()">
+      <div class="icon icon-menu">📋</div>
+      <div class="name">菜单管理</div>
+    </button>
+    <a href="agent-chat.html?agent=boss" class="action-btn">
+      <div class="icon icon-cost">💰</div>
+      <div class="name">成本核算</div>
+    </a>
+    <button class="action-btn" onclick="openStock()">
+      <div class="icon icon-stock">📦</div>
+      <div class="name">库存查看</div>
+    </button>
+    <a href="agent-chat.html?agent=manager" class="action-btn">
+      <div class="icon icon-review">💬</div>
+      <div class="name">差评处理</div>
+    </a>
+    <button class="action-btn" onclick="openReport()">
+      <div class="icon icon-report">📊</div>
+      <div class="name">日报详情</div>
+    </button>
+  </div>
+
+  <!-- ===== 底部 ===== -->
+  <div class="footer">
+    <div class="hours">营业 <span>10:00-22:00</span></div>
+    <div class="phone" onclick="window.location.href='tel:0731-88889999'">📞 0731-88889999</div>
+  </div>
+
+  <!-- ===== 弹出层 ===== -->
+  <div class="overlay" id="overlay" onclick="closeSheet(event)">
+    <div class="sheet" onclick="event.stopPropagation()">
+      <div class="sheet-header">
+        <h2 id="sheetTitle">标题</h2>
+        <button class="sheet-close" onclick="closeSheetDirect()">✕</button>
+      </div>
+      <div class="sheet-body" id="sheetBody">
+        <div class="spinner"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== 配置 =====
+    const SUPABASE_URL = 'https://vovzgflfdwngfuqnxjc.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvdnpnZmxmZHduZ2Z1cW54amMiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc4MTU5ODQ5NiwiZXhwIjoyMDk3MTc0NDk2fQ.p8e3LcWgBqWxQ3jYk7mN2vR4sT8uY6zA9bC1dE5fG3h';
+    const STORE_CODE = 'WM001';
+    let supabase = null;
+
+    // ===== MockData 兜底 =====
+    const MOCK = {
+      metrics: {
+        revenue: 1820,
+        orders: 98,
+        margin: 65,
+        stockWarn: 3,
+        revenueTrend: '↑ 12% vs 昨日',
+        ordersTrend: '↑ 8单 vs 昨日',
+        marginTrend: '↑ 3% vs 上周',
+        stockTrend: '需补货'
+      },
+      dishes: [
+        { name: '一口香酱油炒饭', price: 9.9, tag: 'hot' },
+        { name: '猛火牛肉炒饭', price: 18.0, tag: 'hot' },
+        { name: '辣椒炒肉盖饭', price: 16.0, tag: '' },
+        { name: '番茄鸡蛋盖饭', price: 13.0, tag: '' },
+        { name: '酸辣鸡杂炒饭', price: 15.0, tag: '' },
+        { name: '老干妈炒饭', price: 12.0, tag: '' },
+        { name: '排骨拼盘饭', price: 22.0, tag: 'new' },
+        { name: '榨菜肉丝炒饭', price: 11.0, tag: '' },
+        { name: '腊味煲仔饭', price: 19.0, tag: '' },
+        { name: '咖喱鸡肉饭', price: 17.0, tag: '' },
+        { name: '鱼香肉丝盖饭', price: 14.0, tag: '' },
+        { name: '梅菜扣肉饭', price: 18.0, tag: '' },
+        { name: '蒜苔炒肉饭', price: 15.0, tag: '' },
+        { name: '回锅肉盖饭', price: 16.0, tag: '' },
+        { name: '麻婆豆腐盖饭', price: 12.0, tag: '' },
+        { name: '宫保鸡丁饭', price: 16.0, tag: '' },
+        { name: '土豆牛肉饭', price: 18.0, tag: '' },
+        { name: '青椒肉丝饭', price: 14.0, tag: '' },
+        { name: '蛋炒饭', price: 8.0, tag: '' },
+        { name: '扬州炒饭', price: 13.0, tag: '' },
+        { name: '酸豆角肉沫饭', price: 12.0, tag: '' },
+        { name: '香菇滑鸡饭', price: 17.0, tag: '' },
+        { name: '红烧排骨饭', price: 20.0, tag: '' },
+        { name: '干煸四季豆饭', price: 13.0, tag: '' },
+        { name: '木须肉盖饭', price: 15.0, tag: '' },
+        { name: '葱爆牛肉饭', price: 19.0, tag: '' },
+        { name: '辣子鸡丁饭', price: 16.0, tag: '' },
+        { name: '时蔬炒饭', price: 10.0, tag: '' }
+      ],
+      stock: [
+        { name: '牛肉', qty: 0.8, unit: 'kg', threshold: 1.0, max: 5.0, warn: true },
+        { name: '辣椒', qty: 0.5, unit: 'kg', threshold: 1.0, max: 3.0, warn: true },
+        { name: '葱', qty: 0.3, unit: 'kg', threshold: 0.5, max: 2.0, warn: true },
+        { name: '猪肉', qty: 3.2, unit: 'kg', threshold: 1.5, max: 6.0, warn: false },
+        { name: '鸡蛋', qty: 60, unit: '个', threshold: 30, max: 100, warn: false },
+        { name: '大米', qty: 25, unit: 'kg', threshold: 10, max: 50, warn: false },
+        { name: '食用油', qty: 8, unit: 'L', threshold: 3, max: 15, warn: false },
+        { name: '酱油', qty: 4, unit: 'L', threshold: 2, max: 10, warn: false },
+        { name: '番茄', qty: 2.5, unit: 'kg', threshold: 1.0, max: 5.0, warn: false },
+        { name: '土豆', qty: 5.0, unit: 'kg', threshold: 2.0, max: 10.0, warn: false },
+        { name: '鸡胸肉', qty: 2.8, unit: 'kg', threshold: 1.0, max: 5.0, warn: false },
+        { name: '腊肠', qty: 1.5, unit: 'kg', threshold: 0.5, max: 3.0, warn: false },
+        { name: '榨菜', qty: 1.2, unit: 'kg', threshold: 0.5, max: 3.0, warn: false },
+        { name: '排骨', qty: 2.0, unit: 'kg', threshold: 1.0, max: 4.0, warn: false },
+        { name: '豆腐', qty: 3.0, unit: 'kg', threshold: 1.0, max: 5.0, warn: false },
+        { name: '青菜', qty: 1.8, unit: 'kg', threshold: 0.5, max: 3.0, warn: false },
+        { name: '蒜苔', qty: 1.0, unit: 'kg', threshold: 0.5, max: 2.0, warn: false },
+        { name: '香菇', qty: 0.8, unit: 'kg', threshold: 0.3, max: 2.0, warn: false }
+      ],
+      report: {
+        date: '',
+        revenue: 1820,
+        orders: 98,
+        avgOrder: 18.6,
+        grossProfit: 1183,
+        margin: 65,
+        topDish: '猛火牛肉炒饭',
+        topDishCount: 22,
+        reviewAvg: 4.6,
+        reviewCount: 15,
+        cost: 637,
+        note: '今日营收较昨日增长12%，猛火牛肉炒饭持续热销。牛肉库存告急，建议明早优先补货。差评1条已转AI助手处理。'
+      }
+    };
+
+    // ===== 初始化 =====
+    async function init() {
+      // 日期
+      const now = new Date();
+      const months = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+      const days = ['周日','周一','周二','周三','周四','周五','周六'];
+      const dateStr = `${months[now.getMonth()]}${now.getDate()}日 ${days[now.getDay()]}`;
+      document.getElementById('dateBadge').textContent = dateStr;
+      MOCK.report.date = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+
+      // 营业状态
+      const hour = now.getHours();
+      let status = '今日休息';
+      if (hour >= 10 && hour < 22) {
+        status = '今日营业中';
+      } else if (hour < 10) {
+        status = '10:00 开门营业';
+      } else {
+        status = '今日已打烊';
+      }
+      document.getElementById('storeSub').textContent = status;
+
+      // 初始化Supabase
+      try {
+        if (window.supabase && typeof window.supabase.createClient === 'function') {
+          supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        }
+      } catch (e) {
+        console.warn('Supabase初始化失败，使用Mock数据', e);
+      }
+
+      // 加载指标
+      await loadMetrics();
+    }
+
+    // ===== 加载核心指标 =====
+    async function loadMetrics() {
+      let data = null;
+
+      if (supabase) {
+        try {
+          const today = MOCK.report.date;
+          const { data: row, error } = await supabase
+            .from('store_daily_summary')
+            .select('*')
+            .eq('store_code', STORE_CODE)
+            .eq('summary_date', today)
+            .limit(1);
+
+          if (!error && row && row.length > 0) {
+            const r = row[0];
+            data = {
+              revenue: r.revenue || r.total_revenue || MOCK.metrics.revenue,
+              orders: r.order_count || r.total_orders || MOCK.metrics.orders,
+              margin: r.gross_margin || r.margin_rate || MOCK.metrics.margin,
+              stockWarn: MOCK.metrics.stockWarn
+            };
+          }
+        } catch (e) {
+          console.warn('Supabase查询失败，使用Mock数据', e);
+        }
+      }
+
+      // 兜底
+      if (!data) {
+        data = MOCK.metrics;
+      }
+
+      // 填充
+      animateNumber('mRevenue', data.revenue);
+      document.getElementById('mOrders').textContent = data.orders;
+      document.getElementById('mMargin').textContent = data.margin;
+      document.getElementById('mStockWarn').textContent = data.stockWarn;
+
+      document.getElementById('mRevenueTrend').textContent = data.revenueTrend || MOCK.metrics.revenueTrend;
+      document.getElementById('mOrdersTrend').textContent = data.ordersTrend || MOCK.metrics.ordersTrend;
+      document.getElementById('mMarginTrend').textContent = data.marginTrend || MOCK.metrics.marginTrend;
+      document.getElementById('mStockTrend').textContent = data.stockTrend || MOCK.metrics.stockTrend;
+    }
+
+    // ===== 数字滚动动画 =====
+    function animateNumber(id, target) {
+      const el = document.getElementById(id);
+      const duration = 800;
+      const start = 0;
+      const startTime = performance.now();
+
+      function tick(now) {
+        const progress = Math.min((now - startTime) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const current = Math.round(start + (target - start) * eased);
+        el.textContent = current.toLocaleString();
+        if (progress < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    }
+
+    // ===== 弹出层 =====
+    function showSheet(title, html) {
+      document.getElementById('sheetTitle').textContent = title;
+      document.getElementById('sheetBody').innerHTML = html;
+      document.getElementById('overlay').classList.add('show');
+    }
+
+    function closeSheet(e) {
+      if (e.target.id === 'overlay') {
+        document.getElementById('overlay').classList.remove('show');
+      }
+    }
+
+    function closeSheetDirect() {
+      document.getElementById('overlay').classList.remove('show');
+    }
+
+    // ===== 菜单管理 =====
+    async function openMenu() {
+      showSheet('📋 菜品列表', '<div class="spinner"></div>');
+
+      let dishes = null;
+
+      if (supabase) {
+        try {
+          const { data, error } = await supabase
+            .from('store_dishes')
+            .select('dish_name, price, is_active, is_hot')
+            .eq('store_code', STORE_CODE)
+            .eq('is_active', true)
+            .order('price', { ascending: true });
+
+          if (!error && data && data.length > 0) {
+            dishes = data.map(d => ({
+              name: d.dish_name,
+              price: parseFloat(d.price) || 0,
+              tag: d.is_hot ? 'hot' : ''
+            }));
+          }
+        } catch (e) {
+          console.warn('菜品查询失败', e);
+        }
+      }
+
+      // 兜底
+      if (!dishes || dishes.length === 0) {
+        dishes = MOCK.dishes;
+      }
+
+      const html = dishes.map(d => `
+        <div class="dish-item">
+          <div>
+            <span class="dish-name">${d.name}</span>
+            ${d.tag === 'hot' ? '<span class="dish-tag tag-hot">🔥 热销</span>' : ''}
+            ${d.tag === 'new' ? '<span class="dish-tag tag-new">✨ 新品</span>' : ''}
+          </div>
+          <div class="dish-price">¥${d.price.toFixed(1)}</div>
+        </div>
+      `).join('');
+
+      showSheet(`📋 菜品列表（${dishes.length}道）`, html);
+    }
+
+    // ===== 库存查看 =====
+    async function openStock() {
+      showSheet('📦 库存状态', '<div class="spinner"></div>');
+
+      let stock = null;
+
+      if (supabase) {
+        try {
+          const { data, error } = await supabase
+            .from('ingredient_inventory')
+            .select('ingredient_name, current_qty, unit, min_qty, max_qty')
+            .eq('store_code', STORE_CODE)
+            .order('current_qty', { ascending: true });
+
+          if (!error && data && data.length > 0) {
+            stock = data.map(s => ({
+              name: s.ingredient_name,
+              qty: parseFloat(s.current_qty) || 0,
+              unit: s.unit || 'kg',
+              threshold: parseFloat(s.min_qty) || 0,
+              max: parseFloat(s.max_qty) || 100,
+              warn: parseFloat(s.current_qty) <= parseFloat(s.min_qty || 0)
+            }));
+          }
+        } catch (e) {
+          console.warn('库存查询失败', e);
+        }
+      }
+
+      // 兜底
+      if (!stock || stock.length === 0) {
+        stock = MOCK.stock;
+      }
+
+      const warnCount = stock.filter(s => s.warn).length;
+      const html = stock.map(s => {
+        const pct = Math.min((s.qty / s.max) * 100, 100);
+        const barColor = s.warn ? 'var(--accent)' : 'var(--green)';
+        return `
+          <div class="stock-item">
+            <div>
+              <div class="stock-name">${s.name}${s.warn ? ' ⚠️' : ''}</div>
+              <div class="stock-bar"><div class="stock-bar-fill" style="width:${pct}%;background:${barColor}"></div></div>
+            </div>
+            <div class="stock-qty ${s.warn ? 'stock-warn' : 'stock-ok'}">${s.qty}${s.unit}</div>
+          </div>
+        `;
+      }).join('');
+
+      showSheet(`📦 库存状态（预警${warnCount}项）`, html);
+    }
+
+    // ===== 日报详情 =====
+    async function openReport() {
+      showSheet('📊 今日日报', '<div class="spinner"></div>');
+
+      let report = null;
+
+      if (supabase) {
+        try {
+          const today = MOCK.report.date;
+          const { data, error } = await supabase
+            .from('store_daily_summary')
+            .select('*')
+            .eq('store_code', STORE_CODE)
+            .eq('summary_date', today)
+            .limit(1);
+
+          if (!error && data && data.length > 0) {
+            const r = data[0];
+            report = {
+              date: today,
+              revenue: r.revenue || r.total_revenue || MOCK.report.revenue,
+              orders: r.order_count || r.total_orders || MOCK.report.orders,
+              avgOrder: r.avg_order_value || (report ? report.revenue / report.orders : 18.6),
+              grossProfit: r.gross_profit || MOCK.report.grossProfit,
+              margin: r.gross_margin || MOCK.report.margin,
+              topDish: r.top_dish || MOCK.report.topDish,
+              topDishCount: r.top_dish_count || MOCK.report.topDishCount,
+              reviewAvg: r.review_avg || MOCK.report.reviewAvg,
+              reviewCount: r.review_count || MOCK.report.reviewCount,
+              cost: r.total_cost || MOCK.report.cost,
+              note: r.summary_note || MOCK.report.note
+            };
+          }
+        } catch (e) {
+          console.warn('日报查询失败', e);
+        }
+      }
+
+      // 兜底
+      if (!report) {
+        report = MOCK.report;
+      }
+
+      const html = `
+        <div class="report-row"><span class="r-label">日期</span><span class="r-value">${report.date}</span></div>
+        <div class="report-row"><span class="r-label">总营收</span><span class="r-value" style="color:var(--accent)">¥${report.revenue.toLocaleString()}</span></div>
+        <div class="report-row"><span class="r-label">订单数</span><span class="r-value">${report.orders} 单</span></div>
+        <div class="report-row"><span class="r-label">客单价</span><span class="r-value">¥${report.avgOrder.toFixed(1)}</span></div>
+        <div class="report-row"><span class="r-label">食材成本</span><span class="r-value">¥${report.cost.toLocaleString()}</span></div>
+        <div class="report-row"><span class="r-label">毛利润</span><span class="r-value" style="color:var(--green)">¥${report.grossProfit.toLocaleString()}</span></div>
+        <div class="report-row"><span class="r-label">毛利率</span><span class="r-value">${report.margin}%</span></div>
+        <div class="report-row"><span class="r-label">热销菜品</span><span class="r-value">${report.topDish}（${report.topDishCount}份）</span></div>
+        <div class="report-row"><span class="r-label">评价均分</span><span class="r-value">⭐ ${report.reviewAvg}（${report.reviewCount}条）</span></div>
+        <div class="report-note">📝 ${report.note}</div>
+      `;
+
+      showSheet('📊 今日日报', html);
+    }
+
+    // ===== 启动 =====
+    init();
+  </script>
+</body>
+</html>
