@@ -1,0 +1,1038 @@
+{
+  "stores": [
+    {
+      "id": "wm001-store-id-mock",
+      "store_name": "哇塞猛火猪油炒饭（望月湖店）",
+      "store_code": "WM001",
+      "address": "长沙市岳麓区望月湖",
+      "contact_person": "艾刃",
+      "phone": "19770809",
+      "business_hours": {
+        "open": "10:00",
+        "close": "21:00"
+      },
+      "platform_accounts": {
+        "meituan": "shop_wm001_mt",
+        "douyin": "shop_wm001_dy",
+        "jd": "shop_wm001_jd"
+      },
+      "status": "active",
+      "owner_id": "owner_default",
+      "settings": {
+        "theme": "dark",
+        "auto_reply": true,
+        "mock_data": true
+      },
+      "created_at": "2026-07-01T00:00:00+08:00"
+    }
+  ],
+  "store_dishes": [
+    {
+      "id": "dish-1",
+      "store_id": "wm001-store-id-mock",
+      "dish_name": "一口香酱油炒饭（基础版）",
+      "category": "主食",
+      "price": 9.9,
+      "cost": 3.0,
+      "gross_margin": 70.0,
+      "status": "available",
+      "is_featured": true,
+      "is_new": false,
+      "sort_order": 1,
+      "description": "引流爆款，猪油酱油炒饭",
+      "total_sold": 3200,
+      "total_revenue": 31680,
+      "daily_avg_sold": 213,
+      "platform_prices": {
+        "meituan": 10.9,
+        "jd": 9.9
+      }
+    },
+    {
+      "id": "dish-2",
+      "store_id": "wm001-store-id-mock",
+      "dish_name": "一口香酱油炒饭（加量版）",
+      "category": "主食",
+      "price": 11.9,
+      "cost": 3.5,
+      "gross_margin": 71.0,
+      "status": "available",
+      "is_featured": false,
+      "is_new": false,
+      "sort_order": 2,
+      "description": "450g加量版",
+      "total_sold": 1200,
+      "total_revenue": 14280,
+      "daily_avg_sold": 80,
+      "platform_prices": {
+        "meituan": 12.9,
+        "jd": 11.9
+      }
+    },
+    {
+      "id": "dish-3",
+      "store_id": "wm001-store-id-mock",
+      "dish_name": "哇塞蛋炒饭（基础版）",
+      "category": "主食",
+      "price": 11.0,
+      "cost": 3.0,
+      "gross_margin": 73.0,
+      "status": "available",
+      "is_featured": true,
+      "is_new": false,
+      "sort_order": 3,
+      "description": "招牌蛋炒饭，猛火猪油",
+      "total_sold": 4100,
+      "total_revenue": 45100,
+      "daily_avg_sold": 273,
+      "platform_prices": {
+        "meituan": 12.0,
+        "jd": 11.0
+      }
+    },
+    {
+      "id": "dish-4",
+      "store_id": "wm001-store-id-mock",
+      "dish_name": "哇塞蛋炒饭（加量版）",
+      "category": "主食",
+      "price": 13.0,
+      "cost": 3.5,
+      "gross_margin": 73.0,
+      "status": "available",
+      "is_featured": false,
+      "is_new": false,
+      "sort_order": 4,
+      "description": "450g加量版",
+      "total_sold": 1800,
+      "total_revenue": 23400,
+      "daily_avg_sold": 120,
+      "platform_prices": {
+        "meituan": 14.0,
+        "jd": 13.0
+      }
+    },
+    {
+      "id": "dish-5",
+      "store_id": "wm001-store-id-mock",
+      "dish_name": "老干妈蛋炒饭（基础版）",
+      "category": "主食",
+      "price": 12.0,
+      "cost": 3.0,
+      "gross_margin": 75.0,
+      "status": "available",
+      "is_featured": false,
+      "is_new": false,
+      "sort_order": 5,
+      "description": "老干妈酱+蛋+炒饭",
+      "total_sold": 2100,
+      "total_revenue": 25200,
+      "daily_avg_sold": 140,
+      "platform_prices": {
+        "meituan": 13.0,
+        "jd": 12.0
+      }
+    },
+    {
+      "id": "dish-6",
+      "store_id": "wm001-store-id-mock",
+      "dish_name": "老干妈蛋炒饭（加量版）",
+      "category": "主食",
+      "price": 14.0,
+      "cost": 3.5,
+      "gross_margin": 75.0,
+      "status": "available",
+      "is_featured": false,
+      "is_new": false,
+      "sort_order": 6,
+      "description": "450g加量版",
+      "total_sold": 800,
+      "total_revenue": 11200,
+      "daily_avg_sold": 53,
+      "platform_prices": {
+        "meituan": 15.0,
+        "jd": 14.0
+      }
+    },
+    {
+      "id": "dish-7",
+      "store_id": "wm001-store-id-mock",
+      "dish_name": "扬州炒饭（基础版）",
+      "category": "主食",
+      "price": 14.0,
+      "cost": 3.0,
+      "gross_margin": 79.0,
+      "status": "available",
+      "is_featured": false,
+      "is_new": false,
+      "sort_order": 7,
+      "description": "经典扬州炒饭",
+      "total_sold": 1500,
+      "total_revenue": 21000,
+      "daily_avg_sold": 100,
+      "platform_prices": {
+        "meituan": 15.0,
+        "jd": 14.0
+      }
+    },
+    {
+      "id": "dish-8",
+      "store_id": "wm001-store-id-mock",
+      "dish_name": "扬州炒饭（加量版）",
+      "category": "主食",
+      "price": 16.0,
+      "cost": 3.5,
+      "gross_margin": 78.0,
+      "status": "available",
+      "is_featured": false,
+      "is_new": false,
+      "sort_order": 8,
+      "description": "450g加量版",
+      "total_sold": 500,
+      "total_revenue": 8000,
+      "daily_avg_sold": 33,
+      "platform_prices": {
+        "meituan": 17.0,
+        "jd": 16.0
+      }
+    },
+    {
+      "id": "dish-9",
+      "store_id": "wm001-store-id-mock",
+      "dish_name": "广式香肠蛋炒饭（基础版）",
+      "category": "主食",
+      "price": 17.0,
+      "cost": 6.0,
+      "gross_margin": 65.0,
+      "status": "available",
+      "is_featured": false,
+      "is_new": false,
+      "sort_order": 9,
+      "description": "广式腊肠+蛋+炒饭",
+      "total_sold": 1300,
+      "total_revenue": 22100,
+      "daily_avg_sold": 87,
+      "platform_prices": {
+        "meituan": 18.0,
+        "jd": 17.0
+      }
+    },
+    {
+      "id": "dish-10",
+      "store_id": "wm001-store-id-mock",
+      "dish_name": "广式香肠蛋炒饭（加量版）",
+      "category": "主食",
+      "price": 19.0,
+      "cost": 6.5,
+      "gross_margin": 66.0,
+      "status": "available",
+      "is_featured": false,
+      "is_new": false,
+      "sort_order": 10,
+      "description": "450g加量版",
+      "total_sold": 450,
+      "total_revenue": 8550,
+      "daily_avg_sold": 30,
+      "platform_prices": {
+        "meituan": 20.0,
+        "jd": 19.0
+      }
+    },
+    {
+      "id": "dish-11",
+      "store_id": "wm001-store-id-mock",
+      "dish_name": "黑椒烤肠蛋炒饭（基础版）",
+      "category": "主食",
+      "price": 17.0,
+      "cost": 6.0,
+      "gross_margin": 65.0,
+      "status": "available",
+      "is_featured": false,
+      "is_new": false,
+      "sort_order": 11,
+      "description": "黑椒烤肠+蛋+炒饭",
+      "total_sold": 1100,
+      "total_revenue": 18700,
+      "daily_avg_sold": 73,
+      "platform_prices": {
+        "meituan": 18.0,
+        "jd": 17.0
+      }
+    },
+    {
+      "id": "dish-12",
+      "store_id": "wm001-store-id-mock",
+      "dish_name": "黑椒烤肠蛋炒饭（加量版）",
+      "category": "主食",
+      "price": 19.0,
+      "cost": 6.5,
+      "gross_margin": 66.0,
+      "status": "available",
+      "is_featured": false,
+      "is_new": false,
+      "sort_order": 12,
+      "description": "450g加量版",
+      "total_sold": 400,
+      "total_revenue": 7600,
+      "daily_avg_sold": 27,
+      "platform_prices": {
+        "meituan": 20.0,
+        "jd": 19.0
+      }
+    },
+    {
+      "id": "dish-13",
+      "store_id": "wm001-store-id-mock",
+      "dish_name": "港式肉肠蛋炒饭（基础版）",
+      "category": "主食",
+      "price": 17.0,
+      "cost": 6.0,
+      "gross_margin": 65.0,
+      "status": "available",
+      "is_featured": false,
+      "is_new": false,
+      "sort_order": 13,
+      "description": "港式肉肠+蛋+炒饭",
+      "total_sold": 950,
+      "total_revenue": 16150,
+      "daily_avg_sold": 63,
+      "platform_prices": {
+        "meituan": 18.0,
+        "jd": 17.0
+      }
+    },
+    {
+      "id": "dish-14",
+      "store_id": "wm001-store-id-mock",
+      "dish_name": "港式肉肠蛋炒饭（加量版）",
+      "category": "主食",
+      "price": 19.0,
+      "cost": 6.5,
+      "gross_margin": 66.0,
+      "status": "available",
+      "is_featured": false,
+      "is_new": false,
+      "sort_order": 14,
+      "description": "450g加量版",
+      "total_sold": 350,
+      "total_revenue": 6650,
+      "daily_avg_sold": 23,
+      "platform_prices": {
+        "meituan": 20.0,
+        "jd": 19.0
+      }
+    },
+    {
+      "id": "dish-15",
+      "store_id": "wm001-store-id-mock",
+      "dish_name": "辣椒炒肉蛋炒饭（基础版）",
+      "category": "主食",
+      "price": 19.0,
+      "cost": 6.0,
+      "gross_margin": 68.0,
+      "status": "available",
+      "is_featured": true,
+      "is_new": false,
+      "sort_order": 15,
+      "description": "湖南辣椒炒肉+蛋+炒饭",
+      "total_sold": 2800,
+      "total_revenue": 53200,
+      "daily_avg_sold": 187,
+      "platform_prices": {
+        "meituan": 20.0,
+        "jd": 19.0
+      }
+    },
+    {
+      "id": "dish-16",
+      "store_id": "wm001-store-id-mock",
+      "dish_name": "辣椒炒肉蛋炒饭（加量版）",
+      "category": "主食",
+      "price": 21.0,
+      "cost": 6.5,
+      "gross_margin": 69.0,
+      "status": "available",
+      "is_featured": false,
+      "is_new": false,
+      "sort_order": 16,
+      "description": "450g加量版",
+      "total_sold": 1000,
+      "total_revenue": 21000,
+      "daily_avg_sold": 67,
+      "platform_prices": {
+        "meituan": 22.0,
+        "jd": 21.0
+      }
+    },
+    {
+      "id": "dish-17",
+      "store_id": "wm001-store-id-mock",
+      "dish_name": "梅菜扣肉蛋炒饭（基础版）",
+      "category": "主食",
+      "price": 19.0,
+      "cost": 6.0,
+      "gross_margin": 68.0,
+      "status": "available",
+      "is_featured": false,
+      "is_new": false,
+      "sort_order": 17,
+      "description": "梅菜扣肉+蛋+炒饭",
+      "total_sold": 1200,
+      "total_revenue": 22800,
+      "daily_avg_sold": 80,
+      "platform_prices": {
+        "meituan": 20.0,
+        "jd": 19.0
+      }
+    },
+    {
+      "id": "dish-18",
+      "store_id": "wm001-store-id-mock",
+      "dish_name": "梅菜扣肉蛋炒饭（加量版）",
+      "category": "主食",
+      "price": 21.0,
+      "cost": 6.5,
+      "gross_margin": 69.0,
+      "status": "available",
+      "is_featured": false,
+      "is_new": false,
+      "sort_order": 18,
+      "description": "450g加量版",
+      "total_sold": 400,
+      "total_revenue": 8400,
+      "daily_avg_sold": 27,
+      "platform_prices": {
+        "meituan": 22.0,
+        "jd": 21.0
+      }
+    },
+    {
+      "id": "dish-19",
+      "store_id": "wm001-store-id-mock",
+      "dish_name": "牛肉蛋炒饭（基础版）",
+      "category": "主食",
+      "price": 21.0,
+      "cost": 6.0,
+      "gross_margin": 71.0,
+      "status": "available",
+      "is_featured": true,
+      "is_new": false,
+      "sort_order": 19,
+      "description": "鲜牛肉+蛋+炒饭",
+      "total_sold": 2400,
+      "total_revenue": 50400,
+      "daily_avg_sold": 160,
+      "platform_prices": {
+        "meituan": 22.0,
+        "jd": 21.0
+      }
+    },
+    {
+      "id": "dish-20",
+      "store_id": "wm001-store-id-mock",
+      "dish_name": "牛肉蛋炒饭（加量版）",
+      "category": "主食",
+      "price": 23.0,
+      "cost": 6.5,
+      "gross_margin": 72.0,
+      "status": "available",
+      "is_featured": false,
+      "is_new": false,
+      "sort_order": 20,
+      "description": "450g加量版",
+      "total_sold": 900,
+      "total_revenue": 20700,
+      "daily_avg_sold": 60,
+      "platform_prices": {
+        "meituan": 24.0,
+        "jd": 23.0
+      }
+    },
+    {
+      "id": "dish-21",
+      "store_id": "wm001-store-id-mock",
+      "dish_name": "整块鸡排蛋炒饭（基础版）",
+      "category": "主食",
+      "price": 21.0,
+      "cost": 6.0,
+      "gross_margin": 71.0,
+      "status": "available",
+      "is_featured": false,
+      "is_new": false,
+      "sort_order": 21,
+      "description": "整块鸡排+蛋+炒饭",
+      "total_sold": 1100,
+      "total_revenue": 23100,
+      "daily_avg_sold": 73,
+      "platform_prices": {
+        "meituan": 22.0,
+        "jd": 21.0
+      }
+    },
+    {
+      "id": "dish-22",
+      "store_id": "wm001-store-id-mock",
+      "dish_name": "整块鸡排蛋炒饭（加量版）",
+      "category": "主食",
+      "price": 23.0,
+      "cost": 6.5,
+      "gross_margin": 72.0,
+      "status": "available",
+      "is_featured": false,
+      "is_new": false,
+      "sort_order": 22,
+      "description": "450g加量版",
+      "total_sold": 380,
+      "total_revenue": 8740,
+      "daily_avg_sold": 25,
+      "platform_prices": {
+        "meituan": 24.0,
+        "jd": 23.0
+      }
+    },
+    {
+      "id": "dish-23",
+      "store_id": "wm001-store-id-mock",
+      "dish_name": "怀旧脆油渣蛋炒饭（基础版）",
+      "category": "主食",
+      "price": 17.0,
+      "cost": 6.0,
+      "gross_margin": 65.0,
+      "status": "available",
+      "is_featured": true,
+      "is_new": false,
+      "sort_order": 23,
+      "description": "猪油渣+蛋+炒饭，怀旧口味",
+      "total_sold": 1600,
+      "total_revenue": 27200,
+      "daily_avg_sold": 107,
+      "platform_prices": {
+        "meituan": 18.0,
+        "jd": 17.0
+      }
+    },
+    {
+      "id": "dish-24",
+      "store_id": "wm001-store-id-mock",
+      "dish_name": "怀旧脆油渣蛋炒饭（加量版）",
+      "category": "主食",
+      "price": 19.0,
+      "cost": 6.5,
+      "gross_margin": 66.0,
+      "status": "available",
+      "is_featured": false,
+      "is_new": false,
+      "sort_order": 24,
+      "description": "450g加量版",
+      "total_sold": 550,
+      "total_revenue": 10450,
+      "daily_avg_sold": 37,
+      "platform_prices": {
+        "meituan": 20.0,
+        "jd": 19.0
+      }
+    },
+    {
+      "id": "dish-25",
+      "store_id": "wm001-store-id-mock",
+      "dish_name": "素炒粉（基础版）",
+      "category": "主食",
+      "price": 9.0,
+      "cost": 2.5,
+      "gross_margin": 72.0,
+      "status": "available",
+      "is_featured": false,
+      "is_new": false,
+      "sort_order": 25,
+      "description": "素炒米粉",
+      "total_sold": 800,
+      "total_revenue": 7200,
+      "daily_avg_sold": 53,
+      "platform_prices": {
+        "meituan": 10.0,
+        "jd": 9.0
+      }
+    },
+    {
+      "id": "dish-26",
+      "store_id": "wm001-store-id-mock",
+      "dish_name": "素炒粉（加量版）",
+      "category": "主食",
+      "price": 11.0,
+      "cost": 3.0,
+      "gross_margin": 73.0,
+      "status": "available",
+      "is_featured": false,
+      "is_new": false,
+      "sort_order": 26,
+      "description": "450g加量版",
+      "total_sold": 300,
+      "total_revenue": 3300,
+      "daily_avg_sold": 20,
+      "platform_prices": {
+        "meituan": 12.0,
+        "jd": 11.0
+      }
+    },
+    {
+      "id": "dish-27",
+      "store_id": "wm001-store-id-mock",
+      "dish_name": "素炒方便面（基础版）",
+      "category": "主食",
+      "price": 9.0,
+      "cost": 2.5,
+      "gross_margin": 72.0,
+      "status": "available",
+      "is_featured": false,
+      "is_new": false,
+      "sort_order": 27,
+      "description": "素炒方便面",
+      "total_sold": 600,
+      "total_revenue": 5400,
+      "daily_avg_sold": 40,
+      "platform_prices": {
+        "meituan": 10.0,
+        "jd": 9.0
+      }
+    },
+    {
+      "id": "dish-28",
+      "store_id": "wm001-store-id-mock",
+      "dish_name": "素炒方便面（加量版）",
+      "category": "主食",
+      "price": 11.0,
+      "cost": 3.0,
+      "gross_margin": 73.0,
+      "status": "available",
+      "is_featured": false,
+      "is_new": false,
+      "sort_order": 28,
+      "description": "450g加量版",
+      "total_sold": 200,
+      "total_revenue": 2200,
+      "daily_avg_sold": 13,
+      "platform_prices": {
+        "meituan": 12.0,
+        "jd": 11.0
+      }
+    }
+  ],
+  "store_daily_summary": [
+    {
+      "id": "sum-1",
+      "store_id": "wm001-store-id-mock",
+      "summary_date": "2026-07-01",
+      "total_revenue": 1680.0,
+      "total_cost": 588.0,
+      "gross_profit": 1092.0,
+      "gross_margin_pct": 65.0,
+      "order_count": 92,
+      "avg_order_value": 18.3,
+      "customer_count": 78,
+      "new_customer_count": 12,
+      "negative_reviews": 0,
+      "inventory_alerts": 1,
+      "food_safety_score": 97,
+      "top_dishes": [
+        {
+          "name": "哇塞蛋炒饭（基础版）",
+          "qty": 18,
+          "revenue": 198.0
+        },
+        {
+          "name": "辣椒炒肉蛋炒饭（基础版）",
+          "qty": 14,
+          "revenue": 266.0
+        },
+        {
+          "name": "一口香酱油炒饭（基础版）",
+          "qty": 16,
+          "revenue": 158.4
+        }
+      ],
+      "bottom_dishes": [
+        {
+          "name": "素炒方便面（加量版）",
+          "qty": 1,
+          "revenue": 11.0
+        }
+      ],
+      "channel_breakdown": {
+        "meituan": 780.0,
+        "jd": 520.0,
+        "dinein": 380.0
+      },
+      "peak_hours": {
+        "11": 15,
+        "12": 28,
+        "18": 22,
+        "19": 18
+      },
+      "notes": "工作日正常"
+    },
+    {
+      "id": "sum-2",
+      "store_id": "wm001-store-id-mock",
+      "summary_date": "2026-07-02",
+      "total_revenue": 2150.0,
+      "total_cost": 752.5,
+      "gross_profit": 1397.5,
+      "gross_margin_pct": 65.0,
+      "order_count": 118,
+      "avg_order_value": 18.2,
+      "customer_count": 102,
+      "new_customer_count": 18,
+      "negative_reviews": 1,
+      "inventory_alerts": 2,
+      "food_safety_score": 96,
+      "top_dishes": [
+        {
+          "name": "哇塞蛋炒饭（基础版）",
+          "qty": 22,
+          "revenue": 242.0
+        },
+        {
+          "name": "牛肉蛋炒饭（基础版）",
+          "qty": 16,
+          "revenue": 336.0
+        },
+        {
+          "name": "辣椒炒肉蛋炒饭（基础版）",
+          "qty": 18,
+          "revenue": 342.0
+        }
+      ],
+      "bottom_dishes": [
+        {
+          "name": "港式肉肠蛋炒饭（加量版）",
+          "qty": 2,
+          "revenue": 38.0
+        }
+      ],
+      "channel_breakdown": {
+        "meituan": 1050.0,
+        "jd": 680.0,
+        "dinein": 420.0
+      },
+      "peak_hours": {
+        "11": 18,
+        "12": 35,
+        "17": 20,
+        "18": 25
+      },
+      "notes": "周末高峰"
+    },
+    {
+      "id": "sum-3",
+      "store_id": "wm001-store-id-mock",
+      "summary_date": "2026-07-03",
+      "total_revenue": 1820.0,
+      "total_cost": 637.0,
+      "gross_profit": 1183.0,
+      "gross_margin_pct": 65.0,
+      "order_count": 98,
+      "avg_order_value": 18.6,
+      "customer_count": 85,
+      "new_customer_count": 8,
+      "negative_reviews": 0,
+      "inventory_alerts": 3,
+      "food_safety_score": 98,
+      "top_dishes": [
+        {
+          "name": "哇塞蛋炒饭（基础版）",
+          "qty": 20,
+          "revenue": 220.0
+        },
+        {
+          "name": "辣椒炒肉蛋炒饭（基础版）",
+          "qty": 15,
+          "revenue": 285.0
+        },
+        {
+          "name": "怀旧脆油渣蛋炒饭（基础版）",
+          "qty": 12,
+          "revenue": 204.0
+        }
+      ],
+      "bottom_dishes": [
+        {
+          "name": "素炒方便面（加量版）",
+          "qty": 1,
+          "revenue": 11.0
+        }
+      ],
+      "channel_breakdown": {
+        "meituan": 850.0,
+        "jd": 570.0,
+        "dinein": 400.0
+      },
+      "peak_hours": {
+        "11": 16,
+        "12": 30,
+        "18": 24,
+        "19": 20
+      },
+      "notes": "工作日正常"
+    }
+  ],
+  "ingredient_inventory": [
+    {
+      "id": "inv-1",
+      "store_id": "wm001-store-id-mock",
+      "ingredient_name": "大米",
+      "category": "主食",
+      "quantity": 50.0,
+      "unit": "kg",
+      "safety_stock": 5.0,
+      "current_stock": 50.0,
+      "storage_location": "常温",
+      "status": "normal",
+      "shelf_life_days": 180,
+      "updated_at": "2026-07-03T09:00:00+08:00"
+    },
+    {
+      "id": "inv-2",
+      "store_id": "wm001-store-id-mock",
+      "ingredient_name": "鸡蛋",
+      "category": "蛋类",
+      "quantity": 8.0,
+      "unit": "kg",
+      "safety_stock": 5.0,
+      "current_stock": 8.0,
+      "storage_location": "冷藏",
+      "status": "normal",
+      "shelf_life_days": 17,
+      "updated_at": "2026-07-03T09:00:00+08:00"
+    },
+    {
+      "id": "inv-3",
+      "store_id": "wm001-store-id-mock",
+      "ingredient_name": "猪油",
+      "category": "调料",
+      "quantity": 5.0,
+      "unit": "kg",
+      "safety_stock": 5.0,
+      "current_stock": 5.0,
+      "storage_location": "冷藏",
+      "status": "normal",
+      "shelf_life_days": 90,
+      "updated_at": "2026-07-03T09:00:00+08:00"
+    },
+    {
+      "id": "inv-4",
+      "store_id": "wm001-store-id-mock",
+      "ingredient_name": "酱油",
+      "category": "调料",
+      "quantity": 3.0,
+      "unit": "L",
+      "safety_stock": 5.0,
+      "current_stock": 3.0,
+      "storage_location": "常温",
+      "status": "normal",
+      "shelf_life_days": 365,
+      "updated_at": "2026-07-03T09:00:00+08:00"
+    },
+    {
+      "id": "inv-5",
+      "store_id": "wm001-store-id-mock",
+      "ingredient_name": "广式香肠",
+      "category": "肉类",
+      "quantity": 2.0,
+      "unit": "kg",
+      "safety_stock": 3.0,
+      "current_stock": 2.0,
+      "storage_location": "冷藏",
+      "status": "warning",
+      "shelf_life_days": 14,
+      "updated_at": "2026-07-03T09:00:00+08:00"
+    },
+    {
+      "id": "inv-6",
+      "store_id": "wm001-store-id-mock",
+      "ingredient_name": "黑椒烤肠",
+      "category": "肉类",
+      "quantity": 1.5,
+      "unit": "kg",
+      "safety_stock": 3.0,
+      "current_stock": 1.5,
+      "storage_location": "冷藏",
+      "status": "warning",
+      "shelf_life_days": 14,
+      "updated_at": "2026-07-03T09:00:00+08:00"
+    },
+    {
+      "id": "inv-7",
+      "store_id": "wm001-store-id-mock",
+      "ingredient_name": "港式肉肠",
+      "category": "肉类",
+      "quantity": 1.2,
+      "unit": "kg",
+      "safety_stock": 3.0,
+      "current_stock": 1.2,
+      "storage_location": "冷藏",
+      "status": "warning",
+      "shelf_life_days": 14,
+      "updated_at": "2026-07-03T09:00:00+08:00"
+    },
+    {
+      "id": "inv-8",
+      "store_id": "wm001-store-id-mock",
+      "ingredient_name": "牛肉",
+      "category": "肉类",
+      "quantity": 0.8,
+      "unit": "kg",
+      "safety_stock": 1.0,
+      "current_stock": 0.8,
+      "storage_location": "冷冻",
+      "status": "critical",
+      "shelf_life_days": 3,
+      "updated_at": "2026-07-03T09:00:00+08:00"
+    },
+    {
+      "id": "inv-9",
+      "store_id": "wm001-store-id-mock",
+      "ingredient_name": "鸡排",
+      "category": "肉类",
+      "quantity": 1.0,
+      "unit": "kg",
+      "safety_stock": 5.0,
+      "current_stock": 1.0,
+      "storage_location": "冷冻",
+      "status": "normal",
+      "shelf_life_days": 14,
+      "updated_at": "2026-07-03T09:00:00+08:00"
+    },
+    {
+      "id": "inv-10",
+      "store_id": "wm001-store-id-mock",
+      "ingredient_name": "辣椒",
+      "category": "蔬菜",
+      "quantity": 0.5,
+      "unit": "kg",
+      "safety_stock": 1.0,
+      "current_stock": 0.5,
+      "storage_location": "冷藏",
+      "status": "critical",
+      "shelf_life_days": 3,
+      "updated_at": "2026-07-03T09:00:00+08:00"
+    },
+    {
+      "id": "inv-11",
+      "store_id": "wm001-store-id-mock",
+      "ingredient_name": "老干妈酱",
+      "category": "调料",
+      "quantity": 0.5,
+      "unit": "kg",
+      "safety_stock": 5.0,
+      "current_stock": 0.5,
+      "storage_location": "常温",
+      "status": "normal",
+      "shelf_life_days": 365,
+      "updated_at": "2026-07-03T09:00:00+08:00"
+    },
+    {
+      "id": "inv-12",
+      "store_id": "wm001-store-id-mock",
+      "ingredient_name": "梅菜",
+      "category": "蔬菜",
+      "quantity": 0.3,
+      "unit": "kg",
+      "safety_stock": 5.0,
+      "current_stock": 0.3,
+      "storage_location": "冷藏",
+      "status": "normal",
+      "shelf_life_days": 7,
+      "updated_at": "2026-07-03T09:00:00+08:00"
+    },
+    {
+      "id": "inv-13",
+      "store_id": "wm001-store-id-mock",
+      "ingredient_name": "猪油渣",
+      "category": "肉类",
+      "quantity": 0.4,
+      "unit": "kg",
+      "safety_stock": 5.0,
+      "current_stock": 0.4,
+      "storage_location": "冷藏",
+      "status": "normal",
+      "shelf_life_days": 7,
+      "updated_at": "2026-07-03T09:00:00+08:00"
+    },
+    {
+      "id": "inv-14",
+      "store_id": "wm001-store-id-mock",
+      "ingredient_name": "米粉",
+      "category": "主食",
+      "quantity": 2.0,
+      "unit": "kg",
+      "safety_stock": 5.0,
+      "current_stock": 2.0,
+      "storage_location": "常温",
+      "status": "normal",
+      "shelf_life_days": 90,
+      "updated_at": "2026-07-03T09:00:00+08:00"
+    },
+    {
+      "id": "inv-15",
+      "store_id": "wm001-store-id-mock",
+      "ingredient_name": "方便面",
+      "category": "主食",
+      "quantity": 1.0,
+      "unit": "kg",
+      "safety_stock": 5.0,
+      "current_stock": 1.0,
+      "storage_location": "常温",
+      "status": "normal",
+      "shelf_life_days": 180,
+      "updated_at": "2026-07-03T09:00:00+08:00"
+    },
+    {
+      "id": "inv-16",
+      "store_id": "wm001-store-id-mock",
+      "ingredient_name": "食用油",
+      "category": "调料",
+      "quantity": 4.0,
+      "unit": "L",
+      "safety_stock": 5.0,
+      "current_stock": 4.0,
+      "storage_location": "常温",
+      "status": "normal",
+      "shelf_life_days": 180,
+      "updated_at": "2026-07-03T09:00:00+08:00"
+    },
+    {
+      "id": "inv-17",
+      "store_id": "wm001-store-id-mock",
+      "ingredient_name": "葱",
+      "category": "蔬菜",
+      "quantity": 0.3,
+      "unit": "kg",
+      "safety_stock": 1.0,
+      "current_stock": 0.3,
+      "storage_location": "冷藏",
+      "status": "critical",
+      "shelf_life_days": 3,
+      "updated_at": "2026-07-03T09:00:00+08:00"
+    },
+    {
+      "id": "inv-18",
+      "store_id": "wm001-store-id-mock",
+      "ingredient_name": "蒜末",
+      "category": "调料",
+      "quantity": 0.2,
+      "unit": "kg",
+      "safety_stock": 5.0,
+      "current_stock": 0.2,
+      "storage_location": "冷藏",
+      "status": "normal",
+      "shelf_life_days": 14,
+      "updated_at": "2026-07-03T09:00:00+08:00"
+    }
+  ],
+  "_meta": {
+    "store_code": "WM001",
+    "store_id": "wm001-store-id-mock",
+    "store_name": "哇塞猛火猪油炒饭（望月湖店）",
+    "generated_at": "2026-07-03T09:40:00+08:00",
+    "description": "MCP Server本地兜底数据，sandbox无法连接Supabase时使用"
+  }
+}

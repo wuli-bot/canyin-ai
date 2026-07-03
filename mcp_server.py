@@ -62,11 +62,47 @@ app.add_middleware(
 # HTTP 客户端
 http_client: Optional[httpx.AsyncClient] = None
 
+# 本地兜底数据（sandbox无法连接Supabase时使用）
+local_data: dict = {}
+_supabase_available: bool = False
+
+
+def load_local_data():
+    """加载本地兜底数据"""
+    global local_data
+    import os
+    local_path = os.path.join(os.path.dirname(__file__), "local_mock_data.json")
+    if os.path.exists(local_path):
+        with open(local_path, "r", encoding="utf-8") as f:
+            local_data = json.load(f)
+        logger.info(f"📦 本地兜底数据已加载: {sum(1 for k in local_data if not k.startswith('_'))} 张表")
+
+
+def query_local(table: str, params: dict = None, limit: int = 100) -> list:
+    """从本地数据查询（简单过滤）"""
+    rows = local_data.get(table, [])
+    if not rows:
+        return []
+    if params:
+        filtered = []
+        for row in rows:
+            match = True
+            for key, value in params.items():
+                row_val = row.get(key)
+                if row_val is not None and row_val != value:
+                    match = False
+                    break
+            if match:
+                filtered.append(row)
+        rows = filtered
+    return rows[:limit]
+
 
 @app.on_event("startup")
 async def startup():
     """启动时初始化"""
-    global http_client
+    global http_client, _supabase_available
+    load_local_data()
     http_client = httpx.AsyncClient(
         base_url=SUPABASE_URL,
         headers={
@@ -76,6 +112,17 @@ async def startup():
         },
         timeout=30.0
     )
+    # 测试Supabase连接
+    try:
+        test_resp = await http_client.get("/rest/v1/stores?select=store_code&limit=1")
+        _supabase_available = test_resp.status_code == 200
+        if _supabase_available:
+            logger.info("✅ Supabase连接正常")
+        else:
+            logger.warning(f"⚠️ Supabase连接异常(HTTP {test_resp.status_code})，使用本地兜底数据")
+    except Exception:
+        _supabase_available = False
+        logger.warning("⚠️ Supabase无法连接，使用本地兜底数据")
     logger.info("🍜 餐饮AI店长 MCP Server 已启动")
     logger.info(f"📡 监听地址: http://{MCP_HOST}:{MCP_PORT}")
     logger.info("")
@@ -107,45 +154,37 @@ async def supabase_query(
     limit: int = 100
 ) -> list:
     """
-    查询 Supabase 表
-    
-    Args:
-        table: 表名
-        params: 查询参数 (eq, gt, gte, lt, lte, like, in 等)
-        select: 选择字段
-        limit: 返回条数限制
-    
-    Returns:
-        查询结果列表
+    查询 Supabase 表（失败时自动切换本地数据）
     """
     if not http_client:
         raise HTTPException(status_code=500, detail="HTTP client not initialized")
     
-    try:
-        query_params = {"select": select, "limit": limit}
-        if params:
-            for key, value in params.items():
-                if isinstance(value, dict):
-                    # 处理操作符，如 {"gte": 10}
-                    for op, val in value.items():
-                        query_params[f"{key}.{op}"] = val
-                elif value is not None:
-                    query_params[key] = value
-        
-        response = await http_client.get(
-            f"/rest/v1/{table}",
-            params=query_params
-        )
-        
-        if response.status_code == 200:
-            return response.json()
-        else:
-            logger.error(f"Supabase query failed: {response.status_code} - {response.text}")
-            return []
+    # 优先尝试Supabase
+    if _supabase_available:
+        try:
+            query_params = {"select": select, "limit": limit}
+            if params:
+                for key, value in params.items():
+                    if isinstance(value, dict):
+                        for op, val in value.items():
+                            query_params[f"{key}.{op}"] = val
+                    elif value is not None:
+                        query_params[key] = value
             
-    except Exception as e:
-        logger.error(f"Supabase query error: {str(e)}")
-        return []
+            response = await http_client.get(
+                f"/rest/v1/{table}",
+                params=query_params
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            else:
+                logger.warning(f"Supabase query failed ({response.status_code}), 切换本地数据")
+        except Exception as e:
+            logger.warning(f"Supabase query error: {str(e)}, 切换本地数据")
+    
+    # 兜底：本地数据
+    return query_local(table, params, limit)
 
 
 async def supabase_query_single(
@@ -171,7 +210,11 @@ TOOLS = [
             "properties": {
                 "store_id": {
                     "type": "string",
-                    "description": "门店ID（可选，不传则查所有门店）"
+                    "description": "门店ID（可选）"
+                },
+                "store_code": {
+                    "type": "string",
+                    "description": "门店编码（可选），如：WM001"
                 },
                 "category": {
                     "type": "string",
@@ -192,7 +235,11 @@ TOOLS = [
             "properties": {
                 "store_id": {
                     "type": "string",
-                    "description": "门店ID（可选，不传则查所有门店）"
+                    "description": "门店ID（可选）"
+                },
+                "store_code": {
+                    "type": "string",
+                    "description": "门店编码（可选），如：WM001"
                 },
                 "alert_only": {
                     "type": "boolean",
@@ -231,14 +278,17 @@ TOOLS = [
             "properties": {
                 "store_id": {
                     "type": "string",
-                    "description": "门店ID（必填）"
+                    "description": "门店ID（可选）"
+                },
+                "store_code": {
+                    "type": "string",
+                    "description": "门店编码（可选），如：WM001"
                 },
                 "date": {
                     "type": "string",
                     "description": "查询日期（可选，默认今天），格式：YYYY-MM-DD"
                 }
-            },
-            "required": ["store_id"]
+            }
         }
     }
 ]
@@ -251,8 +301,15 @@ TOOLS = [
 async def handle_get_menu(params: dict) -> dict:
     """处理 get_menu 工具调用"""
     store_id = params.get("store_id")
+    store_code = params.get("store_code")
     category = params.get("category")
     status = params.get("status")
+    
+    # store_code → store_id 解析
+    if store_code and not store_id:
+        store = await supabase_query_single("stores", {"store_code": store_code})
+        if store:
+            store_id = store.get("id")
     
     # 构建查询参数
     query_params = {}
@@ -299,9 +356,16 @@ async def handle_get_menu(params: dict) -> dict:
 async def handle_get_inventory_status(params: dict) -> dict:
     """处理 get_inventory_status 工具调用"""
     store_id = params.get("store_id")
+    store_code = params.get("store_code")
     alert_only = params.get("alert_only", False)
     
-    # 查询库存表（假设表名为 ingredient_inventory）
+    # store_code → store_id 解析
+    if store_code and not store_id:
+        store = await supabase_query_single("stores", {"store_code": store_code})
+        if store:
+            store_id = store.get("id")
+    
+    # 查询库存表
     query_params = {}
     if store_id:
         query_params["store_id"] = store_id
@@ -401,9 +465,16 @@ async def handle_get_store_info(params: dict) -> dict:
 async def handle_get_daily_summary(params: dict) -> dict:
     """处理 get_daily_summary 工具调用"""
     store_id = params.get("store_id")
+    store_code = params.get("store_code")
     query_date = params.get("date")
     
-    if not store_id:
+    # store_code → store_id 解析
+    if store_code and not store_id:
+        store = await supabase_query_single("stores", {"store_code": store_code})
+        if store:
+            store_id = store.get("id")
+    
+    if not store_id and not store_code:
         return {
             "success": False,
             "error": "必须提供 store_id"
@@ -628,6 +699,7 @@ async def get_tool_info(tool_name: str):
 @app.get("/api/menu")
 async def api_get_menu(
     store_id: Optional[str] = None,
+    store_code: Optional[str] = None,
     category: Optional[str] = None,
     status: Optional[str] = None
 ):
@@ -635,6 +707,8 @@ async def api_get_menu(
     params = {}
     if store_id:
         params["store_id"] = store_id
+    if store_code:
+        params["store_code"] = store_code
     if category:
         params["category"] = category
     if status:
@@ -646,12 +720,15 @@ async def api_get_menu(
 @app.get("/api/inventory")
 async def api_get_inventory(
     store_id: Optional[str] = None,
+    store_code: Optional[str] = None,
     alert_only: bool = False
 ):
     """REST API: 获取库存状态"""
     params = {"alert_only": alert_only}
     if store_id:
         params["store_id"] = store_id
+    if store_code:
+        params["store_code"] = store_code
     return await handle_get_inventory_status(params)
 
 
@@ -671,11 +748,16 @@ async def api_get_store(
 
 @app.get("/api/daily-summary")
 async def api_get_daily_summary(
-    store_id: str,
+    store_id: Optional[str] = None,
+    store_code: Optional[str] = None,
     date: Optional[str] = None
 ):
     """REST API: 获取日报数据"""
-    params = {"store_id": store_id}
+    params = {}
+    if store_id:
+        params["store_id"] = store_id
+    if store_code:
+        params["store_code"] = store_code
     if date:
         params["date"] = date
     return await handle_get_daily_summary(params)
