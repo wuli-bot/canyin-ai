@@ -116,7 +116,13 @@ Page({
     end = now.toISOString().slice(0, 10)
     switch (dateRange) {
       case 'today': start = end; days = 1; break
-      case 'yesterday': const y = new Date(now.getTime() - 86400000); start = y.toISOString().slice(0, 10); end = start; days = 1; break
+      case 'yesterday': {
+        const y = new Date(now.getTime() - 86400000)
+        start = y.toISOString().slice(0, 10)
+        end = start
+        days = 1
+        break
+      }
       case 'week': start = new Date(now.getTime() - 7 * 86400000).toISOString().slice(0, 10); days = 7; break
       case 'month': start = new Date(now.getTime() - 30 * 86400000).toISOString().slice(0, 10); days = 30; break
     }

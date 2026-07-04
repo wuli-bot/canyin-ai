@@ -1,6 +1,12 @@
 const app = getApp()
-const plugin = requirePlugin('WechatSI')
-const manager = plugin.getRecordRecognitionManager()
+let plugin = null
+let manager = null
+try {
+  plugin = requirePlugin('WechatSI')
+  manager = plugin.getRecordRecognitionManager()
+} catch (e) {
+  console.warn('同声传译插件未安装，语音功能暂不可用。请在微信公众平台后台添加插件后使用。')
+}
 
 Page({
   data: {
@@ -36,6 +42,10 @@ Page({
   },
 
   initVoiceRecognition() {
+    if (!manager) {
+      console.warn('语音识别管理器未初始化')
+      return
+    }
     manager.onRecognize = (res) => { this.voiceResult = res.result || '' }
     manager.onStop = (res) => {
       const text = res.result || this.voiceResult
@@ -66,6 +76,10 @@ Page({
   },
 
   onVoiceStart(e) {
+    if (!manager) {
+      wx.showToast({ title: '语音插件未安装，请先用文字输入', icon: 'none', duration: 2000 })
+      return
+    }
     this.setData({ recording: true, cancelMode: false })
     this.touchStartY = e.touches[0].clientY
     this.voiceResult = ''
@@ -81,7 +95,7 @@ Page({
   onVoiceEnd() {
     if (!this.data.recording) return
     this.setData({ recording: false })
-    manager.stop()
+    if (manager) manager.stop()
   },
 
   onInput(e) { this.setData({ inputText: e.detail.value }) },
