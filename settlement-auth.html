@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>结算授权 · AI店长</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    :root {
+      --bg: #1a1a2e; --card: #16213e; --card-hover: #1a2944;
+      --accent: #e94560; --accent-soft: rgba(233,69,96,0.15);
+      --text: #eaeaea; --text-dim: #8892a6; --text-bright: #ffffff;
+      --green: #4ecca3; --orange: #f0a500; --red: #ff4757;
+      --radius: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg); color: var(--text);
+      min-height: 100vh; max-width: 480px; margin: 0 auto;
+      padding-bottom: 80px; -webkit-font-smoothing: antialiased;
+    }
+    .header {
+      padding: 20px 16px 12px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .header h1 { font-size: 20px; font-weight: 700; color: var(--text-bright); }
+    .header .sub { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+    .header .badge {
+      background: var(--accent-soft); color: var(--accent);
+      padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 600;
+    }
+    .summary { padding: 4px 16px 16px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .summary .item {
+      background: var(--card); border-radius: var(--radius); padding: 12px 8px; text-align: center;
+    }
+    .summary .item .num { font-size: 22px; font-weight: 800; color: var(--text-bright); }
+    .summary .item .lbl { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+    .summary .item.active .num { color: var(--green); }
+    .summary .item.frozen .num { color: var(--orange); }
+    .summary .item.pending .num { color: var(--accent); }
+
+    .agent-card {
+      background: var(--card); border-radius: var(--radius); margin: 0 16px 12px;
+      padding: 16px; position: relative; overflow: hidden;
+    }
+    .agent-card::before {
+      content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%;
+    }
+    .agent-card.status-active::before { background: var(--green); }
+    .agent-card.status-frozen::before { background: var(--orange); }
+    .agent-card.status-disabled::before { background: var(--red); }
+    .agent-card .top {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
+    }
+    .agent-card .name { font-size: 16px; font-weight: 700; color: var(--text-bright); }
+    .agent-card .status-tag {
+      padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600;
+    }
+    .status-tag.active { background: rgba(78,204,163,0.15); color: var(--green); }
+    .status-tag.frozen { background: rgba(240,165,0,0.15); color: var(--orange); }
+    .status-tag.disabled { background: rgba(255,71,87,0.15); color: var(--red); }
+
+    .agent-card .limits { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+    .limit-item { background: rgba(255,255,255,0.03); border-radius: 8px; padding: 10px 8px; text-align: center; }
+    .limit-item .v { font-size: 16px; font-weight: 700; color: var(--text-bright); }
+    .limit-item .v .unit { font-size: 11px; color: var(--text-dim); }
+    .limit-item .l { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+
+    .agent-card .approval-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 0; border-top: 1px solid rgba(255,255,255,0.05);
+    }
+    .approval-row .label { font-size: 13px; color: var(--text-dim); }
+    .approval-row .value { font-size: 13px; font-weight: 600; }
+    .approval-row .value.on { color: var(--green); }
+    .approval-row .value.off { color: var(--text-dim); }
+
+    .agent-card .actions { display: flex; gap: 8px; margin-top: 12px; }
+    .btn {
+      flex: 1; padding: 10px; border-radius: 8px; border: none; font-size: 13px;
+      font-weight: 600; cursor: pointer; transition: 0.2s;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:active { transform: scale(0.97); }
+    .btn-secondary { background: rgba(255,255,255,0.08); color: var(--text); }
+    .btn-danger { background: rgba(255,71,87,0.15); color: var(--red); }
+
+    /* 编辑弹窗 */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6); display: none; z-index: 100;
+      justify-content: center; align-items: flex-end;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: var(--card); border-radius: 20px 20px 0 0; width: 100%; max-width: 480px;
+      padding: 24px 16px 32px; max-height: 80vh; overflow-y: auto;
+    }
+    .modal .handle { width: 40px; height: 4px; background: var(--text-dim); border-radius: 2px; margin: 0 auto 16px; opacity: 0.5; }
+    .modal h2 { font-size: 18px; font-weight: 700; color: var(--text-bright); margin-bottom: 16px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 12px; color: var(--text-dim); margin-bottom: 6px; }
+    .form-group input, .form-group select {
+      width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px; padding: 12px; color: var(--text-bright); font-size: 15px;
+    }
+    .form-group input:focus { outline: none; border-color: var(--accent); }
+    .toggle-row {
+      display: flex; justify-content: space-between; align-items: center; padding: 12px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .toggle-row .lbl { font-size: 14px; }
+    .switch { position: relative; width: 44px; height: 24px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(255,255,255,0.1); border-radius: 12px; transition: 0.3s;
+    }
+    .slider::before {
+      content: ''; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px;
+      background: #fff; border-radius: 50%; transition: 0.3s;
+    }
+    input:checked + .slider { background: var(--green); }
+    input:checked + .slider::before { transform: translateX(20px); }
+    .modal-actions { display: flex; gap: 8px; margin-top: 20px; }
+
+    .loading { text-align: center; padding: 60px 20px; color: var(--text-dim); }
+    .loading .spinner {
+      width: 32px; height: 32px; border: 3px solid rgba(255,255,255,0.1);
+      border-top-color: var(--accent); border-radius: 50%; margin: 0 auto 12px;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .toast {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: var(--green); color: #fff; padding: 12px 24px; border-radius: 8px;
+      font-size: 14px; font-weight: 600; z-index: 200; opacity: 0; transition: 0.3s;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <h1>结算授权</h1>
+      <div class="sub">控制每个AI员工能花多少钱</div>
+    </div>
+    <div class="badge" id="todayBadge">今日</div>
+  </div>
+
+  <div class="summary">
+    <div class="item active"><div class="num" id="activeCount">-</div><div class="lbl">正常</div></div>
+    <div class="item frozen"><div class="num" id="frozenCount">-</div><div class="lbl">冻结</div></div>
+    <div class="item pending"><div class="num" id="todaySpent">-</div><div class="lbl">今日已花</div></div>
+  </div>
+
+  <div id="agentList"></div>
+
+  <div id="loadingDiv" class="loading">
+    <div class="spinner"></div>
+    <div>加载中...</div>
+  </div>
+
+  <!-- 编辑弹窗 -->
+  <div class="modal-overlay" id="editModal">
+    <div class="modal">
+      <div class="handle"></div>
+      <h2 id="editTitle">编辑授权</h2>
+      <input type="hidden" id="editAgentId">
+      <div class="form-group">
+        <label>单笔限额（元）</label>
+        <input type="number" id="editSingleLimit" min="0" step="0.01" placeholder="0 = 不限制">
+      </div>
+      <div class="form-group">
+        <label>日累计限额（元）</label>
+        <input type="number" id="editDailyLimit" min="0" step="0.01" placeholder="0 = 不限制">
+      </div>
+      <div class="form-group">
+        <label>月累计限额（元）</label>
+        <input type="number" id="editMonthlyLimit" min="0" step="0.01" placeholder="0 = 不限制">
+      </div>
+      <div class="form-group">
+        <label>低于此金额自动通过（元）</label>
+        <input type="number" id="editAutoApprove" min="0" step="0.01" placeholder="0 = 都要确认">
+      </div>
+      <div class="toggle-row">
+        <span class="lbl">每笔需老板确认</span>
+        <label class="switch">
+          <input type="checkbox" id="editRequiresApproval">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+        <button class="btn btn-primary" onclick="saveAuth()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="https://wuli-bot.github.io/canyin-ai/voice-input.js"></script>
+  <script>
+    const SUPABASE_URL = 'https://vovzgflfdwngfuqnxjc.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvdnpnZmxmZHduZ2Z1cW54amMiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc4MTU5ODQ5NiwiZXhwIjoyMDk3MTc0NDk2fQ.p8e3LcWgBqWxQ3jYk7mN2vR4sT8uY6zA9bC1dE5fG3h';
+    let supabase = null;
+    try {
+      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    } catch(e) { console.warn('Supabase init failed, using mock'); }
+
+    const MOCK_AGENTS = [
+      { agent_id: '7652253691269103651', agent_name: '语音总控', status: 'active', payment_channels: ['mock'], single_limit: 100, daily_limit: 500, monthly_limit: 5000, requires_approval: true, auto_approve_below: 20, approvers: ['老板'], today_spent: 156.50 },
+      { agent_id: '7651952126398054435', agent_name: '私域引流助手', status: 'active', payment_channels: ['mock'], single_limit: 50, daily_limit: 200, monthly_limit: 2000, requires_approval: true, auto_approve_below: 10, approvers: ['老板'], today_spent: 15.00 },
+      { agent_id: '7651922196432338995', agent_name: '成本核算助手', status: 'active', payment_channels: ['mock'], single_limit: 200, daily_limit: 1000, monthly_limit: 10000, requires_approval: true, auto_approve_below: 50, approvers: ['老板'], today_spent: 0 },
+      { agent_id: '7651944084466794550', agent_name: '差评处理助手', status: 'active', payment_channels: ['mock'], single_limit: 30, daily_limit: 100, monthly_limit: 1000, requires_approval: true, auto_approve_below: 0, approvers: ['老板'], today_spent: 0 },
+      { agent_id: '7651953305891405870', agent_name: '小哇客服', status: 'active', payment_channels: ['mock'], single_limit: 30, daily_limit: 100, monthly_limit: 1000, requires_approval: true, auto_approve_below: 0, approvers: ['老板'], today_spent: 0 }
+    ];
+
+    let agents = [];
+
+    async function loadData() {
+      document.getElementById('loadingDiv').style.display = 'block';
+      if (supabase) {
+        try {
+          const { data, error } = await supabase.from('agent_auth').select('*').order('agent_name');
+          if (!error && data && data.length > 0) {
+            agents = data;
+            renderAgents();
+            return;
+          }
+        } catch(e) { console.warn('Supabase query failed, using mock'); }
+      }
+      // Mock fallback
+      agents = [...MOCK_AGENTS];
+      setTimeout(() => { document.getElementById('toast').textContent = '当前为模拟数据'; document.getElementById('toast').style.background = 'var(--orange)'; showToast(); }, 500);
+      renderAgents();
+    }
+
+    function renderAgents() {
+      document.getElementById('loadingDiv').style.display = 'none';
+      const list = document.getElementById('agentList');
+      list.innerHTML = '';
+
+      let activeCount = 0, frozenCount = 0, totalSpent = 0;
+      agents.forEach((a, i) => {
+        if (a.status === 'active') activeCount++;
+        if (a.status === 'frozen') frozenCount++;
+        totalSpent += parseFloat(a.today_spent || 0);
+
+        const card = document.createElement('div');
+        card.className = `agent-card status-${a.status}`;
+        const statusText = a.status === 'active' ? '正常' : a.status === 'frozen' ? '已冻结' : '已停用';
+        card.innerHTML = `
+          <div class="top">
+            <div class="name">${a.agent_name}</div>
+            <div class="status-tag ${a.status}">${statusText}</div>
+          </div>
+          <div class="limits">
+            <div class="limit-item">
+              <div class="v">${a.single_limit || 0}<span class="unit">元</span></div>
+              <div class="l">单笔上限</div>
+            </div>
+            <div class="limit-item">
+              <div class="v">${a.daily_limit || 0}<span class="unit">元</span></div>
+              <div class="l">日累计上限</div>
+            </div>
+            <div class="limit-item">
+              <div class="v">${a.today_spent || 0}<span class="unit">元</span></div>
+              <div class="l">今日已花</div>
+            </div>
+          </div>
+          <div class="approval-row">
+            <span class="label">需老板确认</span>
+            <span class="value ${a.requires_approval ? 'on' : 'off'}">${a.requires_approval ? '是' : '否'}</span>
+          </div>
+          <div class="approval-row">
+            <span class="label">自动通过线</span>
+            <span class="value">≤${a.auto_approve_below || 0}元</span>
+          </div>
+          <div class="actions">
+            <button class="btn btn-primary" onclick="openEdit(${i})">编辑</button>
+            ${a.status === 'active'
+              ? `<button class="btn btn-danger" onclick="toggleFreeze('${a.agent_id}', 'freeze')">冻结</button>`
+              : `<button class="btn btn-secondary" onclick="toggleFreeze('${a.agent_id}', 'unfreeze')">解冻</button>`
+            }
+          </div>
+        `;
+        list.appendChild(card);
+      });
+
+      document.getElementById('activeCount').textContent = activeCount;
+      document.getElementById('frozenCount').textContent = frozenCount;
+      document.getElementById('todaySpent').textContent = '¥' + totalSpent.toFixed(2);
+    }
+
+    function openEdit(index) {
+      const a = agents[index];
+      document.getElementById('editAgentId').value = a.agent_id;
+      document.getElementById('editTitle').textContent = `编辑 · ${a.agent_name}`;
+      document.getElementById('editSingleLimit').value = a.single_limit || 0;
+      document.getElementById('editDailyLimit').value = a.daily_limit || 0;
+      document.getElementById('editMonthlyLimit').value = a.monthly_limit || 0;
+      document.getElementById('editAutoApprove').value = a.auto_approve_below || 0;
+      document.getElementById('editRequiresApproval').checked = a.requires_approval;
+      document.getElementById('editModal').classList.add('show');
+    }
+
+    function closeModal() {
+      document.getElementById('editModal').classList.remove('show');
+    }
+
+    async function saveAuth() {
+      const agentId = document.getElementById('editAgentId').value;
+      const updates = {
+        single_limit: parseFloat(document.getElementById('editSingleLimit').value) || 0,
+        daily_limit: parseFloat(document.getElementById('editDailyLimit').value) || 0,
+        monthly_limit: parseFloat(document.getElementById('editMonthlyLimit').value) || 0,
+        auto_approve_below: parseFloat(document.getElementById('editAutoApprove').value) || 0,
+        requires_approval: document.getElementById('editRequiresApproval').checked,
+        updated_at: new Date().toISOString()
+      };
+
+      const agent = agents.find(a => a.agent_id === agentId);
+      if (agent) { Object.assign(agent, updates); }
+
+      if (supabase) {
+        try {
+          const { error } = await supabase.from('agent_auth').update(updates).eq('agent_id', agentId);
+          if (error) throw error;
+        } catch(e) { console.warn('Save failed, updating locally only'); }
+      }
+
+      closeModal();
+      renderAgents();
+      showToast('已保存');
+    }
+
+    async function toggleFreeze(agentId, action) {
+      const agent = agents.find(a => a.agent_id === agentId);
+      if (!agent) return;
+      agent.status = action === 'freeze' ? 'frozen' : 'active';
+      if (action === 'freeze') agent.frozen_at = new Date().toISOString();
+
+      if (supabase) {
+        try {
+          const updates = { status: agent.status };
+          if (action === 'freeze') updates.frozen_at = agent.frozen_at;
+          await supabase.from('agent_auth').update(updates).eq('agent_id', agentId);
+        } catch(e) { console.warn('Update failed locally'); }
+      }
+
+      renderAgents();
+      showToast(action === 'freeze' ? '已冻结该Agent支付权限' : '已解冻');
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      if (msg) { t.textContent = msg; t.style.background = 'var(--green)'; }
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    loadData();
+  </script>
+</body>
+</html>

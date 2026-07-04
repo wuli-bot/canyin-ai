@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>结算流水 · AI店长</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    :root {
+      --bg: #1a1a2e; --card: #16213e; --card-hover: #1a2944;
+      --accent: #e94560; --accent-soft: rgba(233,69,96,0.15);
+      --text: #eaeaea; --text-dim: #8892a6; --text-bright: #ffffff;
+      --green: #4ecca3; --orange: #f0a500; --red: #ff4757;
+      --radius: 12px;
+    }
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg); color: var(--text);
+      min-height: 100vh; max-width: 480px; margin: 0 auto;
+      padding-bottom: 80px; -webkit-font-smoothing: antialiased;
+    }
+    .header {
+      padding: 20px 16px 12px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .header h1 { font-size: 20px; font-weight: 700; color: var(--text-bright); }
+    .header .sub { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+    .header .badge {
+      background: var(--accent-soft); color: var(--accent);
+      padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+
+    .summary { padding: 4px 16px 12px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .summary .item { background: var(--card); border-radius: var(--radius); padding: 14px 8px; text-align: center; }
+    .summary .item .num { font-size: 20px; font-weight: 800; }
+    .summary .item .lbl { font-size: 10px; color: var(--text-dim); margin-top: 4px; }
+    .summary .item.income .num { color: var(--green); }
+    .summary .item.expense .num { color: var(--accent); }
+    .summary .item.pending .num { color: var(--orange); }
+
+    .filters { padding: 0 16px 12px; display: flex; gap: 8px; }
+    .filters select {
+      flex: 1; background: var(--card); border: 1px solid rgba(255,255,255,0.1);
+      color: var(--text); border-radius: 8px; padding: 10px; font-size: 13px;
+    }
+    .filters select:focus { outline: none; border-color: var(--accent); }
+
+    .export-btn {
+      margin: 0 16px 12px; width: calc(100% - 32px);
+      background: rgba(78,204,163,0.15); color: var(--green);
+      border: 1px solid rgba(78,204,163,0.3); border-radius: 8px;
+      padding: 10px; font-size: 14px; font-weight: 600; cursor: pointer; text-align: center;
+    }
+    .export-btn:active { transform: scale(0.98); }
+
+    .record-card {
+      background: var(--card); border-radius: var(--radius); margin: 0 16px 10px;
+      padding: 14px; position: relative; overflow: hidden;
+    }
+    .record-card::before {
+      content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%;
+    }
+    .record-card.income::before { background: var(--green); }
+    .record-card.expense::before { background: var(--accent); }
+
+    .record-card .row1 {
+      display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;
+    }
+    .record-card .agent { font-size: 14px; font-weight: 600; color: var(--text-bright); }
+    .record-card .time { font-size: 11px; color: var(--text-dim); }
+    .record-card .amount { font-size: 18px; font-weight: 800; }
+    .record-card.income .amount { color: var(--green); }
+    .record-card.expense .amount { color: var(--accent); }
+    .record-card .desc { font-size: 13px; color: var(--text-dim); margin-bottom: 8px; }
+    .record-card .tags { display: flex; gap: 6px; flex-wrap: wrap; }
+    .tag {
+      padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 600;
+    }
+    .tag.status-confirmed { background: rgba(78,204,163,0.15); color: var(--green); }
+    .tag.status-pending { background: rgba(240,165,0,0.15); color: var(--orange); }
+    .tag.status-failed { background: rgba(255,71,87,0.15); color: var(--red); }
+    .tag.status-cancelled { background: rgba(136,146,166,0.15); color: var(--text-dim); }
+    .tag.mock { background: rgba(255,255,255,0.05); color: var(--text-dim); }
+    .tag.channel { background: rgba(233,69,96,0.1); color: var(--accent); }
+
+    .loading { text-align: center; padding: 60px 20px; color: var(--text-dim); }
+    .loading .spinner {
+      width: 32px; height: 32px; border: 3px solid rgba(255,255,255,0.1);
+      border-top-color: var(--accent); border-radius: 50%; margin: 0 auto 12px;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .empty { text-align: center; padding: 40px 20px; color: var(--text-dim); }
+
+    .toast {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: var(--green); color: #fff; padding: 12px 24px; border-radius: 8px;
+      font-size: 14px; font-weight: 600; z-index: 200; opacity: 0; transition: 0.3s;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <h1>结算流水</h1>
+      <div class="sub">AI经手的每一笔收支</div>
+    </div>
+    <div class="badge" id="totalBadge">共 0 笔</div>
+  </div>
+
+  <div class="summary">
+    <div class="item income"><div class="num" id="totalIncome">¥0</div><div class="lbl">总收入</div></div>
+    <div class="item expense"><div class="num" id="totalExpense">¥0</div><div class="lbl">总支出</div></div>
+    <div class="item pending"><div class="num" id="pendingCount">0</div><div class="lbl">待确认</div></div>
+  </div>
+
+  <div class="filters">
+    <select id="filterAgent">
+      <option value="">全部Agent</option>
+    </select>
+    <select id="filterType">
+      <option value="">全部类型</option>
+      <option value="income">收入</option>
+      <option value="expense">支出</option>
+    </select>
+    <select id="filterStatus">
+      <option value="">全部状态</option>
+      <option value="confirmed">已确认</option>
+      <option value="pending">待确认</option>
+      <option value="failed">失败</option>
+      <option value="cancelled">已取消</option>
+    </select>
+  </div>
+
+  <button class="export-btn" onclick="exportCSV()">📋 导出CSV</button>
+
+  <div id="recordList"></div>
+  <div id="loadingDiv" class="loading">
+    <div class="spinner"></div>
+    <div>加载中...</div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="https://wuli-bot.github.io/canyin-ai/voice-input.js"></script>
+  <script>
+    const SUPABASE_URL = 'https://vovzgflfdwngfuqnxjc.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvdnpnZmxmZHduZ2Z1cW54amMiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc4MTU5ODQ5NiwiZXhwIjoyMDk3MTc0NDk2fQ.p8e3LcWgBqWxQ3jYk7mN2vR4sT8uY6zA9bC1dE5fG3h';
+    let supabase = null;
+    try { supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch(e) {}
+
+    const MOCK_RECORDS = [
+      { id:'r1', agent_id:'7652253691269103651', agent_name:'语音总控', task_id:'ord-001', task_type:'order', amount:28.50, channel:'mock', type:'income', status:'confirmed', description:'顾客语音点餐收款·猪油炒饭套餐', approved_by:'auto', mock:true, created_at:new Date(Date.now()-3600000).toISOString() },
+      { id:'r2', agent_id:'7651952126398054435', agent_name:'私域引流助手', task_id:'mkt-003', task_type:'marketing', amount:5.00, channel:'mock', type:'expense', status:'pending', description:'老客复购自动发券·满25减5', approved_by:null, mock:true, created_at:new Date(Date.now()-7200000).toISOString() },
+      { id:'r3', agent_id:'7651922196432338995', agent_name:'成本核算助手', task_id:'pur-002', task_type:'procurement', amount:156.00, channel:'mock', type:'expense', status:'confirmed', description:'库存预警自动采购·鸡蛋10斤+猪油5斤', approved_by:'老板', mock:true, created_at:new Date(Date.now()-10800000).toISOString() },
+      { id:'r4', agent_id:'7652253691269103651', agent_name:'语音总控', task_id:'ord-002', task_type:'order', amount:38.00, channel:'mock', type:'income', status:'confirmed', description:'顾客语音点餐收款·炒饭2份+饮品', approved_by:'auto', mock:true, created_at:new Date(Date.now()-14400000).toISOString() },
+      { id:'r5', agent_id:'7651952126398054435', agent_name:'私域引流助手', task_id:'mkt-004', task_type:'marketing', amount:3.00, channel:'mock', type:'expense', status:'confirmed', description:'新客首单优惠券·立减3元', approved_by:'老板', mock:true, created_at:new Date(Date.now()-18000000).toISOString() },
+      { id:'r6', agent_id:'7651922196432338995', agent_name:'成本核算助手', task_id:'pur-003', task_type:'procurement', amount:89.50, channel:'mock', type:'expense', status:'pending', description:'库存预警自动采购·大米1袋', approved_by:null, mock:true, created_at:new Date(Date.now()-21600000).toISOString() },
+      { id:'r7', agent_id:'7652253691269103651', agent_name:'语音总控', task_id:'ord-003', task_type:'order', amount:15.00, channel:'mock', type:'income', status:'confirmed', description:'顾客语音点餐收款·单品炒饭', approved_by:'auto', mock:true, created_at:new Date(Date.now()-28800000).toISOString() },
+      { id:'r8', agent_id:'7651944084466794550', agent_name:'差评处理助手', task_id:'rfd-001', task_type:'refund', amount:12.00, channel:'mock', type:'expense', status:'failed', description:'差评退款·出餐延迟补偿', approved_by:'老板', mock:true, created_at:new Date(Date.now()-36000000).toISOString() },
+      { id:'r9', agent_id:'7651952126398054435', agent_name:'私域引流助手', task_id:'mkt-005', task_type:'marketing', amount:8.00, channel:'mock', type:'expense', status:'confirmed', description:'社群限时优惠·满30减8', approved_by:'老板', mock:true, created_at:new Date(Date.now()-43200000).toISOString() },
+      { id:'r10', agent_id:'7652253691269103651', agent_name:'语音总控', task_id:'ord-004', task_type:'order', amount:45.00, channel:'mock', type:'income', status:'cancelled', description:'顾客取消订单·退款', approved_by:'auto', mock:true, created_at:new Date(Date.now()-57600000).toISOString() }
+    ];
+
+    let allRecords = [];
+
+    async function loadData() {
+      document.getElementById('loadingDiv').style.display = 'block';
+      if (supabase) {
+        try {
+          const { data, error } = await supabase.from('settlement_records').select('*').order('created_at', { ascending: false }).limit(100);
+          if (!error && data && data.length > 0) { allRecords = data; populateAgents(); renderRecords(); return; }
+        } catch(e) { console.warn('Supabase query failed, using mock'); }
+      }
+      allRecords = [...MOCK_RECORDS];
+      setTimeout(() => { showToast('当前为模拟数据', true); }, 500);
+      populateAgents(); renderRecords();
+    }
+
+    function populateAgents() {
+      const agents = [...new Set(allRecords.map(r => r.agent_name))];
+      const sel = document.getElementById('filterAgent');
+      agents.forEach(a => {
+        const opt = document.createElement('option');
+        opt.value = a; opt.textContent = a;
+        sel.appendChild(opt);
+      });
+    }
+
+    function renderRecords() {
+      document.getElementById('loadingDiv').style.display = 'none';
+      const fAgent = document.getElementById('filterAgent').value;
+      const fType = document.getElementById('filterType').value;
+      const fStatus = document.getElementById('filterStatus').value;
+
+      let filtered = allRecords.filter(r => {
+        if (fAgent && r.agent_name !== fAgent) return false;
+        if (fType && r.type !== fType) return false;
+        if (fStatus && r.status !== fStatus) return false;
+        return true;
+      });
+
+      let totalIncome = 0, totalExpense = 0, pendingCount = 0;
+      filtered.forEach(r => {
+        if (r.type === 'income' && r.status === 'confirmed') totalIncome += parseFloat(r.amount);
+        if (r.type === 'expense' && r.status === 'confirmed') totalExpense += parseFloat(r.amount);
+        if (r.status === 'pending') pendingCount++;
+      });
+
+      document.getElementById('totalIncome').textContent = '¥' + totalIncome.toFixed(2);
+      document.getElementById('totalExpense').textContent = '¥' + totalExpense.toFixed(2);
+      document.getElementById('pendingCount').textContent = pendingCount;
+      document.getElementById('totalBadge').textContent = `共 ${filtered.length} 笔`;
+
+      const list = document.getElementById('recordList');
+      if (filtered.length === 0) {
+        list.innerHTML = '<div class="empty">没有符合条件的记录</div>';
+        return;
+      }
+
+      list.innerHTML = '';
+      filtered.forEach(r => {
+        const card = document.createElement('div');
+        card.className = `record-card ${r.type}`;
+        const d = new Date(r.created_at);
+        const timeStr = `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+        const statusText = { confirmed:'已确认', pending:'待确认', failed:'失败', cancelled:'已取消' }[r.status] || r.status;
+        const taskTypeText = { order:'订单', procurement:'采购', marketing:'营销', refund:'退款' }[r.task_type] || r.task_type || '';
+        card.innerHTML = `
+          <div class="row1">
+            <div>
+              <div class="agent">${r.agent_name}</div>
+              <div class="time">${timeStr}</div>
+            </div>
+            <div class="amount">${r.type === 'income' ? '+' : '-'}¥${parseFloat(r.amount).toFixed(2)}</div>
+          </div>
+          <div class="desc">${r.description || '无描述'}</div>
+          <div class="tags">
+            <span class="tag status-${r.status}">${statusText}</span>
+            ${taskTypeText ? `<span class="tag channel">${taskTypeText}</span>` : ''}
+            ${r.mock ? '<span class="tag mock">模拟</span>' : ''}
+            ${r.approved_by ? `<span class="tag mock">审批:${r.approved_by}</span>` : ''}
+          </div>
+        `;
+        list.appendChild(card);
+      });
+    }
+
+    function exportCSV() {
+      const fAgent = document.getElementById('filterAgent').value;
+      const fType = document.getElementById('filterType').value;
+      const fStatus = document.getElementById('filterStatus').value;
+      let filtered = allRecords.filter(r => {
+        if (fAgent && r.agent_name !== fAgent) return false;
+        if (fType && r.type !== fType) return false;
+        if (fStatus && r.status !== fStatus) return false;
+        return true;
+      });
+      const headers = ['时间','Agent','类型','金额','渠道','状态','描述','审批人','模拟'];
+      const rows = filtered.map(r => {
+        const d = new Date(r.created_at);
+        return [d.toLocaleString('zh-CN'), r.agent_name, r.type==='income'?'收入':'支出', r.amount, r.channel, r.status, r.description||'', r.approved_by||'', r.mock?'是':'否'];
+      });
+      const csv = '\uFEFF' + [headers, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `结算流水_${new Date().toISOString().slice(0,10)}.csv`;
+      a.click(); URL.revokeObjectURL(url);
+      showToast('已导出CSV');
+    }
+
+    function showToast(msg, warn) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.style.background = warn ? 'var(--orange)' : 'var(--green)';
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    document.getElementById('filterAgent').addEventListener('change', renderRecords);
+    document.getElementById('filterType').addEventListener('change', renderRecords);
+    document.getElementById('filterStatus').addEventListener('change', renderRecords);
+
+    loadData();
+  </script>
+</body>
+</html>

@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>结算权限 · AI店长</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    :root {
+      --bg: #1a1a2e; --card: #16213e; --card-hover: #1a2944;
+      --accent: #e94560; --accent-soft: rgba(233,69,96,0.15);
+      --text: #eaeaea; --text-dim: #8892a6; --text-bright: #ffffff;
+      --green: #4ecca3; --orange: #f0a500; --red: #ff4757;
+      --radius: 12px;
+    }
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg); color: var(--text);
+      min-height: 100vh; max-width: 480px; margin: 0 auto;
+      padding-bottom: 80px; -webkit-font-smoothing: antialiased;
+    }
+    .header {
+      padding: 20px 16px 12px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .header h1 { font-size: 20px; font-weight: 700; color: var(--text-bright); }
+    .header .sub { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+
+    .section-title {
+      padding: 16px 16px 8px; font-size: 13px; font-weight: 600; color: var(--text-dim);
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+
+    /* 紧急控制区 */
+    .emergency-card {
+      background: var(--card); border-radius: var(--radius); margin: 0 16px 8px;
+      padding: 16px; border: 1px solid rgba(255,71,87,0.2);
+    }
+    .emergency-card .title { font-size: 15px; font-weight: 700; color: var(--red); margin-bottom: 4px; }
+    .emergency-card .desc { font-size: 12px; color: var(--text-dim); margin-bottom: 12px; }
+    .emergency-btns { display: flex; gap: 8px; }
+    .emergency-btns button {
+      flex: 1; padding: 12px; border-radius: 8px; border: none; font-size: 14px;
+      font-weight: 600; cursor: pointer; transition: 0.2s;
+    }
+    .btn-freeze-all { background: rgba(255,71,87,0.2); color: var(--red); border: 1px solid rgba(255,71,87,0.3); }
+    .btn-unfreeze-all { background: rgba(78,204,163,0.15); color: var(--green); border: 1px solid rgba(78,204,163,0.3); }
+    .emergency-btns button:active { transform: scale(0.97); }
+
+    /* 审批人配置 */
+    .card {
+      background: var(--card); border-radius: var(--radius); margin: 0 16px 12px;
+      padding: 16px;
+    }
+    .card .card-title { font-size: 15px; font-weight: 600; color: var(--text-bright); margin-bottom: 12px; }
+
+    .approver-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+    .approver-chip {
+      background: rgba(78,204,163,0.1); border: 1px solid rgba(78,204,163,0.3);
+      color: var(--green); padding: 6px 12px; border-radius: 20px; font-size: 13px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .approver-chip .remove {
+      cursor: pointer; opacity: 0.6; font-size: 16px; line-height: 1;
+    }
+    .approver-chip .remove:hover { opacity: 1; }
+    .add-approver {
+      display: flex; gap: 8px;
+    }
+    .add-approver input {
+      flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px; padding: 10px 12px; color: var(--text-bright); font-size: 14px;
+    }
+    .add-approver input:focus { outline: none; border-color: var(--accent); }
+    .add-approver button {
+      background: var(--accent); color: #fff; border: none; border-radius: 8px;
+      padding: 10px 16px; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+
+    /* 全局规则 */
+    .rule-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .rule-row:last-child { border-bottom: none; }
+    .rule-row .info { flex: 1; }
+    .rule-row .label { font-size: 14px; color: var(--text); margin-bottom: 2px; }
+    .rule-row .hint { font-size: 11px; color: var(--text-dim); }
+    .rule-row input[type="number"] {
+      width: 80px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px; padding: 8px; color: var(--text-bright); font-size: 14px; text-align: right;
+    }
+    .rule-row input:focus { outline: none; border-color: var(--accent); }
+
+    .switch { position: relative; width: 44px; height: 24px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(255,255,255,0.1); border-radius: 12px; transition: 0.3s;
+    }
+    .slider::before {
+      content: ''; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px;
+      background: #fff; border-radius: 50%; transition: 0.3s;
+    }
+    input:checked + .slider { background: var(--green); }
+    input:checked + .slider::before { transform: translateX(20px); }
+
+    /* 支付渠道配置 */
+    .channel-card {
+      background: var(--card); border-radius: var(--radius); margin: 0 16px 12px;
+      padding: 14px 16px;
+    }
+    .channel-card .agent-name {
+      font-size: 14px; font-weight: 600; color: var(--text-bright); margin-bottom: 10px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .channel-card .agent-name .status-dot {
+      width: 8px; height: 8px; border-radius: 50%; display: inline-block;
+    }
+    .channel-card .agent-name .status-dot.active { background: var(--green); }
+    .channel-card .agent-name .status-dot.frozen { background: var(--orange); }
+    .channel-toggles { display: flex; gap: 12px; }
+    .channel-toggle {
+      display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-dim);
+    }
+    .channel-toggle .dot {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--text-dim);
+    }
+    .channel-toggle.enabled .dot { background: var(--green); }
+    .channel-toggle.enabled { color: var(--green); }
+
+    .save-bar {
+      position: fixed; bottom: 0; left: 0; width: 100%; max-width: 480px;
+      background: var(--card); padding: 12px 16px; border-top: 1px solid rgba(255,255,255,0.05);
+      z-index: 50;
+    }
+    .save-btn {
+      width: 100%; background: var(--accent); color: #fff; border: none;
+      border-radius: 8px; padding: 14px; font-size: 15px; font-weight: 700; cursor: pointer;
+    }
+    .save-btn:active { transform: scale(0.98); }
+
+    .loading { text-align: center; padding: 60px 20px; color: var(--text-dim); }
+    .loading .spinner {
+      width: 32px; height: 32px; border: 3px solid rgba(255,255,255,0.1);
+      border-top-color: var(--accent); border-radius: 50%; margin: 0 auto 12px;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .toast {
+      position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%);
+      background: var(--green); color: #fff; padding: 12px 24px; border-radius: 8px;
+      font-size: 14px; font-weight: 600; z-index: 200; opacity: 0; transition: 0.3s;
+      pointer-events: none; white-space: nowrap;
+    }
+    .toast.show { opacity: 1; }
+
+    .confirm-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7); display: none; z-index: 300;
+      justify-content: center; align-items: center;
+    }
+    .confirm-overlay.show { display: flex; }
+    .confirm-box {
+      background: var(--card); border-radius: 16px; padding: 24px;
+      width: 320px; text-align: center;
+    }
+    .confirm-box h3 { font-size: 17px; color: var(--text-bright); margin-bottom: 8px; }
+    .confirm-box p { font-size: 13px; color: var(--text-dim); margin-bottom: 20px; line-height: 1.5; }
+    .confirm-box .btns { display: flex; gap: 8px; }
+    .confirm-box .btns button {
+      flex: 1; padding: 12px; border-radius: 8px; border: none; font-size: 14px;
+      font-weight: 600; cursor: pointer;
+    }
+    .confirm-box .btn-cancel { background: rgba(255,255,255,0.08); color: var(--text); }
+    .confirm-box .btn-confirm { background: var(--red); color: #fff; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <h1>结算权限</h1>
+      <div class="sub">谁能批准AI花钱 · 花多少要你点头</div>
+    </div>
+  </div>
+
+  <!-- 紧急控制 -->
+  <div class="section-title">🚨 紧急控制</div>
+  <div class="emergency-card">
+    <div class="title">一键冻结所有Agent</div>
+    <div class="desc">紧急情况下，立刻冻结所有AI员工的支付权限，已生成的交易不受影响</div>
+    <div class="emergency-btns">
+      <button class="btn-freeze-all" onclick="confirmFreezeAll()">全部冻结</button>
+      <button class="btn-unfreeze-all" onclick="unfreezeAll()">全部解冻</button>
+    </div>
+  </div>
+
+  <!-- 审批人配置 -->
+  <div class="section-title">👤 审批人管理</div>
+  <div class="card">
+    <div class="card-title">谁有权批准Agent花钱</div>
+    <div class="approver-list" id="approverList"></div>
+    <div class="add-approver">
+      <input type="text" id="newApprover" placeholder="输入审批人名称（如：老板、店长）">
+      <button onclick="addApprover()">添加</button>
+    </div>
+  </div>
+
+  <!-- 全局规则 -->
+  <div class="section-title">⚙️ 全局规则</div>
+  <div class="card">
+    <div class="rule-row">
+      <div class="info">
+        <div class="label">全局自动通过线</div>
+        <div class="hint">低于此金额的交易不需要审批</div>
+      </div>
+      <input type="number" id="globalAutoApprove" min="0" step="0.01" value="20" style="width:70px">
+      <span style="color:var(--text-dim);font-size:12px;margin-left:4px">元</span>
+    </div>
+    <div class="rule-row">
+      <div class="info">
+        <div class="label">新交易通知老板</div>
+        <div class="hint">每笔新交易推送消息</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="notifyEnabled" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="rule-row">
+      <div class="info">
+        <div class="label">日限额超限自动冻结</div>
+        <div class="hint">Agent超日限额后自动冻结支付</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="autoFreezeEnabled" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="rule-row">
+      <div class="info">
+        <div class="label">每日对账推送</div>
+        <div class="hint">每天22:00推送当日收支汇总</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="dailyReportEnabled" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+  </div>
+
+  <!-- 各Agent支付渠道 -->
+  <div class="section-title">💳 各Agent支付渠道</div>
+  <div id="channelList"></div>
+
+  <div style="height:60px"></div>
+  <div class="save-bar">
+    <button class="save-btn" onclick="saveAll()">保存所有配置</button>
+  </div>
+
+  <div id="loadingDiv" class="loading">
+    <div class="spinner"></div>
+    <div>加载中...</div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- 确认弹窗 -->
+  <div class="confirm-overlay" id="confirmOverlay">
+    <div class="confirm-box">
+      <h3 id="confirmTitle">确认操作</h3>
+      <p id="confirmText">确定要执行此操作吗？</p>
+      <div class="btns">
+        <button class="btn-cancel" onclick="closeConfirm()">取消</button>
+        <button class="btn-confirm" id="confirmBtn">确认</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://wuli-bot.github.io/canyin-ai/voice-input.js"></script>
+  <script>
+    const SUPABASE_URL = 'https://vovzgflfdwngfuqnxjc.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvdnpnZmxmZHduZ2Z1cW54amMiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc4MTU5ODQ5NiwiZXhwIjoyMDk3MTc0NDk2fQ.p8e3LcWgBqWxQ3jYk7mN2vR4sT8uY6zA9bC1dE5fG3h';
+    let supabase = null;
+    try { supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch(e) {}
+
+    let approvers = ['老板'];
+    let agents = [
+      { agent_id:'7652253691269103651', agent_name:'语音总控', status:'active', channels:{mock:true,wechat:false,alipay:false} },
+      { agent_id:'7651952126398054435', agent_name:'私域引流助手', status:'active', channels:{mock:true,wechat:false,alipay:false} },
+      { agent_id:'7651922196432338995', agent_name:'成本核算助手', status:'active', channels:{mock:true,wechat:false,alipay:false} },
+      { agent_id:'7651944084466794550', agent_name:'差评处理助手', status:'active', channels:{mock:true,wechat:false,alipay:false} },
+      { agent_id:'7651953305891405870', agent_name:'小哇客服', status:'active', channels:{mock:true,wechat:false,alipay:false} }
+    ];
+
+    async function loadData() {
+      document.getElementById('loadingDiv').style.display = 'none';
+      if (supabase) {
+        try {
+          const { data, error } = await supabase.from('agent_auth').select('*').order('agent_name');
+          if (!error && data && data.length > 0) {
+            // 合并Supabase数据
+            const dbApprovers = new Set();
+            data.forEach(a => {
+              if (a.approvers) a.approvers.forEach(p => dbApprovers.add(p));
+            });
+            if (dbApprovers.size > 0) approvers = [...dbApprovers];
+            agents = data.map(a => ({
+              agent_id: a.agent_id,
+              agent_name: a.agent_name,
+              status: a.status || 'active',
+              channels: {
+                mock: (a.payment_channels || ['mock']).includes('mock'),
+                wechat: (a.payment_channels || []).includes('wechat'),
+                alipay: (a.payment_channels || []).includes('alipay')
+              }
+            }));
+            // 取全局自动通过线
+            if (data[0] && data[0].auto_approve_below != null) {
+              document.getElementById('globalAutoApprove').value = data[0].auto_approve_below;
+            }
+          }
+        } catch(e) { console.warn('Supabase query failed, using mock'); }
+      }
+      renderApprovers();
+      renderChannels();
+    }
+
+    function renderApprovers() {
+      const list = document.getElementById('approverList');
+      list.innerHTML = '';
+      approvers.forEach((name, i) => {
+        const chip = document.createElement('div');
+        chip.className = 'approver-chip';
+        chip.innerHTML = `${name} <span class="remove" onclick="removeApprover(${i})">×</span>`;
+        list.appendChild(chip);
+      });
+    }
+
+    function addApprover() {
+      const input = document.getElementById('newApprover');
+      const name = input.value.trim();
+      if (!name) return;
+      if (approvers.includes(name)) { showToast('已存在'); return; }
+      approvers.push(name);
+      input.value = '';
+      renderApprovers();
+      showToast('已添加');
+    }
+
+    function removeApprover(index) {
+      approvers.splice(index, 1);
+      renderApprovers();
+      showToast('已移除');
+    }
+
+    function renderChannels() {
+      const list = document.getElementById('channelList');
+      list.innerHTML = '';
+      agents.forEach(a => {
+        const card = document.createElement('div');
+        card.className = 'channel-card';
+        const statusClass = a.status === 'active' ? 'active' : 'frozen';
+        card.innerHTML = `
+          <div class="agent-name">
+            ${a.agent_name}
+            <span class="status-dot ${statusClass}"></span>
+          </div>
+          <div class="channel-toggles">
+            <div class="channel-toggle ${a.channels.mock ? 'enabled' : ''}" onclick="toggleChannel('${a.agent_id}','mock')">
+              <span class="dot"></span> 模拟
+            </div>
+            <div class="channel-toggle ${a.channels.wechat ? 'enabled' : ''}" onclick="toggleChannel('${a.agent_id}','wechat')">
+              <span class="dot"></span> 微信
+            </div>
+            <div class="channel-toggle ${a.channels.alipay ? 'enabled' : ''}" onclick="toggleChannel('${a.agent_id}','alipay')">
+              <span class="dot"></span> 支付宝
+            </div>
+          </div>
+        `;
+        list.appendChild(card);
+      });
+    }
+
+    function toggleChannel(agentId, channel) {
+      const agent = agents.find(a => a.agent_id === agentId);
+      if (!agent) return;
+      agent.channels[channel] = !agent.channels[channel];
+      renderChannels();
+    }
+
+    function confirmFreezeAll() {
+      showConfirm('全部冻结', '将冻结所有AI员工的支付权限，确认吗？', () => {
+        agents.forEach(a => a.status = 'frozen');
+        if (supabase) {
+          agents.forEach(async a => {
+            try { await supabase.from('agent_auth').update({ status: 'frozen', frozen_at: new Date().toISOString() }).eq('agent_id', a.agent_id); }
+            catch(e) {}
+          });
+        }
+        renderChannels();
+        showToast('已冻结全部Agent');
+      });
+    }
+
+    function unfreezeAll() {
+      agents.forEach(a => a.status = 'active');
+      if (supabase) {
+        agents.forEach(async a => {
+          try { await supabase.from('agent_auth').update({ status: 'active', frozen_at: null }).eq('agent_id', a.agent_id); }
+          catch(e) {}
+        });
+      }
+      renderChannels();
+      showToast('已解冻全部Agent');
+    }
+
+    async function saveAll() {
+      const globalAuto = parseFloat(document.getElementById('globalAutoApprove').value) || 0;
+      const notifyEnabled = document.getElementById('notifyEnabled').checked;
+      const autoFreeze = document.getElementById('autoFreezeEnabled').checked;
+      const dailyReport = document.getElementById('dailyReportEnabled').checked;
+
+      if (supabase) {
+        agents.forEach(async a => {
+          const channels = [];
+          if (a.channels.mock) channels.push('mock');
+          if (a.channels.wechat) channels.push('wechat');
+          if (a.channels.alipay) channels.push('alipay');
+          try {
+            await supabase.from('agent_auth').update({
+              payment_channels: channels,
+              approvers: approvers,
+              auto_approve_below: globalAuto,
+              status: a.status,
+              updated_at: new Date().toISOString()
+            }).eq('agent_id', a.agent_id);
+          } catch(e) {}
+        });
+      }
+
+      // 保存全局规则到localStorage（无单独表）
+      localStorage.setItem('settlement_rules', JSON.stringify({
+        globalAutoApprove: globalAuto,
+        notifyEnabled, autoFreeze, dailyReport,
+        approvers: approvers,
+        savedAt: new Date().toISOString()
+      }));
+
+      showToast('配置已保存');
+    }
+
+    // 恢复保存的规则
+    function loadRules() {
+      const saved = localStorage.getItem('settlement_rules');
+      if (saved) {
+        try {
+          const rules = JSON.parse(saved);
+          if (rules.globalAutoApprove != null) document.getElementById('globalAutoApprove').value = rules.globalAutoApprove;
+          if (rules.notifyEnabled != null) document.getElementById('notifyEnabled').checked = rules.notifyEnabled;
+          if (rules.autoFreeze != null) document.getElementById('autoFreezeEnabled').checked = rules.autoFreeze;
+          if (rules.dailyReport != null) document.getElementById('dailyReportEnabled').checked = rules.dailyReport;
+          if (rules.approvers && rules.approvers.length > 0) approvers = rules.approvers;
+        } catch(e) {}
+      }
+    }
+
+    function showConfirm(title, text, callback) {
+      document.getElementById('confirmTitle').textContent = title;
+      document.getElementById('confirmText').textContent = text;
+      document.getElementById('confirmOverlay').classList.add('show');
+      document.getElementById('confirmBtn').onclick = () => {
+        closeConfirm();
+        callback();
+      };
+    }
+    function closeConfirm() { document.getElementById('confirmOverlay').classList.remove('show'); }
+
+    function showToast(msg, warn) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.style.background = warn ? 'var(--orange)' : 'var(--green)';
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    loadRules();
+    loadData();
+  </script>
+</body>
+</html>
