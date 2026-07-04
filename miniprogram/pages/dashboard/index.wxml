@@ -1,0 +1,64 @@
+<!-- pages/dashboard/index.wxml -->
+<view class="container">
+  <view class="date-tabs">
+    <view class="date-tab {{dateRange === item.value ? 'active' : ''}}" wx:for="{{dateOptions}}" wx:key="value" data-value="{{item.value}}" bindtap="onDateChange">{{item.label}}</view>
+  </view>
+
+  <view class="metrics-grid">
+    <view class="metric-card">
+      <text class="metric-value">¥{{metrics.revenue}}</text>
+      <text class="metric-label">营收</text>
+      <view class="metric-trend {{metrics.revenueChange >= 0 ? 'up' : 'down'}}"><text>{{metrics.revenueChange >= 0 ? '↑' : '↓'}}{{metrics.revenueChange}}%</text></view>
+    </view>
+    <view class="metric-card">
+      <text class="metric-value">{{metrics.orders}}</text>
+      <text class="metric-label">订单</text>
+      <view class="metric-trend {{metrics.ordersChange >= 0 ? 'up' : 'down'}}"><text>{{metrics.ordersChange >= 0 ? '↑' : '↓'}}{{metrics.ordersChange}}%</text></view>
+    </view>
+    <view class="metric-card">
+      <text class="metric-value">{{metrics.profitRate}}%</text>
+      <text class="metric-label">毛利率</text>
+    </view>
+    <view class="metric-card warning" bindtap="goAlerts">
+      <text class="metric-value">{{metrics.alertCount}}</text>
+      <text class="metric-label">预警</text>
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="card-title flex-between"><text>营收趋势</text><text class="text-secondary text-small">近{{dateDays}}天</text></view>
+    <view class="trend-chart">
+      <view class="trend-bar-wrap" wx:for="{{trendData}}" wx:key="date">
+        <view class="trend-bar" style="height: {{item.percent}}%;"></view>
+        <text class="trend-label text-small">{{item.shortDate}}</text>
+        <text class="trend-val text-small">¥{{item.value}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="card" wx:if="{{alerts.length > 0}}">
+    <view class="card-title"><text>库存预警</text><text class="tag tag-danger" style="margin-left:12rpx;">{{alerts.length}}项</text></view>
+    <view class="alert-list">
+      <view class="alert-item" wx:for="{{alerts}}" wx:key="id">
+        <view class="flex-between"><text class="alert-name">{{item.item_name}}</text><text class="tag {{item.status === 'critical' ? 'tag-danger' : 'tag-warning'}}">{{item.status === 'critical' ? '紧急' : '不足'}}</text></view>
+        <view class="alert-bar-wrap"><view class="alert-bar" style="width: {{item.ratio}}%;"></view></view>
+        <text class="alert-detail text-secondary text-small">当前 {{item.quantity}}{{item.unit}} / 安全库存 {{item.min_stock}}{{item.unit}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="card" wx:if="{{alerts.length === 0}}">
+    <view class="card-title">库存状态</view>
+    <view class="empty-state"><text class="empty-icon">✅</text><text class="empty-text">库存正常，无预警项</text></view>
+  </view>
+
+  <view class="section-title">AI分析</view>
+  <view class="quick-list">
+    <view class="quick-row card" wx:for="{{quickActions}}" wx:key="name" bindtap="onQuickTap" data-agent="{{item.agentIndex}}">
+      <text class="quick-icon">{{item.icon}}</text>
+      <view class="flex-col"><text class="quick-name">{{item.name}}</text><text class="quick-desc text-secondary text-small">{{item.desc}}</text></view>
+      <text class="arrow">›</text>
+    </view>
+  </view>
+  <view style="height: 40rpx;"></view>
+</view>

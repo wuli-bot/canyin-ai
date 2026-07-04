@@ -1,0 +1,28 @@
+<!-- pages/settings/index.wxml -->
+<view class="container">
+  <view class="card">
+    <view class="card-title">门店信息</view>
+    <view class="setting-row"><text class="setting-label">门店名称</text><text class="setting-value">{{storeName}}</text></view>
+    <view class="divider"></view>
+    <view class="setting-row"><text class="setting-label">门店代码</text><text class="setting-value">{{storeCode}}</text></view>
+    <view class="divider"></view>
+    <view class="setting-row"><text class="setting-label">营业状态</text><text class="setting-value text-success">营业中</text></view>
+  </view>
+
+  <view class="card">
+    <view class="card-title">硬件对接</view>
+    <view class="setting-row"><text class="setting-label">小爱同学</text><text class="setting-value text-secondary">未连接</text></view>
+    <view class="divider"></view>
+    <view class="setting-row"><text class="setting-label">摄像头</text><text class="setting-value text-secondary">未连接</text></view>
+    <view class="divider"></view>
+    <view class="setting-row"><text class="setting-label">树莓派</text><text class="setting-value text-secondary">未连接</text></view>
+    <view class="hint">设备到位后自动连接</view>
+  </view>
+
+  <view class="card">
+    <view class="card-title">关于</view>
+    <view class="setting-row"><text class="setting-label">版本号</text><text class="setting-value text-secondary">v1.0.0 体验版</text></view>
+    <view class="divider"></view>
+    <view class="setting-row"><text class="setting-label">算法备案</text><text class="setting-value text-secondary text-small">网信算备440305295988701230071号</text></view>
+  </view>
+</view>

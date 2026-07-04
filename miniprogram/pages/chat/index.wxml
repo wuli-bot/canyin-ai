@@ -1,0 +1,57 @@
+<!-- pages/chat/index.wxml -->
+<view class="chat-page">
+  <view class="agent-tabs">
+    <view class="agent-tab {{currentIndex === index ? 'active' : ''}}" wx:for="{{agents}}" wx:key="id" data-index="{{index}}" bindtap="onAgentSwitch">
+      <text class="tab-icon">{{item.icon}}</text>
+      <text class="tab-name">{{item.name}}</text>
+    </view>
+  </view>
+
+  <scroll-view class="msg-list" scroll-y scroll-into-view="{{scrollToView}}" scroll-with-animation enhanced show-scrollbar="{{false}}">
+    <view class="welcome-card" wx:if="{{messages.length === 0}}">
+      <view class="welcome-icon">{{currentAgent.icon}}</view>
+      <text class="welcome-title">{{currentAgent.name}}</text>
+      <text class="welcome-desc">{{currentAgent.desc}}</text>
+      <text class="welcome-hint">下方输入框可直接打字或点击🎤语音输入</text>
+    </view>
+
+    <view class="msg-item {{msg.role === 'user' ? 'msg-user' : 'msg-ai'}}" wx:for="{{messages}}" wx:key="id" id="msg-{{item.id}}">
+      <view class="msg-avatar" wx:if="{{msg.role === 'ai'}}">{{currentAgent.icon}}</view>
+      <view class="msg-bubble {{msg.role === 'user' ? 'bubble-user' : 'bubble-ai'}}">
+        <text class="msg-text">{{msg.content}}</text>
+      </view>
+      <view class="msg-avatar user-avatar" wx:if="{{msg.role === 'user'}}">我</view>
+    </view>
+
+    <view class="msg-item msg-ai" wx:if="{{loading}}" id="msg-loading">
+      <view class="msg-avatar">{{currentAgent.icon}}</view>
+      <view class="msg-bubble bubble-ai">
+        <view class="loading-dots"><view class="dot"></view><view class="dot"></view><view class="dot"></view></view>
+      </view>
+    </view>
+    <view style="height: 40rpx;"></view>
+  </scroll-view>
+
+  <view class="input-area">
+    <view class="input-keyboard" wx:if="{{inputMode === 'keyboard'}}">
+      <view class="mode-switch" bindtap="toggleInputMode"><text class="switch-icon">🎤</text></view>
+      <input class="text-input" placeholder="输入消息..." value="{{inputText}}" bindinput="onInput" confirm-type="send" bindconfirm="onSend" adjust-position="{{true}}" cursor-spacing="20" />
+      <view class="send-btn {{inputText ? 'active' : ''}}" bindtap="onSend">↑</view>
+    </view>
+
+    <view class="input-voice" wx:if="{{inputMode === 'voice'}}">
+      <view class="mode-switch" bindtap="toggleInputMode"><text class="switch-icon">⌨️</text></view>
+      <view class="voice-btn {{recording ? 'recording' : ''}} {{cancelMode ? 'cancel' : ''}}" bindtouchstart="onVoiceStart" bindtouchmove="onVoiceMove" bindtouchend="onVoiceEnd" bindtouchcancel="onVoiceEnd">
+        <text class="voice-btn-text">{{recording ? (cancelMode ? '松开取消' : '松开发送') : '按住说话'}}</text>
+      </view>
+    </view>
+
+    <view class="record-overlay" wx:if="{{recording}}">
+      <view class="record-mask">
+        <view class="record-icon-wrap"><text class="record-icon">{{cancelMode ? '✕' : '🎙️'}}</text></view>
+        <text class="record-tip">{{cancelMode ? '松开取消发送' : '上滑取消，松开发送'}}</text>
+        <view class="record-wave"><view class="wave-bar" wx:for="{{[1,2,3,4,5,6,7,8,9]}}" wx:key="*this" style="animation-delay: {{index * 0.1}}s"></view></view>
+      </view>
+    </view>
+  </view>
+</view>

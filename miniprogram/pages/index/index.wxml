@@ -1,0 +1,43 @@
+<!-- pages/index/index.wxml -->
+<view class="container">
+  <view class="store-header card">
+    <view class="flex-between">
+      <view class="flex-col">
+        <text class="store-name">{{storeName}}</text>
+        <text class="store-code text-secondary text-small">门店代码：{{storeCode}}</text>
+      </view>
+      <view class="tag tag-success">营业中</view>
+    </view>
+  </view>
+
+  <view class="overview-grid">
+    <view class="overview-item card" wx:for="{{overviewData}}" wx:key="label">
+      <text class="overview-value text-primary">{{item.value}}</text>
+      <text class="overview-label text-secondary text-small">{{item.label}}</text>
+    </view>
+  </view>
+
+  <view class="section-title">快捷功能</view>
+  <view class="quick-grid">
+    <view class="quick-item card" wx:for="{{quickActions}}" wx:key="name" bindtap="onQuickTap" data-url="{{item.url}}">
+      <text class="quick-icon">{{item.icon}}</text>
+      <text class="quick-name">{{item.name}}</text>
+    </view>
+  </view>
+
+  <view class="section-title">AI智能体</view>
+  <view class="agent-list">
+    <view class="agent-item card" wx:for="{{agents}}" wx:key="id" bindtap="onAgentTap" data-index="{{index}}">
+      <view class="flex-between">
+        <view class="flex-row">
+          <text class="agent-icon">{{item.icon}}</text>
+          <view class="flex-col">
+            <text class="agent-name">{{item.name}}</text>
+            <text class="agent-desc text-secondary text-small">{{item.desc}}</text>
+          </view>
+        </view>
+        <text class="arrow">›</text>
+      </view>
+    </view>
+  </view>
+</view>

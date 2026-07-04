@@ -1,0 +1,18 @@
+.store-header { margin-bottom: 32rpx; }
+.store-name { font-size: 36rpx; font-weight: 700; }
+.store-code { margin-top: 8rpx; }
+.overview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16rpx; margin-bottom: 32rpx; }
+.overview-item { text-align: center; padding: 28rpx 16rpx; }
+.overview-value { font-size: 40rpx; font-weight: 700; display: block; margin-bottom: 8rpx; }
+.overview-label { display: block; }
+.section-title { font-size: 30rpx; font-weight: 600; margin: 32rpx 0 16rpx; padding-left: 8rpx; }
+.quick-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16rpx; margin-bottom: 16rpx; }
+.quick-item { display: flex; flex-direction: column; align-items: center; padding: 32rpx 16rpx; }
+.quick-icon { font-size: 56rpx; margin-bottom: 12rpx; }
+.quick-name { font-size: 26rpx; color: var(--color-text); }
+.agent-list { margin-bottom: 32rpx; }
+.agent-item { margin-bottom: 16rpx; }
+.agent-icon { font-size: 48rpx; margin-right: 20rpx; }
+.agent-name { font-size: 30rpx; font-weight: 600; }
+.agent-desc { margin-top: 4rpx; }
+.arrow { font-size: 40rpx; color: var(--color-text-secondary); }

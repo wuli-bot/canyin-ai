@@ -1,0 +1,53 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/chat/index",
+    "pages/dashboard/index",
+    "pages/orders/list",
+    "pages/orders/detail",
+    "pages/settings/index"
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#1a1a2e",
+    "navigationBarTextStyle": "white",
+    "navigationBarTitleText": "餐饮AI店长",
+    "backgroundColor": "#1a1a2e",
+    "backgroundTextStyle": "light",
+    "enablePullDownRefresh": false
+  },
+  "tabBar": {
+    "custom": false,
+    "color": "#666666",
+    "selectedColor": "#e94560",
+    "backgroundColor": "#16213e",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/chat/index",
+        "text": "对话"
+      },
+      {
+        "pagePath": "pages/dashboard/index",
+        "text": "看板"
+      }
+    ]
+  },
+  "plugins": {
+    "WechatSI": {
+      "version": "0.3.6",
+      "provider": "wx069ba97219f66d99"
+    }
+  },
+  "permission": {
+    "scope.record": {
+      "desc": "用于语音输入功能"
+    }
+  },
+  "sitemapLocation": "sitemap.json",
+  "style": "v2",
+  "lazyCodeLoading": "requiredComponents"
+}

@@ -1,0 +1,7 @@
+{
+  "name": "supabase_query",
+  "version": "1.0.0",
+  "description": "Supabase查询代理云函数",
+  "main": "index.js",
+  "dependencies": {}
+}

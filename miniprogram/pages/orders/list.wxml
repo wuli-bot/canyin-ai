@@ -1,0 +1,36 @@
+<!-- pages/orders/list.wxml -->
+<view class="container">
+  <view class="status-tabs">
+    <view class="status-tab {{currentTab === item.value ? 'active' : ''}}" wx:for="{{statusTabs}}" wx:key="value" data-value="{{item.value}}" bindtap="onTabChange">
+      <text>{{item.label}}</text>
+      <text class="tab-count" wx:if="{{item.count > 0}}">{{item.count}}</text>
+    </view>
+  </view>
+
+  <view class="order-list" wx:if="{{orders.length > 0}}">
+    <view class="order-card card" wx:for="{{orders}}" wx:key="id" data-id="{{item.id}}" bindtap="onOrderTap">
+      <view class="flex-between">
+        <text class="order-no text-small text-secondary">单号：{{item.order_no}}</text>
+        <text class="tag {{item.statusClass}}">{{item.statusText}}</text>
+      </view>
+      <view class="order-items"><text class="order-items-text">{{item.itemsText}}</text></view>
+      <view class="flex-between">
+        <text class="order-time text-small text-secondary">{{item.timeText}}</text>
+        <text class="order-amount">¥{{item.total_amount}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="empty-state" wx:if="{{orders.length === 0 && !loading}}">
+    <text class="empty-icon">📦</text>
+    <text class="empty-text">{{currentTab === 'all' ? '暂无订单' : '暂无该状态订单'}}</text>
+  </view>
+
+  <view class="loading-more" wx:if="{{loading}}">
+    <view class="loading-dots"><view class="dot"></view><view class="dot"></view><view class="dot"></view></view>
+  </view>
+
+  <view class="no-more" wx:if="{{!hasMore && orders.length > 0 && !loading}}">
+    <text class="text-secondary text-small">没有更多了</text>
+  </view>
+</view>
