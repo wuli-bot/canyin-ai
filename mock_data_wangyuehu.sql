@@ -26,7 +26,7 @@ VALUES (
 -- 1. 菜品表（store_dishes）—— 14款产品 × 2版本 = 28条
 -- ============================================================
 INSERT INTO store_dishes (store_id, dish_name, category, price, cost, gross_margin, status, is_featured, is_new, sort_order, description, total_sold, total_revenue, daily_avg_sold, platform_prices)
-SELECT s.id, d.dish_name, d.category, d.price, d.cost, d.gross_margin, d.status, d.is_featured, d.is_new, d.sort_order, d.description, d.total_sold, d.total_revenue, d.daily_avg_sold, d.platform_prices
+SELECT s.id, d.dish_name, d.category, d.price, d.cost, d.gross_margin, d.status, d.is_featured, d.is_new, d.sort_order, d.description, d.total_sold, d.total_revenue, d.daily_avg_sold, d.platform_prices::jsonb
 FROM stores s
 CROSS JOIN (VALUES
   -- 引流款
