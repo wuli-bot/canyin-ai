@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>SQL执行助手</title>
+<style>
+body { font-family: monospace; padding: 20px; max-width: 900px; margin: 0 auto; }
+button { font-size: 18px; padding: 15px 30px; margin: 10px; cursor: pointer; border: 2px solid #3ecf8e; background: #3ecf8e; color: white; border-radius: 8px; }
+button:hover { background: #2eb878; }
+#status { color: #666; margin: 10px 0; }
+#preview { background: #f5f5f5; padding: 10px; border-radius: 4px; max-height: 200px; overflow: auto; font-size: 12px; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<h1>SQL执行助手</h1>
+<p>步骤：1.点击"复制SQL" → 2.点击"打开Supabase编辑器" → 3.在编辑器中Ctrl+V粘贴 → 4.点击Run执行</p>
+<div>
+<button id="copyBtn">📋 复制SQL到剪贴板</button>
+<button id="openEditor">🔗 打开Supabase编辑器</button>
+<button id="copyVerify">📋 复制验证查询</button>
+</div>
+<div id="status">正在加载SQL文件...</div>
+<div id="preview"></div>
+<script>
+const RAW_URL = 'https://raw.githubusercontent.com/wuli-bot/canyin-ai/main/mock_data_wangyuehu.sql';
+let sqlText = '';
+
+fetch(RAW_URL)
+  .then(r => r.text())
+  .then(t => {
+    sqlText = t;
+    document.getElementById('status').textContent = '✅ SQL已加载，共 ' + t.length + ' 字符，' + t.split('\n').length + ' 行';
+    document.getElementById('preview').textContent = t.substring(0, 500) + '\n... (共' + t.length + '字符)';
+  })
+  .catch(e => {
+    document.getElementById('status').textContent = '❌ 加载失败: ' + e.message;
+  });
+
+document.getElementById('copyBtn').addEventListener('click', async () => {
+  if (!sqlText) { alert('SQL尚未加载完成'); return; }
+  try {
+    await navigator.clipboard.writeText(sqlText);
+    document.getElementById('status').textContent = '✅ SQL已复制到剪贴板！' + sqlText.length + ' 字符。现在去Supabase编辑器Ctrl+V粘贴。';
+  } catch(e) {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = sqlText;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    document.getElementById('status').textContent = '✅ SQL已复制(fallback)！';
+  }
+});
+
+document.getElementById('openEditor').addEventListener('click', () => {
+  window.open('https://supabase.com/dashboard/project/vovzgflfdwngfuqnxjc/sql/new', '_blank');
+});
+
+const verifyQuery = "SELECT 'stores' as t, count(*) as cnt FROM stores\nUNION ALL SELECT 'store_dishes', count(*) FROM store_dishes\nUNION ALL SELECT 'store_daily_summary', count(*) FROM store_daily_summary\nUNION ALL SELECT 'store_transactions', count(*) FROM store_transactions\nUNION ALL SELECT 'ingredient_inventory', count(*) FROM ingredient_inventory\nUNION ALL SELECT 'store_configs', count(*) FROM store_configs;";
+
+document.getElementById('copyVerify').addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(verifyQuery);
+    document.getElementById('status').textContent = '✅ 验证查询已复制！去Supabase粘贴执行。';
+  } catch(e) {
+    const ta = document.createElement('textarea');
+    ta.value = verifyQuery;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    document.getElementById('status').textContent = '✅ 验证查询已复制(fallback)！';
+  }
+});
+</script>
+</body>
+</html>
